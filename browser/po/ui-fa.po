@@ -6756,7 +6756,7 @@ msgstr "لغو پیوند نقل قول ها"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
 msgstr ""
 "لغو پیوند نقل‌قول‌ها باعث می‌شود که Collaboran Online نتواند نقل‌قول‌ها و "
@@ -8499,7 +8499,7 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your Apenio Office server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8819,7 +8819,7 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
+msgid "Apenio Office Welcome"
 msgstr "همکاری آنلاین خوش آمدید"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -8828,7 +8828,7 @@ msgstr "{coolversion} جدید را کاوش کنید"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Collabora Online Development Edition"
+msgid "Apenio Office"
 msgstr "نسخه توسعه آنلاین Collabora"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
@@ -8836,7 +8836,7 @@ msgstr "نسخه توسعه آنلاین Collabora"
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
@@ -8854,10 +8854,10 @@ msgstr "تمام تغییرات را کشف کنید"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Collabora Online Development Edition, aimed at home "
+"all about: The latest Apenio Office, aimed at home "
 "users and small teams."
 msgstr ""
-"<a target=\"_blank\" href=\"https://www.collaboraonline.com/"
+"<a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">یادداشت های انتشار</a> را بررسی کنید و همه چیز "
 "را در مورد: جدیدترین توسعه آنلاین Collabora بیاموزید نسخه، با هدف کاربران "
 "خانگی و تیم های کوچک."
@@ -8868,7 +8868,7 @@ msgstr "مشارکت کنید"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
 #, fuzzy
-msgid "https://www.collaboraoffice.org/"
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -8878,9 +8878,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "آیا شما علاقه مند به مشارکت هستید اما نمی دانید از کجا شروع کنید؟ به <a "
