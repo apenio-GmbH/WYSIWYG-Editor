@@ -6729,9 +6729,9 @@ msgstr "未链接的引文"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
-msgstr "取消引用链接将阻止 Collabora Online 更新本文档中的引用和参考书目。"
+msgstr "取消引用链接将阻止 Apenio Office 更新本文档中的引用和参考书目。"
 
 #: src/control/HRuler.ts:326
 msgid "First line"
@@ -8048,7 +8048,7 @@ msgid ""
 "sdk.collaboraonline.com/docs/installation/Proxy_settings.html"
 msgstr ""
 "无法建立网络连接或网络连接被意外关闭。反向代理可能配置错误，请联系管理员。有"
-"关反向代理的更多信息，请查阅 https://sdk.collaboraonline.com/docs/"
+"关反向代理的更多信息，请查阅 https://github.com/apenio-marasmus/Apenio-Officedocs/"
 "installation/Proxy_settings.html"
 
 #: src/errormessages.ts:65
@@ -8433,8 +8433,8 @@ msgid "Update Slides"
 msgstr "更新幻灯片"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
-msgstr "您的Collabora Online版本需要更新。{0}版本可用。"
+msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgstr "您的Apenio Office版本需要更新。{0}版本可用。"
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8749,8 +8749,8 @@ msgid "Welcome to Presentation"
 msgstr "欢迎使用演示文稿"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
-msgstr "Collabora Online 欢迎"
+msgid "Apenio Office Welcome"
+msgstr "Apenio Office 欢迎"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8758,14 +8758,14 @@ msgstr "体验新版本 {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Collabora Online Development Edition"
-msgstr "Collabora Online 开发版本"
+msgid "Apenio Office"
+msgstr "Apenio Office 开发版本（CODE）"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
@@ -8781,20 +8781,20 @@ msgstr "检查所有更新"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Collabora Online Development Edition, aimed at home "
+"all about: The latest Apenio Office, aimed at home "
 "users and small teams."
 msgstr ""
-"请查阅 <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
-"collaboraonline.com/code-26-04-release-notes/\">发布说明</a> "
-"并了解针对家庭用户和小团队的最新 Collabora Online 开发版的所有信息。"
+"请查阅 <a target=\"_blank\" rel=\"noopener\" href=\"https://"
+"www.collaboraonline.com/code-26-04-release-notes/\">发布说明</a> 并了解针对家"
+"庭用户和小团队的最新 Collabora Online 开发版的所有信息。"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"
 msgstr "加入"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
-msgid "https://www.collaboraoffice.org/"
-msgstr "https://www.collaboraoffice.org/"
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
+msgstr "https://github.com/apenio-marasmus/Apenio-Office"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
 msgid ""
@@ -8802,17 +8802,17 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
-"有兴趣参与贡献但不知道从何入手？请前往 <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/build-code/\">分步指南</a> "
-"从零开始构建 CODE。你还可以通过协助 <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/translate/\">翻译</a>，或者 <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraoffice.org/"
-"post/filebugs/\">提交包含完整复现步骤的缺陷报告</a> 来提供帮助。"
+"您有兴趣贡献但不知从何入手？请前往<a target=\"_blank\" rel=\"noopener\" href="
+"\"https://github.com/apenio-marasmus/Apenio-Officepost/build-code/\">分步说明</"
+"a>从零开始构建 CODE。您还可以帮助<a target=\"_blank\" rel=\"noopener\" href="
+"\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/\">翻译</a>，或通过<a "
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
+"post/filebugs/\">提交错误报告</a>（附上重现问题的关键步骤）来提供帮助。"
 
 #: welcome/welcome.html%2Bhtml.body.div.div:55-5
 msgid ""
@@ -9514,8 +9514,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "服务器正在恢复，稍后即将可用"
 
-#~ msgid "Oops, there is a problem connecting to Collabora Online : "
-#~ msgstr "糟糕，连接到 Collabora Online 时出现了问题: "
+#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgstr "糟糕，连接到 Apenio Office 时出现了问题: "
 
 #~ msgid "Number of views"
 #~ msgstr "视图数"

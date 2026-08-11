@@ -6786,10 +6786,10 @@ msgstr "Цитаталарды ажырату"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Цитаталарды ажырату Collabora Online жүйесіне бұл құжаттағы цитаталарды және "
+"Цитаталарды ажырату Apenio Office жүйесіне бұл құжаттағы цитаталарды және "
 "библиографияны жаңартуға мүмкіндік бермейді."
 
 #: src/control/HRuler.ts:326
@@ -8142,7 +8142,7 @@ msgstr ""
 "Сокет байланысын орнату мүмкін болмады немесе сокет байланысы күтпеген "
 "жерден жабылды. Обратный прокси дұрыс конфигурацияланбаған болуы мүмкін, "
 "әкімшіден көмек сұраңыз. Прокси конфигурациясы туралы қосымша ақпаратты мына "
-"жерден таба аласыз: https://sdk.collaboraonline.com/docs/installation/"
+"жерден таба аласыз: https://github.com/apenio-marasmus/Apenio-Officedocs/installation/"
 "Proxy_settings.html"
 
 #: src/errormessages.ts:65
@@ -8550,9 +8550,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your Apenio Office server needs updating. Version {0} is available."
 msgstr ""
-"Сіздің Collabora Online серверіңіз жаңартуды қажет етеді. {0} нұсқасы "
+"Сіздің Apenio Office серверіңіз жаңартуды қажет етеді. {0} нұсқасы "
 "қолжетімді."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8876,8 +8876,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
-msgstr "Collabora Online-ға қош келдіңіз"
+msgid "Apenio Office Welcome"
+msgstr "Apenio Office-ға қош келдіңіз"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8885,21 +8885,21 @@ msgstr "Жаңа {coolversion} туралы білу"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Collabora Online Development Edition"
-msgstr "Collabora Online әзірлеушілер нұсқасы"
+msgid "Apenio Office"
+msgstr "Apenio Office әзірлеушілер нұсқасы"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "Онлайн өнімділіктің соңғы жетістіктерін пайдаланыңыз, оларды зерттеу үшін "
 "және басқа пайдаланушылармен бірге браузерде қолдану үшін тегін. Әртүрлі <a "
-"target=\"_blank\" href=\"https://www.collaboraonline.com/solutions/"
+"target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Officesolutions/"
 "collabora-office-android-ios/\">қолданбалар</a> мобильді құрылғыларға да "
 "қолжетімді."
 
@@ -8912,12 +8912,12 @@ msgstr "Барлық өзгерістерді білу"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Collabora Online Development Edition, aimed at home "
+"all about: The latest Apenio Office, aimed at home "
 "users and small teams."
 msgstr ""
-"<a target=\"_blank\" href=\"https://www.collaboraonline.com/"
+"<a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\"> шығару ескертпелері</a>-мен танысып, үй "
-"пайдаланушылары мен шағын командаларға арналған ең соңғы Collabora Online "
+"пайдаланушылары мен шағын командаларға арналған ең соңғы Apenio Office "
 "Development Edition туралы біліңіз."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -8926,7 +8926,7 @@ msgstr "Қатысу"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
 #, fuzzy
-msgid "https://www.collaboraoffice.org/"
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -8936,9 +8936,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "Сіз өз үлесіңізді қосқыңыз келеді, бірақ қайдан бастау керектігін білмейсіз "
@@ -9052,7 +9052,7 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "Oops, there is a problem connecting the document"
-#~ msgstr "Қап, Collabora Online жүйесіне байланысу қатесі орын алды : "
+#~ msgstr "Қап, Apenio Office жүйесіне байланысу қатесі орын алды : "
 
 #~ msgid "Server is down, restarting automatically. Please wait."
 #~ msgstr ""

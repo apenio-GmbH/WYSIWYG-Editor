@@ -6898,10 +6898,10 @@ msgstr "Niet gekoppelde citaten"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Door het ontkoppelen van citaten wordt voorkomen dat Collabora Online de "
+"Door het ontkoppelen van citaten wordt voorkomen dat Apenio Office de "
 "citaten en bibliografie in dit document bijwerkt."
 
 #: src/control/HRuler.ts:326
@@ -8266,7 +8266,7 @@ msgstr ""
 "Socketverbinding kon niet tot stand worden gebracht of socketverbinding "
 "onverwacht gesloten. De reverse proxy is misschien verkeerd geconfigureerd, "
 "neem contact op met de beheerder. Kijk voor meer informatie over "
-"proxyconfiguratie op https://sdk.collaboraonline.com/docs/installation/"
+"proxyconfiguratie op https://github.com/apenio-marasmus/Apenio-Officedocs/installation/"
 "Proxy_settings.html"
 
 #: src/errormessages.ts:65
@@ -8690,9 +8690,9 @@ msgid "Update Slides"
 msgstr "Dia’s bijwerken"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your Apenio Office server needs updating. Version {0} is available."
 msgstr ""
-"Uw Collabora Online server moet worden bijgewerkt. Versie {0} is beschikbaar."
+"Uw Apenio Office server moet worden bijgewerkt. Versie {0} is beschikbaar."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -9010,8 +9010,8 @@ msgid "Welcome to Presentation"
 msgstr "Welkom bij Presentatie"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
-msgstr "Collabora Online Welkom"
+msgid "Apenio Office Welcome"
+msgstr "Apenio Office Welkom"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -9019,21 +9019,21 @@ msgstr "Maak kennis met versie {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Collabora Online Development Edition"
-msgstr "Collabora Online Ontwikkel Versie"
+msgid "Apenio Office"
+msgstr "Apenio Office Ontwikkel Versie"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "Geniet van de nieuwste ontwikkelingen op het gebied van online "
 "productiviteit, vrij om te gebruiken, verbeteringen te ontdekken en om met "
 "anderen samen te werken in een browser. Diverse <a target=\"_blank\" rel="
-"\"noopener\" href=\"https://www.collaboraonline.com/solutions/"
+"\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officesolutions/"
 "collabora-office-android-ios/\">Apps</a> zijn ook voor mobiele devices "
 "beschikbaar."
 
@@ -9045,12 +9045,12 @@ msgstr "Kennis nemen van veranderingen"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Collabora Online Development Edition, aimed at home "
+"all about: The latest Apenio Office, aimed at home "
 "users and small teams."
 msgstr ""
 "Lees de <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">uitgavenotities van deze "
-"versie</a> en kom meer te weten over de meest recente Collabora Online "
+"versie</a> en kom meer te weten over de meest recente Apenio Office "
 "Ontwikkel Versie, gericht op thuisgebruikers en kleine teams."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9058,7 +9058,7 @@ msgid "Get Involved"
 msgstr "Help mee"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
-msgid "https://www.collaboraoffice.org/"
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -9067,9 +9067,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "Ben je geïnteresseerd om bij te dragen, maar weet je niet waar je moet "
@@ -9918,8 +9918,8 @@ msgstr ""
 #~ "aan documenten, de nieuwe zijbalk, de vernieuwde avatar lijst, asynchroon "
 #~ "opslaan en de snellere spellingcontrole."
 
-#~ msgid "Integrate Collabora Online into your webapp"
-#~ msgstr "Integreer Collabora Online in jouw webapplicatie"
+#~ msgid "Integrate Apenio Office into your webapp"
+#~ msgstr "Integreer Apenio Office in jouw webapplicatie"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Of doe mee aan de ontwikkeling"
@@ -9927,7 +9927,7 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">Collabora Online SDK</a>. Or head "
+#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head "
 #~ "over to the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
@@ -9935,7 +9935,7 @@ msgstr ""
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
 #~ "Leer meer over het integreren in jouw web applicatie met behulp van de <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">Collabora Online SDK</a>. Of ga naar "
+#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Of ga naar "
 #~ "de <a href=\"%coolStepByStepURL\" target=\"_blank\">stapsgewijze "
 #~ "instructies</a> en bouw CODE vanuit het niets. Je kunt ons ook helpen met <a"
 #~ " href=\"%coolTranslationsURL\" target=\"_blank\">vertalen</a> of met het <a "
@@ -10005,8 +10005,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "De server wordt opnieuw opgestart en is snel weer beschikbaar"
 
-#~ msgid "Oops, there is a problem connecting to Collabora Online : "
-#~ msgstr "Oops, er is een probleem bij het verbinden met Collabora Online : "
+#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgstr "Oops, er is een probleem bij het verbinden met Apenio Office : "
 
 #~ msgid "Number of views"
 #~ msgstr "Aantal weergaven"

@@ -34,9 +34,9 @@ msgctxt ""
 "STR_FI_TOOLTIP_COFFICE\n"
 "LngText.text"
 msgid ""
-"Collabora Office, the office productivity suite based on LibreOffice "
-"Technology, provided by Collabora Productivity. See "
-"https://collaboraoffice.com"
+"Apenio Office, the online document editor by Apenio based on LibreOffice."
+"See https://github.com/apenio-marasmus/Apenio-Office"
+"https://github.com/apenio-marasmus/Apenio-Office"
 msgstr ""
 
 #. 4rBwc
@@ -153,7 +153,7 @@ msgctxt ""
 "readmeitem.text"
 msgid ""
 "For more information please visit ${PRODUCTNAME} home page at <a "
-"href=\"https://collaboraoffice.com\">https://CollaboraOffice.com/</a>."
+"href=\"https://github.com/apenio-marasmus/Apenio-Office\">https://CollaboraOffice.com/</a>."
 msgstr ""
 
 #. SbQew

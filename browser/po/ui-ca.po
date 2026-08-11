@@ -6788,10 +6788,10 @@ msgstr "Desenllaça les citacions"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Desvincular les cites evitarà que el Collabora Online actualitzi les cites i "
+"Desvincular les cites evitarà que el Apenio Office actualitzi les cites i "
 "la bibliografia en aquest document."
 
 #: src/control/HRuler.ts:326
@@ -8566,7 +8566,7 @@ msgid "Update Slides"
 msgstr "Actualitza les diapositives"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your Apenio Office server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8886,7 +8886,7 @@ msgid "Welcome to Presentation"
 msgstr "Us donem la benvinguda a la presentació"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
+msgid "Apenio Office Welcome"
 msgstr "Benvinguda del Collabora Online"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -8895,21 +8895,21 @@ msgstr "Doneu un cop d'ull a la nova {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Collabora Online Development Edition"
-msgstr "Collabora Online, edició de desenvolupament"
+msgid "Apenio Office"
+msgstr "Apenio Office, edició de desenvolupament"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "Gaudiu dels darrers desenvolupaments en productivitat en línia, completament "
 "de franc i amb total llibertat d'exploració i ús compartit amb altres, tot "
 "des del navegador. També hi ha <a target=\"_blank\" rel=\"noopener\" href="
-"\"https://www.collaboraonline.com/solutions/collabora-office-android-ios/\""
+"\"https://github.com/apenio-marasmus/Apenio-Officesolutions/collabora-office-android-ios/\""
 ">aplicacions</a> per al mòbil."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:37-7
@@ -8920,12 +8920,12 @@ msgstr "Descobriu-ne tots els canvis"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Collabora Online Development Edition, aimed at home "
+"all about: The latest Apenio Office, aimed at home "
 "users and small teams."
 msgstr ""
 "Llegiu les <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">notes de llançament</a> i "
-"apreneu-ho tot sobre la darrera versió del Collabora Online, edició de "
+"apreneu-ho tot sobre la darrera versió del Apenio Office, edició de "
 "desenvolupament, dirigida als usuaris domèstics i als equips petits."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -8933,8 +8933,9 @@ msgid "Get Involved"
 msgstr "Impliqueu-vos-hi"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
-msgid "https://www.collaboraoffice.org/"
-msgstr "https://www.collaboraoffice.org/"
+#, fuzzy
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
+msgstr "https://www.collaboraonline.org/ (en anglès)"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
 #, fuzzy
@@ -8943,9 +8944,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "Voleu col·laborar amb el projecte i no sabeu per on començar? Consulteu les "
@@ -9539,9 +9540,9 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "El servidor s'està reciclant i aviat serà disponible"
 
-#~ msgid "Oops, there is a problem connecting to Collabora Online : "
+#~ msgid "Oops, there is a problem connecting to Apenio Office : "
 #~ msgstr ""
-#~ "Ep! S'ha produït un problema en intentar connectar amb el Collabora Online: "
+#~ "Ep! S'ha produït un problema en intentar connectar amb el Apenio Office: "
 
 #~ msgid "Number of views"
 #~ msgstr "Nre. de visualitzacions"

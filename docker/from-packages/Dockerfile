@@ -250,14 +250,14 @@ FROM ${runtime_base}
 
 # some descriptive metadata - docker image inspect
 ARG author
-LABEL author=${author:-"Collabora Productivity Ltd."}
-LABEL description="Collabora Online is a powerful collaborative Office suite that supports all major document, spreadsheet and presentation file formats, which you can integrate into your own infrastructure. Collabora Online provides data security and sovereignty, and is ideally suited to the demands of a modern distributed working environment. Delivering a familiar look and feel, Collabora Online represents a real alternative to other big-brands solutions, giving you control and flexibility."
+LABEL author=${author:-"Apenio"}
+LABEL description="Apenio Office is a powerful collaborative Office suite that supports all major document, spreadsheet and presentation file formats, which you can integrate into your own infrastructure. Apenio Office provides data security and sovereignty, and is ideally suited to the demands of a modern distributed working environment."
 ARG releasenotes
-LABEL release.notes=${releasenotes:-"https://www.collaboraonline.com/code-26-04-release-notes/"}
+LABEL release.notes=${releasenotes:-"https://github.com/apenio-marasmus/Apenio-Office/releases"}
 ARG version
 LABEL version=${version:-"26.04.0.1"}
 ARG onlinetag
-LABEL commit.history.core="https://gerrit.collaboraoffice.com/plugins/gitiles/online/+log/${onlinetag}"
+LABEL commit.history.core="https://github.com/apenio-marasmus/Apenio-Office/commits/${onlinetag}"
 
 # UTF-8 locale is needed to handle file names with non-ASCII characters
 ENV LC_CTYPE C.UTF-8

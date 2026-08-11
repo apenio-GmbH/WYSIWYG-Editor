@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.63])
 
-AC_INIT([coolwsd], [26.04.6.0], [https://github.com/CollaboraOnline/online/issues], [coolwsd], [https://www.collaboraoffice.org/])
+AC_INIT([coolwsd], [26.04.5.1], [https://github.com/apenio-marasmus/Apenio-Office/issues], [coolwsd], [https://github.com/apenio-marasmus/Apenio-Office])
 LT_INIT([shared, disable-static, dlopen])
 
 AM_INIT_AUTOMAKE([1.10 foreign subdir-objects tar-pax -Wno-portability])
@@ -75,7 +75,7 @@ AC_SUBST([COOLWSD_VERSION_NANO])
 AC_SUBST([COOLWSD_VERSION_BUILD_ID])
 AC_SUBST([COOLWSD_VERSION])
 
-AC_DEFINE_UNQUOTED([COOLWSD_VERSION],[["$COOLWSD_VERSION"]],[Collabora Online WebSocket server version])
+AC_DEFINE_UNQUOTED([COOLWSD_VERSION],[["$COOLWSD_VERSION"]],[Apenio Office WebSocket server version])
 
 # try to add a git hash for a version if we're developing
 COOLWSD_VERSION_HASH="$COOLWSD_VERSION"
@@ -85,7 +85,7 @@ if test "z$git_hash" != "z"; then
 fi
 AC_SUBST([COOLWSD_VERSION_HASH])
 
-AC_DEFINE_UNQUOTED([COOLWSD_VERSION_HASH],[["$COOLWSD_VERSION_HASH"]],[Collabora Online git hash if present])
+AC_DEFINE_UNQUOTED([COOLWSD_VERSION_HASH],[["$COOLWSD_VERSION_HASH"]],[Apenio Office git hash if present])
 
 AC_CONFIG_SRCDIR([wsd/COOLWSD.cpp])
 
@@ -1230,7 +1230,7 @@ if test "$enable_windowsapp" = "yes" -a -z "$with_app_name"; then
    AC_MSG_ERROR([You must use --with-app-name])
 fi
 
-APP_NAME="Collabora Online Development Edition"
+APP_NAME="Apenio Office"
 if test -n "$with_app_name"; then
    APP_NAME="$with_app_name"
 fi
@@ -1260,7 +1260,7 @@ else
 fi
 AC_SUBST(VENDOR)
 
-INFO_URL='https://www.collaboraoffice.org/'
+INFO_URL='https://github.com/apenio-marasmus/Apenio-Office'
 if test -n "$with_info_url" -a "$with_info_url" != "no"; then
     INFO_URL="$with_info_url"
 fi

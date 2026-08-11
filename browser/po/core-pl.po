@@ -38,12 +38,12 @@ msgctxt ""
 "STR_FI_TOOLTIP_COFFICE\n"
 "LngText.text"
 msgid ""
-"Collabora Office, the office productivity suite based on LibreOffice "
-"Technology, provided by Collabora Productivity. See "
-"https://collaboraoffice.com"
+"Apenio Office, the online document editor by Apenio based on LibreOffice."
+"See https://github.com/apenio-marasmus/Apenio-Office"
+"https://github.com/apenio-marasmus/Apenio-Office"
 msgstr ""
 "Collabora Office, pakiet biurowy oparty na technologii LibreOffice, "
-"dostarczany przez Collabora Productivity. Zobacz https://collaboraoffice.com"
+"dostarczany przez Collabora Productivity. Zobacz https://github.com/apenio-marasmus/Apenio-Office"
 
 #. 4rBwc
 #: include/svx/strings.hrc:1040
@@ -163,10 +163,10 @@ msgctxt ""
 "readmeitem.text"
 msgid ""
 "For more information please visit ${PRODUCTNAME} home page at <a "
-"href=\"https://collaboraoffice.com\">https://CollaboraOffice.com/</a>."
+"href=\"https://github.com/apenio-marasmus/Apenio-Office\">https://CollaboraOffice.com/</a>."
 msgstr ""
 "Więcej informacji znajdziesz na stronie głównej ${PRODUCTNAME} pod adresem "
-"<a href=\"https://collaboraoffice.com\">https://CollaboraOffice.com/</a>."
+"<a href=\"https://github.com/apenio-marasmus/Apenio-Office\">https://CollaboraOffice.com/</a>."
 
 #. SbQew
 #: chart2/inc/strings.hrc:51

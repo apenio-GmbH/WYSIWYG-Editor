@@ -1,14 +1,11 @@
-# Collabora Online and Collabora Office
+# Apenio Office
 
 > [!IMPORTANT]
-> **The CollaboraOnline/online.mirror repository on GitHub is a read-only mirror.**
-> Collabora Online and Collabora Office are developed on our Gerrit
-> instance at **https://gerrit.collaboraoffice.com**; the GitHub repository only mirrors that
-> source code.
+> **This is the Apenio Office source repository.**
+> Apenio Office is based on Collabora Online (MPL 2.0). The original upstream source is at
+> **https://github.com/CollaboraOnline/online**.
 >
-> - **Code contributions** go through Gerrit, not GitHub. Pull requests are disabled here; see
->   [CONTRIBUTING.md](CONTRIBUTING.md#contributing-to-source-code) for how to submit a patch.
-> - **Report issues** at the [CollaboraOnline/online issue tracker](https://github.com/CollaboraOnline/online/issues/new/choose).
+> - **Report issues** at the [Apenio Office issue tracker](https://github.com/apenio-marasmus/Apenio-Office/issues).
 
 [![Development: Gerrit](https://img.shields.io/badge/Development-Gerrit-orange?logo=git "Code development and review happen on Gerrit. GitHub pull requests are disabled.")](https://gerrit.collaboraoffice.com)
 [![Collabora Office Development Preview](https://img.shields.io/badge/Collabora%20Office-Development%20Preview-blue "Test the latest development snaphots of Collabora Office.")](https://www.collaboraoffice.com/downloads/CODA-Hd7wwbJWxm/)
@@ -26,11 +23,9 @@
 ![](https://www.collaboraonline.com/wp-content/uploads/2024/02/Website_COOL_2305_Home-1024x366.png)
 
 ## Learn more 💡
-* [Collabora Online Development Edition (CODE)](https://www.collaboraonline.com/code/)
-* [Collabora Online](https://www.collaboraonline.com/collabora-online/)
-* [Collabora Office](https://www.collaboraonline.com/collabora-office/)
-* [Collabora Office for iOS and Android](https://www.collaboraonline.com/collabora-office-android-ios/)
-* For additional details, build instructions, downloads, and more, please visit [www.collaboraoffice.org](https://www.collaboraoffice.org/). You can also explore the [SDK Documentation](https://sdk.collaboraonline.com/).
+* [Apenio Office Repository](https://github.com/apenio-marasmus/Apenio-Office)
+* [Upstream Collabora Online](https://www.collaboraonline.com/collabora-online/)
+* For additional details and build instructions, see the [SDK Documentation](https://sdk.collaboraonline.com/).
 
 ## Key features
 * View and edit text documents, spreadsheets, presentations & more
