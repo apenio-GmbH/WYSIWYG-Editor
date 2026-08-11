@@ -123,7 +123,7 @@ class AboutDialog {
 			productName =
 				typeof brandProductName === 'string' && brandProductName.length > 0
 					? brandProductName
-					: 'Collabora Online Development Edition (unbranded)';
+					: 'Apenio Office';
 		}
 
 		const productNameElement = content.querySelector(
@@ -143,7 +143,7 @@ class AboutDialog {
 		this.appendSpanAndLink(
 			elements.coolwsdVersion,
 			' git hash:\xA0',
-			`https://gerrit.collaboraoffice.com/plugins/gitiles/online/+log/${info.coolwsdHash}`,
+			`https://github.com/apenio-marasmus/Apenio-Office/commits/${info.coolwsdHash}`,
 			info.coolwsdHash,
 			info.wsdOptions,
 		);

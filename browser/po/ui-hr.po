@@ -7196,10 +7196,10 @@ msgstr "Odspoji citate"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Uklanjanje poveznica citata spriječit će Collabora Online aktualizirati "
+"Uklanjanje poveznica citata spriječit će Apenio Office aktualizirati "
 "citate i bibliografiju u ovom dokumentu."
 
 #: src/control/HRuler.ts:326
@@ -8593,7 +8593,7 @@ msgstr ""
 "Neuspjelo uspostavljanje veze s utičnicom ili je veza s utičnicom "
 "neočekivano zatvorena. Obrnuti proxy je možda krivo konfiguriran. Obrati se "
 "administratoru. Za daljnje informacije o konfiguraciji proxya pogledaj "
-"https://sdk.collaboraonline.com/docs/installation/Proxy_settings.html"
+"https://github.com/apenio-marasmus/Apenio-Officedocs/installation/Proxy_settings.html"
 
 #: src/errormessages.ts:71
 msgid ""
@@ -9041,9 +9041,9 @@ msgid "Editing slide %1 - click outside or press Esc to finish"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your Apenio Office server needs updating. Version {0} is available."
 msgstr ""
-"Tvoj se Collabora Online server treba aktualizirati. Dostupna je verzija {0}."
+"Tvoj se Apenio Office server treba aktualizirati. Dostupna je verzija {0}."
 
 #: src/map/handler/Map.WOPI.js:234
 msgid "Creating new file from template..."
@@ -9372,28 +9372,29 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
-msgstr "Collabora Online dobrodošlica"
+msgid "Apenio Office Welcome"
+msgstr "Apenio Office dobrodošlica"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
 msgstr "Istraži novu {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
-msgid "Collabora Online Development Edition"
-msgstr "Razvojno Collabora Online izdanje"
+#: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
+msgid "Apenio Office"
+msgstr "Razvojno Apenio Office izdanje"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "Uživaj u najnovijim dostignućima u online produktivnosti, koje možeš "
 "besplatno koristiti, istraživati i koristiti s drugima u pregledniku. Razne "
-"<a target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"<a target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">aplikacije</a> su dostupne i za "
 "mobilne uređaje."
 
@@ -9403,14 +9404,14 @@ msgstr "Otkrij sve promjene"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:39-7
 msgid ""
-"Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraonline.com/code-26-04-release-notes/\">release notes</a> and "
-"learn all about: The latest Collabora Online Development Edition, aimed at "
-"home users and small teams."
+"Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
+"all about: The latest Apenio Office, aimed at home "
+"users and small teams."
 msgstr ""
-"Pregledaj <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraonline.com/code-26-04-release-notes/\">bilješke uz izdanje</a> "
-"i saznaj sve o najnovijem razvojnom Collabora Online izdanju, koje je "
+"Pregledaj <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraonline.com/code-26-04-release-notes/\">bilješke uz izdanje</a> i "
+"saznaj sve o najnovijem razvojnom Apenio Office izdanju, koje je "
 "prikladno za obične korisnike i male timove."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9418,29 +9419,28 @@ msgid "Get Involved"
 msgstr "Uključi se u rad"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
-msgid "https://www.collaboraoffice.org/"
-msgstr "https://www.collaboraoffice.org/"
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
+msgstr "https://github.com/apenio-marasmus/Apenio-Office"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
 msgid ""
 "Are you interested in contributing but don’t know where to start? Head over "
-"to the <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraoffice.org/post/build-code/\">step-by-step instructions</a> "
-"and build CODE from scratch. You can also help out with <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraoffice.org/"
-"post/translate/\">translations</a> or by <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/filebugs/"
-"\">filing a bug report</a> with all the essential steps on how to reproduce "
-"it."
+"to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
+"build CODE from scratch. You can also help out with <a target=\"_blank\" "
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
+"\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
+"report</a> with all the essential steps on how to reproduce it."
 msgstr ""
-"Želiš doprinijeti, ali ne znaš gdje početi? Prijeđi na stranicu s <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraoffice.org/"
-"post/build-code/\">uputama</a> i programiraj razvojno Collabora Online "
-"izdanje (CODE) od nule. Pomoći možeš i putem <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/translate/\">"
-"prevođenja</a> aplikacije ili <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://www.collaboraoffice.org/post/filebugs/\">slanjem izvještaja o "
-"greškama</a> sa svim bitnim koracima za reproduciranje greške."
+"Želiš doprinijeti, ali ne znaš gdje početi? Prijeđi na stranicu s <a target="
+"\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/"
+"build-code/\">uputama</a> i programiraj razvojno Apenio Office izdanje "
+"(CODE) od nule. Pomoći možeš i putem <a target=\"_blank\" rel=\"noopener\" "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/\">prevođenja</a> "
+"aplikacije ili <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraoffice.org/post/filebugs/\">slanjem izvještaja o greškama</a> sa "
+"svim bitnim koracima za reproduciranje greške."
 
 #: welcome/welcome.html%2Bhtml.body.div.div:55-5
 msgid ""
@@ -10177,8 +10177,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Poslužitelj se ponovo pokreće i bit će uskoro dostupan"
 
-#~ msgid "Oops, there is a problem connecting to Collabora Online : "
-#~ msgstr "Ups, postoji problem prilikom povezivanja s Collabora Online: "
+#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgstr "Ups, postoji problem prilikom povezivanja s Apenio Office: "
 
 #~ msgid "Number of views"
 #~ msgstr "Broj pregleda"

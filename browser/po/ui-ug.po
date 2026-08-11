@@ -7180,10 +7180,10 @@ msgstr "نەقىل كەلتۈرۈش"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent Apenio Office from updating citations "
 "and bibliography in this document."
 msgstr ""
-"نەقىل ئېلىنغان نەقىللەر Collabora Online نىڭ بۇ ھۆججەتتىكى نەقىل ۋە "
+"نەقىل ئېلىنغان نەقىللەر Apenio Office نىڭ بۇ ھۆججەتتىكى نەقىل ۋە "
 "بىبلىئوگرافىيەنى يېڭىلىشىنىڭ ئالدىنى ئالىدۇ."
 
 #: src/control/HRuler.ts:326
@@ -9017,7 +9017,7 @@ msgid "Editing slide %1 - click outside or press Esc to finish"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your Apenio Office server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:234
@@ -9352,7 +9352,7 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
+msgid "Apenio Office Welcome"
 msgstr "توردا قارشى ئالىمىز"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -9360,7 +9360,8 @@ msgid "Explore The New {coolversion}"
 msgstr "يېڭى {coolversion} ئۈستىدە ئىزدىنىڭ"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
-msgid "Collabora Online Development Edition"
+#: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
+msgid "Apenio Office"
 msgstr "كوللابورا تور تەرەققىيات نەشرى"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
@@ -9368,14 +9369,14 @@ msgstr "كوللابورا تور تەرەققىيات نەشرى"
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline.com/"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "تور ئۈنۈمدارلىقىدىكى ئەڭ يېڭى تەرەققىياتلاردىن ھۇزۇرلىنىڭ ، تور كۆرگۈچتە "
-"باشقىلار بىلەن بىللە ئىشلىتىش ، ئىزدىنىش ۋە ئىشلىتىش ھەقسىز. ھەرخىل <a target "
-"= \"_ blank\" href = \"https://www.collaboraonline.com/solutions/collabora-"
-"office-android-ios/\"> ئەپلەرمۇ كۆچمە تېلېفوندا بار."
+"باشقىلار بىلەن بىللە ئىشلىتىش ، ئىزدىنىش ۋە ئىشلىتىش ھەقسىز. ھەرخىل <a "
+"target = \"_ blank\" href = \"https://github.com/apenio-marasmus/Apenio-Officesolutions/"
+"collabora-office-android-ios/\"> ئەپلەرمۇ كۆچمە تېلېفوندا بار."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:37-7
 msgid "Discover All The Changes"
@@ -9384,15 +9385,15 @@ msgstr "بارلىق ئۆزگىرىشلەرنى بايقايسىز"
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:39-7
 #, fuzzy
 msgid ""
-"Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraonline.com/code-26-04-release-notes/\">release notes</a> and "
-"learn all about: The latest Collabora Online Development Edition, aimed at "
-"home users and small teams."
+"Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
+"all about: The latest Apenio Office, aimed at home "
+"users and small teams."
 msgstr ""
-"<A target = \"_ blank\" href = \"https://www.collaboraonline.com/code-26-04-"
-"release-notes/\"> قويۇپ بېرىش خاتىرىلىرى </a> نى تەكشۈرۈپ ، ھەممىنى "
-"ئۆگىنىۋېلىڭ: ئەڭ يېڭى كوللابورا تور تەرەققىياتى نەشرى ، ئائىلە ئىشلەتكۈچىلىرى "
-"ۋە كىچىك گۇرۇپپىلارغا قارىتىلغان."
+"<A target = \"_ blank\" href = \"https://github.com/apenio-marasmus/Apenio-Office"
+"code-26-04-release-notes/\"> قويۇپ بېرىش خاتىرىلىرى </a> نى تەكشۈرۈپ ، "
+"ھەممىنى ئۆگىنىۋېلىڭ: ئەڭ يېڭى كوللابورا تور تەرەققىياتى نەشرى ، ئائىلە "
+"ئىشلەتكۈچىلىرى ۋە كىچىك گۇرۇپپىلارغا قارىتىلغان."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"
@@ -9400,21 +9401,20 @@ msgstr "قاتنىشىڭ"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
 #, fuzzy
-msgid "https://www.collaboraoffice.org/"
+msgid "https://github.com/apenio-marasmus/Apenio-Office"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
 #, fuzzy
 msgid ""
 "Are you interested in contributing but don’t know where to start? Head over "
-"to the <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraoffice.org/post/build-code/\">step-by-step instructions</a> "
-"and build CODE from scratch. You can also help out with <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraoffice.org/"
-"post/translate/\">translations</a> or by <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://www.collaboraoffice.org/post/filebugs/"
-"\">filing a bug report</a> with all the essential steps on how to reproduce "
-"it."
+"to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
+"build CODE from scratch. You can also help out with <a target=\"_blank\" "
+"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/"
+"\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
+"href=\"https://github.com/apenio-marasmus/Apenio-Officepost/filebugs/\">filing a bug "
+"report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "تۆھپە قوشۇشقا قىزىقامسىز ، ئەمما نەدىن باشلاشنى بىلمەيسىز؟ <A target = \"_ "
 "blank\" href = \"https://www.collaboraonline.org/post/build-code/\"> "

@@ -2,7 +2,7 @@
 
 This project has adopted the [Contributor Code of Conduct 3.0](https://www.contributor-covenant.org/version/3/0/code_of_conduct/)
 
-Please report your concerns, even if they fall below the threshold of a CoC issue to conduct@collaboraoffice.com promptly.
+Please report your concerns, even if they fall below the threshold of a CoC issue via the [issue tracker](https://github.com/apenio-marasmus/Apenio-Office/issues) promptly.
 
 As regards Addressing & Repairing Harm the repair will be proportionate to the violation and connection to the project. There should always be a way back through apology, reconciliation and improvement. Here are some example repairs:
 

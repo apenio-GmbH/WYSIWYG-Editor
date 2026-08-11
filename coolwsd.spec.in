@@ -9,8 +9,8 @@
 Name:           coolwsd
 Version:        @PACKAGE_VERSION@
 Release:        1
-Vendor:         Collabora Productivity Ltd.
-Summary:        Collabora Online WebSocket Daemon
+Vendor:         Apenio
+Summary:        Apenio Office WebSocket Daemon
 License:        EULA
 Source0:        coolwsd-@PACKAGE_VERSION@.tar.gz
 BuildRequires:  libcap-devel pam-devel rsync
@@ -27,7 +27,7 @@ Obsoletes: loolwsd collaboraoffice-dict-br collaboraoffice-dict-et collaboraoffi
 %description
 
 %package deprecated
-Summary: Collabora Online WebSocket Daemon Deprecated Utilities
+Summary: Apenio Office WebSocket Daemon Deprecated Utilities
 Requires: %{name} = %{version}-%{release}
 Requires(post): /usr/sbin/setcap
 
