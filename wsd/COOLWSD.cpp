@@ -2644,6 +2644,42 @@ void COOLWSD::setLokitEnvironmentVariables(const Poco::Util::LayeredConfiguratio
         appendAllowedAliasGroups(conf, lokAllowedHosts);
     }
 
+    // Auto-allow configured AI endpoints so admins don't need a separate lok_allow entry.
+    if (ConfigUtil::getConfigValue<bool>(conf, "ai.enabled", false))
+    {
+        const auto addAIHost = [&](const std::string& key)
+        {
+            const std::string url = ConfigUtil::getConfigValue<std::string>(conf, key, "");
+            if (url.empty())
+                return;
+            try
+            {
+                const std::string host = Poco::URI(url).getHost();
+                if (!host.empty())
+                {
+                    // Escape regex metacharacters present in hostnames (primarily '.').
+                    std::string pattern;
+                    for (char c : host)
+                    {
+                        if (c == '.' || c == '+' || c == '*' || c == '?' || c == '^' || c == '$'
+                            || c == '[' || c == ']' || c == '(' || c == ')' || c == '{' || c == '}'
+                            || c == '|' || c == '\\')
+                            pattern += '\\';
+                        pattern += c;
+                    }
+                    LOG_INF_S("Adding AI endpoint host to LOK_ALLOW: [" << host << ']');
+                    lokAllowedHosts.push_back(std::move(pattern));
+                }
+            }
+            catch (const Poco::Exception& e)
+            {
+                LOG_WRN("Failed to parse AI URL for LOK_ALLOW: " << e.displayText());
+            }
+        };
+        addAIHost("ai.api_url");
+        addAIHost("ai.image_api_url");
+    }
+
     if (lokAllowedHosts.size())
     {
         // One entry per line; the kit tells CIDR networks and regular
