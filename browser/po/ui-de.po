@@ -188,6 +188,30 @@ msgstr "Netzwerkgrafik"
 msgid "Save"
 msgstr "Speichern"
 
+#. UNO command .uno:Save Label
+msgid "~Save"
+msgstr "~Speichern"
+
+#. UNO command .uno:Print Label
+msgid "~Print..."
+msgstr "~Drucken..."
+
+#. UNO command .uni:Paste Label
+msgid "~Paste"
+msgstr "~Einfügen"
+
+#. UNO command .uno:PasteSpecial Label
+msgid "Paste ~Special..."
+msgstr "Inhalte ~einfügen..."
+
+#. UNO command .uno:Clear Direct Formatting Label
+msgid "Clear Direct Formatting"
+msgstr "Direkte Formatierung löschen"
+
+#. UNO command .uno:Spacing Label
+msgid "Character Spacing"
+msgstr "Zeichenabstand"
+
 #: admin/admin.strings.js:50
 msgid "Cache size of memory statistics"
 msgstr "Zwischenspeichergröße der Speicherstatistik"
