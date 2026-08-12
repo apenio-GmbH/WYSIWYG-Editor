@@ -212,6 +212,122 @@ msgstr "Direkte Formatierung löschen"
 msgid "Character Spacing"
 msgstr "Zeichenabstand"
 
+#. UNO command .uno:CharBackColor Label
+msgid "Character Highlight Color"
+msgstr "Farbe der Zeichenhervorhebung"
+
+#. UNO command .uno:Grow ContextLabel
+msgid "Increase Size"
+msgstr "Schriftgröße vergrößern"
+
+#. UNO command .uno:Shrink ContextLabel
+msgid "Decrease Size"
+msgstr "Schriftgröße verkleinern"
+
+#. UNO command .uno:Color Label
+msgid "Font Color"
+msgstr "Zeichenfarbe"
+
+#. UNO command .uno:DefaultBullet Label
+msgid "Unordered List"
+msgstr "Ungeordnete Liste"
+
+#. UNO command .uno:DefaultBullet ContextLabel
+msgid "~Unordered List"
+msgstr "~Ungeordnete Liste"
+
+#. UNO command .uno:DefaultNumbering Label
+msgid "Ordered List"
+msgstr "Geordnete Liste"
+
+#. UNO command .uno:DefaultNumbering ContextLabel
+msgid "~Ordered List"
+msgstr "~Geordnete Liste"
+
+#. UNO command .uno:InrementIndent ContextLabel
+msgid "Increase Indent"
+msgstr "Einzug vergrößern"
+
+#. UNO command .uno:IncrementIndent TooltipLabel
+msgid "Increase Indent"
+msgstr "Einzug vergrößern"
+
+#. UNO command .uno:DecrementIndent ContextLabel
+msgid "Decrease Indent"
+msgstr "Einzug verkleinern"
+
+#. UNO command .uno:DecrementIndent TooltipLabel
+msgid "Decrease Indent"
+msgstr "Einzug verkleinern"
+
+#. UNO command .uno:ControlCodes Label
+msgid "Formatting Marks"
+msgstr "Formatierungszeichen"
+
+#. UNO command .uno:ControlCodes ContextLabel
+msgid "For~matting Marks"
+msgstr "Formatierungszeichen"
+
+#. UNO command .uno:ParaLeftToRight Label
+msgid "Left-to-Right"
+msgstr "Links-nach-rechts"
+
+#. UNO command .uno:LeftPara Label
+msgid "Left"
+msgstr "Linksbündig"
+
+#. UNO command .uno:CenterPara Label
+msgid "Center"
+msgstr "Mitte"
+
+#. UNO command .uno:RightPara Label
+msgid "Right"
+msgstr "Rechtsbündig"
+
+#. Uno command .uno:ObjectAlignRight Label
+msgid "~Right"
+msgstr "~Rechtsbündig"
+
+#. UNO command .uno:JustifyPara Label
+msgid "Justified"
+msgstr "Blocksatz"
+
+#. UNO command .uno:LineSpacing Label
+msgid "Line Spacing"
+msgstr "Zeilenabstand"
+
+#. UNO command .uno:LineSpacing TooltipLabel
+msgid "Set Line Spacing"
+msgstr "Zeilenabstand festlegen"
+
+#. UNO command .uno:SpacePara1 Label
+msgid "Line Spacing: 1"
+msgstr "Zeilenabstand: 1"
+
+#. UNO command .uno:SpacePara115 Label
+msgid "Line Spacing: 1.15"
+msgstr "Zeilenabstand: 1,15"
+
+#. UNO command .uno:SpacePara15 Label
+msgid "Line Spacing: 1.5"
+msgstr "Zeilenabstand: 1,5"
+
+#. UNO command .uno:SpacePara2 Label
+msgid "Line Spacing: 2"
+msgstr "Zeilenabstand: 2"
+
+#. UNO command .uno:ParaSpaceIncrease ContextLabel
+msgid "Increase Paragraph Spacing"
+msgstr "Absatzabstand vergrößern"
+
+#. UNO command .uno:ParaSpaceDecrease ContextLabel
+msgid "Decrease Paragraph Spacing"
+msgstr "Absatzabstand verkleinern"
+
+#. UNO command .uno:ParagraphDialog-more Label
+msgid "Paragraph"
+msgstr "Absatz..."
+
 #: admin/admin.strings.js:50
 msgid "Cache size of memory statistics"
 msgstr "Zwischenspeichergröße der Speicherstatistik"
