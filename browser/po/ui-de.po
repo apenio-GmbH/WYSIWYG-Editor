@@ -269,8 +269,16 @@ msgid "For~matting Marks"
 msgstr "Formatierungszeichen"
 
 #. UNO command .uno:ParaLeftToRight Label
-msgid "Left-to-Right"
+msgid "Left-To-Right"
 msgstr "Links-nach-rechts"
+
+#. UNO command .uno:ParaRightToLeft Label
+msgid "Right-To-Left"
+msgstr "Rechts-nach-links"
+
+#. UNO command .uno:FormatImageMenu Label
+msgid "~Image"
+msgstr "~Bild"
 
 #. UNO command .uno:LeftPara Label
 msgid "Left"
@@ -327,6 +335,10 @@ msgstr "Absatzabstand verkleinern"
 #. UNO command .uno:ParagraphDialog-more Label
 msgid "Paragraph"
 msgstr "Absatz..."
+
+#. UNO command .uno:BackColor Label
+msgid "Character Highlighting Color"
+msgstr "Farbe der Zeichenhervorhebung"
 
 #: admin/admin.strings.js:50
 msgid "Cache size of memory statistics"
