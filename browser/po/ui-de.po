@@ -280,6 +280,9 @@ msgstr "Rechts-nach-links"
 msgid "~Image"
 msgstr "~Bild"
 
+msgid "Image"
+msgstr "Bild"
+
 #. UNO command .uno:LeftPara Label
 msgid "Left"
 msgstr "Linksbündig"
@@ -1112,12 +1115,12 @@ msgid ""
 "Upload a packaged extension as a .zip; its contents (manifest.json, ...) "
 "are unpacked on the server."
 msgstr ""
-"Laden Sie eine gepackte Erweiterung als ZIP-Datei hoch. Deren Inhalt "
-"(manifest.json ...) wird auf dem Server entpackt."
+"Eine als ZIP verpackte Erweiterung hochladen; ihr Inhalt (manifest.json, "
+"...) wird auf dem Server entpackt."
 
 #: admin/src/integrator/AdminIntegratorSettings.ts:1678
 msgid "Upload Extension"
-msgstr "Upload-Erweiterung"
+msgstr "Erweiterung hochladen"
 
 #: admin/src/integrator/AdminIntegratorSettings.ts:1685
 msgid "Security policies"
@@ -1406,7 +1409,7 @@ msgstr "z. B."
 #: admin/src/integrator/AdminIntegratorSettings.ts:3886
 #: admin/src/integrator/AdminIntegratorSettings.ts:4104
 msgid "Leave empty if your server does not require one"
-msgstr "Leer lassen, wenn Ihr Server keine benötigt"
+msgstr "Leer lassen, wenn Ihr Server keinen benötigt"
 
 #: admin/src/integrator/AdminIntegratorSettings.ts:3721
 msgid ""
@@ -1475,7 +1478,7 @@ msgstr "Modelle zum Auswählen abrufen"
 msgid "API quota exceeded - check your plan and billing details"
 msgstr ""
 "API-Kontingent überschritten – überprüfen Sie Ihren Tarif und Ihre "
-"Abrechnungsdaten"
+"Abrechnungsdetails"
 
 #: admin/src/integrator/AdminIntegratorSettings.ts:4514
 msgid "Could not fetch models (HTTP {0}). Check the provider URL and API key."
@@ -2325,11 +2328,11 @@ msgstr "Namensfeld"
 
 #: src/control/Control.AIChatSidebar.ts:148
 msgid "Make it more concise"
-msgstr "Formulieren Sie es prägnanter"
+msgstr "Prägnanter formulieren"
 
 #: src/control/Control.AIChatSidebar.ts:149
 msgid "Summarize this text"
-msgstr "Fasse diesen Text zusammen"
+msgstr "Diesen Text zusammenfassen"
 
 #: src/control/Control.AIChatSidebar.ts:150
 msgid "Expand this text"
@@ -2703,6 +2706,10 @@ msgstr "Weniger anzeigen"
 msgid "See more"
 msgstr "Mehr anzeigen"
 
+#: src/control/Control.AIChatSidebar.ts:1798
+msgid "Design template choice cancelled."
+msgstr "Auswahl der Designvorlage abgebrochen."
+
 #: src/control/Control.AIChatSidebar.ts:2049
 msgid "Image inserted at cursor"
 msgstr "Bild am Cursor eingefügt"
@@ -2720,8 +2727,8 @@ msgid ""
 "The request timed out. You can increase the request timeout in the AI "
 "section of the settings."
 msgstr ""
-"Das Zeitlimit für die Anfrage wurde überschritten. Sie können das Zeitlimit "
-"im KI-Bereich der Einstellungen erhöhen."
+"Zeitüberschreitung der Anfrage. Sie können das Zeitlimit für Anfragen im "
+"Abschnitt „KI-Assistent“ der Einstellungen erhöhen."
 
 #: src/control/Control.AIChatSidebar.ts:2205
 msgid "Request too large"
@@ -3123,7 +3130,13 @@ msgstr "Der Inhalt der Auswahl konnte nicht analysiert werden"
 
 #: src/control/Control.AIChatSidebar.ts:3381
 msgid "Design (optional):"
-msgstr "Design (optional):"
+msgstr ""
+"Wählen Sie ein Design für Ihre Präsentation aus oder fahren Sie ohne Design "
+"fort:"
+
+#: src/control/Control.AIChatSidebar.ts:2930
+msgid "No template"
+msgstr "Keine Vorlage"
 
 #: src/control/Control.AIChatSidebar.ts:3398
 msgid "No design"
@@ -3132,6 +3145,10 @@ msgstr "Kein Design"
 #: src/control/Control.AIChatSidebar.ts:3399
 msgid "Continue without a design template"
 msgstr "Ohne Designvorlage fortfahren"
+
+#: src/control/Control.AIChatSidebar.ts:2959
+msgid "Design template: %1"
+msgstr "Designvorlage: %1"
 
 #: src/control/Control.AIChatSidebar.ts:3465
 msgid ""
@@ -3161,6 +3178,10 @@ msgstr "Beschreibung von Folie %1"
 #: src/control/Control.AIChatSidebar.ts:3572
 msgid "Remove slide %1"
 msgstr "Folie %1 entfernen"
+
+#: src/control/Control.AIChatSidebar.ts:2960
+msgid "Continuing without a design template."
+msgstr "Ohne Designvorlage wird fortgefahren."
 
 #: src/control/Control.AIChatSidebar.ts:3620
 msgid "Slide title"
@@ -3968,7 +3989,7 @@ msgstr "Datei vom Computer öffnen"
 
 #: src/control/backstage/OpenView.tsx:65
 msgid "Add Cloud +"
-msgstr "Cloud + hinzufügen"
+msgstr "Cloud hinzufügen +"
 
 #: src/control/backstage/OpenView.tsx:139
 #: src/control/backstage/OpenView.tsx:140
@@ -4018,7 +4039,7 @@ msgstr "Neues Konto erfolgreich hinzugefügt"
 
 #: src/control/backstage/CloudDialogs.tsx:218
 msgid "You can now access your files from this cloud."
-msgstr "Sie können nun über diese Cloud auf Ihre Dateien zugreifen."
+msgstr "Sie können jetzt auf Ihre Dateien in dieser Cloud zugreifen."
 
 #: src/control/backstage/CloudDialogs.tsx:241
 msgid "Open Files"
@@ -4030,7 +4051,19 @@ msgstr "Dieses Konto entfernen?"
 
 #: src/control/backstage/CloudDialogs.tsx:272
 msgid "You'll be disconnected from this cloud account."
-msgstr "Sie werden von diesem Cloud-Konto abgemeldet."
+msgstr "Die Verbindung zu diesem Cloud-Konto wird getrennt."
+
+#: src/control/backstage/CloudDialogs.tsx:316
+msgid "Nextcloud"
+msgstr "Nextcloud"
+
+#: src/control/backstage/CloudDialogs.tsx:317
+msgid "OpenCloud"
+msgstr "OpenCloud"
+
+#: src/control/backstage/CloudDialogs.tsx:318
+msgid "Seafile"
+msgstr "Seafile"
 
 #: src/control/DropFileOverlay.tsx:30
 msgid "Drop file to open"
@@ -5324,9 +5357,13 @@ msgstr "Navigation schließen"
 msgid "Results"
 msgstr "Ergebnisse"
 
+#: src/control/Control.NavigatorPanel.ts:317
+msgid "Maximize to grid"
+msgstr "Auf Raster maximieren"
+
 #: src/control/Control.NavigatorPanel.ts:628
 msgid "Find and Replace"
-msgstr "Suchen und ersetzen"
+msgstr "Suchen und Ersetzen"
 
 #: src/control/Control.NavigatorPanel.ts:637
 #: src/control/jsdialog/Widget.Combobox.js:497
@@ -7312,8 +7349,8 @@ msgid ""
 "An embedded script uses the legacy com.sun.star UNO API, which may be "
 "removed in future releases."
 msgstr ""
-"Ein eingebettetes Skript nutzt die veraltete com.sun.star UNO-API, die in "
-"zukünftigen Versionen möglicherweise entfernt wird."
+"Ein eingebettetes Skript verwendet die veraltete com.sun.star-UNO-API, die "
+"in zukünftigen Versionen entfernt werden könnte."
 
 #: src/control/Control.UIManager.ts:3114
 msgid "Confirm password"
@@ -7610,11 +7647,11 @@ msgstr "Gemeinsame Bearbeitung"
 
 #: src/control/Permission.js:438 src/control/Permission.js:471
 msgid "Edit together in real-time"
-msgstr "Zusammen in Echtzeit bearbeiten"
+msgstr "Gemeinsam in Echtzeit bearbeiten"
 
 #: src/control/Permission.js:461
 msgid "Keep viewing local copy"
-msgstr "Weiterhin die lokale Kopie ansehen"
+msgstr "Lokale Kopie weiter anzeigen"
 
 #: src/control/Permission.js:462
 msgid "Continue with your version"
@@ -9382,7 +9419,7 @@ msgstr "Fensterpräsentation: "
 #: src/map/handler/Map.SlideShow.js:210
 #: src/slideshow/SlideShowPresenter.ts:1278
 msgid "Presenting in another window"
-msgstr "In einem separaten Fenster präsentieren"
+msgstr "Präsentation in einem anderen Fenster"
 
 #: src/map/handler/Map.SlideShow.js:211
 #: src/slideshow/SlideShowPresenter.ts:1279
@@ -9580,7 +9617,7 @@ msgstr "Sie verlassen die Präsentation."
 
 #: src/slideshow/PresenterConsole.js:826
 msgid "The link is not valid."
-msgstr "Der Link ist nicht gültig."
+msgstr "Der Link ist ungültig."
 
 #: src/slideshow/PresenterConsole.js:1199
 #: src/slideshow/SlideShowPresenter.ts:981
@@ -9748,11 +9785,11 @@ msgstr "Gelbe Idee"
 
 #: introdocs/introdocs.js:5 introdocs/introdocs.js:8
 msgid "Welcome to Spreadsheet"
-msgstr "Willkommen bei der Tabellenkalkulation"
+msgstr "Willkommen in der Tabellenkalkulation"
 
 #: introdocs/introdocs.js:13 introdocs/introdocs.js:16
 msgid "Welcome to Presentation"
-msgstr "Willkommen bei der Präsentation"
+msgstr "Willkommen in der Präsentation"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
 msgid "Apenio Office Welcome"
