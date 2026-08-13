@@ -2814,6 +2814,10 @@ msgstr ""
 msgid "No template"
 msgstr "Keine Vorlage"
 
+#: src/control/Control.AIChatSidebar.ts:2930
+msgid "No template"
+msgstr "Keine Vorlage"
+
 #: src/control/Control.AIChatSidebar.ts:3237
 msgid "No design"
 msgstr "Kein Design"
@@ -2847,6 +2851,10 @@ msgstr "Titel von Folie %1"
 #: src/control/Control.AIChatSidebar.ts:3405
 msgid "Slide %1 description"
 msgstr "Beschreibung von Folie %1"
+
+#: src/control/Control.AIChatSidebar.ts:2960
+msgid "Continuing without a design template."
+msgstr "Ohne Designvorlage wird fortgefahren."
 
 #: src/control/Control.AIChatSidebar.ts:3411
 msgid "Remove slide %1"
