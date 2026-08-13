@@ -104,7 +104,7 @@ msgstr "Suchen"
 
 #: html/cool-help.html%2Bdiv.div.table.tr.td:24-67
 msgid "Find and Replace"
-msgstr "Suchen und ersetzen"
+msgstr "Suchen und Ersetzen"
 
 #: html/cool-help.html%2Bdiv.div.table.tr.td:25-72
 msgid "Display the Keyboard shortcuts help"
@@ -147,8 +147,7 @@ msgstr ""
 #: html/cool-help.html%2Bdiv.div.table.tr.td:29-38
 msgid "Open the context menu at the cursor or the selected cell"
 msgstr ""
-"Öffnen Sie das Kontextmenü an der Cursorposition oder in der ausgewählten "
-"Zelle"
+"Öffnet das Kontextmenü an der Cursorposition oder der ausgewählten Zelle"
 
 #: html/cool-help.html%2Bdiv.div.table.tr.td:29-121
 #: html/cool-help.html%2Bdiv.div.div.table.tr.td:166-160
@@ -1775,6 +1774,12 @@ msgid ""
 ">You can work alone on a document, or collaboratively as part of a "
 "team.</span>"
 msgstr ""
+"<span class=\"productname\">{productname}</span> ermöglicht es Ihnen, "
+"typische Office-Dokumente, also Textdokumente, Tabellendokumente und "
+"Präsentationen, <span class=\"webBasedCOOLOnly\">direkt in Ihrem "
+"Browser</span> auf einfache und unkomplizierte Weise zu erstellen und zu "
+"bearbeiten. <span class=\"webBasedCOOLOnly\">Sie können allein an einem "
+"Dokument oder gemeinsam im Team arbeiten.</span>"
 
 #: html/cool-help.html%2Bdiv.div.div.ul.li:386-7
 msgid ""
@@ -1805,17 +1810,17 @@ msgstr ""
 "oder einer das Dokument verlässt."
 
 #: html/cool-help.html%2Bdiv.div.div.p:395-7
-#, fuzzy
 msgid ""
 "<span class=\"webBasedCOOLOnly\"> <span class=\"productname\">{productname}</"
 "span> uses modern browser resources to adapt the user interface to the size "
 "of the viewing area, including small screens found in mobile devices.</span> "
 "The interface is composed of:"
 msgstr ""
-"<span class=\"productname\">{productname}</span> verwendet moderne Browser-"
+"<span class=\"webBasedCOOLOnly\"> <span "
+"class=\"productname\">{productname}</span> verwendet moderne Browser-"
 "Ressourcen, um die Benutzeroberfläche an die Größe des Anzeigebereichs "
-"anzupassen, einschließlich kleiner Bildschirme auf Mobilgeräten. Die "
-"Schnittstelle besteht aus:"
+"anzupassen, einschließlich kleiner Bildschirme auf Mobilgeräten.</span> Die "
+"Benutzeroberfläche besteht aus:"
 
 #: html/cool-help.html%2Bdiv.div.div.p:402-5
 msgid ""
@@ -1978,6 +1983,11 @@ msgid ""
 ">{productname}</span> from your platform's file manager or use <span class="
 "\"ui\">Open</span> on the <span class=\"ui\">File</span> tab."
 msgstr ""
+"Um ein Dokument zu öffnen, öffnen Sie es entweder über den Dateimanager "
+"Ihrer Plattform in <span class=\"productname\">{productname}</span> oder "
+"verwenden Sie die Schaltfläche <span class=\"ui\">Öffnen</span> auf der "
+"Seite, die über die Menüleistenschaltfläche <span class=\"ui\">Datei</span> "
+"angezeigt wird."
 
 #: html/cool-help.html%2Bdiv.div.div.p:447-7
 msgid ""
@@ -1986,17 +1996,28 @@ msgid ""
 " in the bottom right corner. New documents and documents created from a "
 "template open ready to edit."
 msgstr ""
+"Um das Dokument in einem anderen Format zu speichern, verwenden Sie die "
+"Schaltfläche <span class=\"ui\">Speichern unter</span> auf der Seite, die "
+"über die Menüleistenschaltfläche <span class=\"ui\">Datei</span> angezeigt "
+"wird."
 
 #: html/cool-help.html%2Bdiv.div.div.p:452-7
 msgid ""
 "If the document is locked by another application, it stays in view mode."
 msgstr ""
+"Dokumente werden automatisch regelmäßig gespeichert. Wenn Sie ein Dokument "
+"jedoch sofort speichern möchten, verwenden Sie die Schaltfläche <span "
+"class=\"ui\">Speichern</span> auf der Seite, die über die "
+"Menüleistenschaltfläche <span class=\"ui\">Datei</span> angezeigt wird."
 
 #: html/cool-help.html%2Bdiv.div.div.p:456-7
 msgid ""
 "To save the document in a different format use <span class=\"ui\">Save As</"
 "span> on the <span class=\"ui\">File</span> tab."
 msgstr ""
+"Um das Dokument zu drucken, verwenden Sie die Schaltfläche <span "
+"class=\"ui\">Drucken</span> auf der Seite, die über die "
+"Menüleistenschaltfläche <span class=\"ui\">Datei</span> angezeigt wird."
 
 #: html/cool-help.html%2Bdiv.div.div.p:461-7
 msgid ""
