@@ -6823,10 +6823,10 @@ msgstr "Desestekatu aipamenak"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Aipuak kentzeak Apenio Office-k dokumentu honetako aipamenak eta "
+"Aipuak kentzeak Apenio WYSIWYG-k dokumentu honetako aipamenak eta "
 "bibliografia eguneratzea eragotziko du."
 
 #: src/control/HRuler.ts:326
@@ -8600,9 +8600,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Apenio Office zerbitzariak eguneraketa behar du. {0} bertsioa eskuragarri "
+"Apenio WYSIWYG zerbitzariak eguneraketa behar du. {0} bertsioa eskuragarri "
 "dago."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8926,8 +8926,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office-ren ongi etorria"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG-ren ongi etorria"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8935,8 +8935,8 @@ msgstr "Begiratu {coolversion} berria"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office Garapen Edizioa"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG Garapen Edizioa"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8962,12 +8962,12 @@ msgstr "Ezagutu aldaketa guztiak"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Begiratu <a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">argitalpen-oharrak</a> eta ikasi guztia azken "
-"Apenio Office Garapen Edizioaz, etxeko erabiltzaileei eta talde txikiei "
+"Apenio WYSIWYG Garapen Edizioaz, etxeko erabiltzaileei eta talde txikiei "
 "zuzenduta."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9586,8 +9586,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Zerbitzaria birziklatzen ari da eta laster egongo da erabilgarri"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Arazo bat dago Apenio Officera konektatzean: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Arazo bat dago Apenio WYSIWYGra konektatzean: "
 
 #~ msgid "Number of views"
 #~ msgstr "Ikuste kopurua"

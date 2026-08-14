@@ -6923,10 +6923,10 @@ msgstr "Μη συνδεδεμένες αναφορές"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Η αποσύνδεση των παραπομπών θα εμποδίσει το Apenio Office να ενημερώσει "
+"Η αποσύνδεση των παραπομπών θα εμποδίσει το Apenio WYSIWYG να ενημερώσει "
 "τις αναφορές και τη βιβλιογραφία σε αυτό το έγγραφο."
 
 #: src/control/HRuler.ts:326
@@ -8730,9 +8730,9 @@ msgid "Update Slides"
 msgstr "Ενημέρωση διαφανειών"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Ο διακομιστής σας Apenio Office χρειάζεται ενημέρωση. Η έκδοση {0} είναι "
+"Ο διακομιστής σας Apenio WYSIWYG χρειάζεται ενημέρωση. Η έκδοση {0} είναι "
 "διαθέσιμη."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -9051,8 +9051,8 @@ msgid "Welcome to Presentation"
 msgstr "Καλώς ήρθατε στην Παρουσίαση"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Καλώς ήρθατε στο Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Καλώς ήρθατε στο Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -9060,8 +9060,8 @@ msgstr "Εξερευνήστε το νέο {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -9085,12 +9085,12 @@ msgstr "Ανακαλύψτε Όλες Τις Αλλαγές"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Ελέγξτε τις <a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">σημειώσεις έκδοσης</a> και μάθετε τα πάντα για: "
-"Την τελευταία έκδοση Apenio Office, που απευθύνεται "
+"Την τελευταία έκδοση Apenio WYSIWYG, που απευθύνεται "
 "σε οικιακούς χρήστες και μικρές ομάδες."
 "Ελέγξτε τις <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> και μάθετε "
@@ -9693,7 +9693,7 @@ msgstr ""
 #~ msgstr "Ο διακομιστής επανεκκινεί και θα είναι σύντομα διαθέσιμος"
 
 #, fuzzy
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
 #~ msgstr "Όπα, υπάρχει πρόβλημα στη σύνδεση με το διαδικτυακό LibreOffice : "
 
 #~ msgid "Number of views"

@@ -1585,7 +1585,7 @@ window.L.Clipboard = window.L.Class.extend({
 	},
 
 	_substProductName: function (msg) {
-		var productName = (typeof brandProductName !== 'undefined') ? brandProductName : 'Apenio Office';
+		var productName = (typeof brandProductName !== 'undefined') ? brandProductName : 'Apenio WYSIWYG';
 		return msg.replace('{productname}', productName);
 	},
 

@@ -6807,10 +6807,10 @@ msgstr "Odspoji citate"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Uklanjanje poveznica citata spriječit će Apenio Office aktualizirati "
+"Uklanjanje poveznica citata spriječit će Apenio WYSIWYG aktualizirati "
 "citate i bibliografiju u ovom dokumentu."
 
 #: src/control/HRuler.ts:326
@@ -8576,9 +8576,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Tvoj se Apenio Office server treba aktualizirati. Dostupna je verzija {0}."
+"Tvoj se Apenio WYSIWYG server treba aktualizirati. Dostupna je verzija {0}."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8895,8 +8895,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office dobrodošlica"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG dobrodošlica"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8904,8 +8904,8 @@ msgstr "Istraži novu {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Razvojno Apenio Office izdanje"
+msgid "Apenio WYSIWYG"
+msgstr "Razvojno Apenio WYSIWYG izdanje"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -8929,12 +8929,12 @@ msgstr "Otkrij sve promjene"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Pregledaj <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">bilješke uz izdanje</a> i "
-"saznaj sve o najnovijem razvojnom Apenio Office izdanju, koje je "
+"saznaj sve o najnovijem razvojnom Apenio WYSIWYG izdanju, koje je "
 "prikladno za obične korisnike i male timove."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -8958,7 +8958,7 @@ msgid ""
 msgstr ""
 "Želiš doprinijeti, ali ne znaš gdje početi? Prijeđi na stranicu s <a target="
 "\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Officepost/"
-"build-code/\">uputama</a> i programiraj razvojno Apenio Office izdanje "
+"build-code/\">uputama</a> i programiraj razvojno Apenio WYSIWYG izdanje "
 "(CODE) od nule. Pomoći možeš i putem <a target=\"_blank\" rel=\"noopener\" "
 "href=\"https://github.com/apenio-marasmus/Apenio-Officepost/translate/\">prevođenja</a> "
 "aplikacije ili <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
@@ -9682,8 +9682,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Poslužitelj se ponovo pokreće i bit će uskoro dostupan"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Ups, postoji problem prilikom povezivanja s Apenio Office: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Ups, postoji problem prilikom povezivanja s Apenio WYSIWYG: "
 
 #~ msgid "Number of views"
 #~ msgstr "Broj pregleda"

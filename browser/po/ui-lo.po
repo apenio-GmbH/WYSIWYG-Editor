@@ -6749,10 +6749,10 @@ msgstr "ຍົກເລີກການເຊື່ອມໂຍງການອ້
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"ການຍົກເລີກການເຊື່ອມໂຍງການອ້າງອີງຈະປ້ອງກັນບໍ່ໃຫ້ Apenio Office "
+"ການຍົກເລີກການເຊື່ອມໂຍງການອ້າງອີງຈະປ້ອງກັນບໍ່ໃຫ້ Apenio WYSIWYG "
 "ອັບເດດການອ້າງອີງ ແລະ ບັນນານຸກົມໃນເອກະສານນີ້."
 
 #: src/control/HRuler.ts:326
@@ -8506,9 +8506,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"ເຊີບເວີ Apenio Office ຂອງທ່ານຕ້ອງໄດ້ຮັບການອັບເດດ. ມີເວີຊັນ {0} ໃຫ້ໃຊ້."
+"ເຊີບເວີ Apenio WYSIWYG ຂອງທ່ານຕ້ອງໄດ້ຮັບການອັບເດດ. ມີເວີຊັນ {0} ໃຫ້ໃຊ້."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8829,8 +8829,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "ຍິນດີຕ້ອນຮັບສູ່ Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "ຍິນດີຕ້ອນຮັບສູ່ Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8838,8 +8838,8 @@ msgstr "ສຳຫຼວດ {coolversion} ໃໝ່"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office ສະບັບພັດທະນາ"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG ສະບັບພັດທະນາ"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -8862,12 +8862,12 @@ msgstr "ຄົ້ນພົບການປ່ຽນແປງທັງໝົດ"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "ກວດສອບ <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">ບັນທຶກການອອກລຸ້ນ</a> ແລະ "
-"ຮຽນຮູ້ທັງໝົດກ່ຽວກັບ: Apenio Office ສະບັບພັດທະນາຫຼ້າສຸດ, "
+"ຮຽນຮູ້ທັງໝົດກ່ຽວກັບ: Apenio WYSIWYG ສະບັບພັດທະນາຫຼ້າສຸດ, "
 "ເຊິ່ງແນໃສ່ຜູ້ໃຊ້ຕາມບ້ານ ແລະ ທີມງານຂະໜາດນ້ອຍ."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7

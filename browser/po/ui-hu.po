@@ -6895,7 +6895,7 @@ msgstr "Leválasztott hivatkozások"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
 "A hivatkozások véglegesítése azt jelenti, hogy megszűnik a kapcsolat a "
@@ -8679,9 +8679,9 @@ msgid "Update Slides"
 msgstr "Diák frissítése"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"A Apenio Office kiszolgálót frissíteni kell. Elérhető az új {0} verzió."
+"A Apenio WYSIWYG kiszolgálót frissíteni kell. Elérhető az új {0} verzió."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8999,8 +8999,8 @@ msgid "Welcome to Presentation"
 msgstr "Üdvözöljük a bemutatókészítőben"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Üdvözli a Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Üdvözli a Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -9008,8 +9008,8 @@ msgstr "Fedezze fel az új {coolversion}-t"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -9032,13 +9032,13 @@ msgstr "Fedezze fel az összes újdonságot"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Olvassa el az <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">angol „release notes”-ot</"
 "a>, ahol részletezzük az otthoni felhasználók és kis munkacsoportok számára "
-"készített Apenio Office újdonságait."
+"készített Apenio WYSIWYG újdonságait."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"
@@ -9882,8 +9882,8 @@ msgstr ""
 #~ "teljesítménynövekedése, az új natív oldalsáv, az újratervezett avatárlista, "
 #~ "az aszinkron mentés, a gyorsabb helyesírás-ellenőrzés stb."
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Integrálja a Apenio Office-t saját webalkalmazásába"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Integrálja a Apenio WYSIWYG-t saját webalkalmazásába"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Vagy vegyen részt a fejlesztésben"
@@ -9891,16 +9891,16 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head "
+#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head "
 #~ "over to the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
 #~ "href=\"%coolBugreportURL\" target=\"_blank\">filing a bug report</a> with "
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
-#~ "Ha szeretné megtudni, hogyan integrálja a Apenio Office-t saját "
+#~ "Ha szeretné megtudni, hogyan integrálja a Apenio WYSIWYG-t saját "
 #~ "webalkalmazásába, látogasson el a <a href=\"%coolSdkURL\" "
-#~ "target=\"_blank\">Apenio Office SDK</a> weboldalra. Vagy nézze meg a CODE"
+#~ "target=\"_blank\">Apenio WYSIWYG SDK</a> weboldalra. Vagy nézze meg a CODE"
 #~ " forráskódból való lefordításának <a href=\"%coolStepByStepURL\" "
 #~ "target=\"_blank\">részletes utasításait</a>. Segíthet a <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">fordításban</a> is, vagy ha "
@@ -9984,8 +9984,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "A kiszolgáló éppen újraindul, hamarosan elérhető lesz."
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Probléma történt a Apenio Office-hoz kapcsolódáskor: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Probléma történt a Apenio WYSIWYG-hoz kapcsolódáskor: "
 
 #~ msgid "Number of views"
 #~ msgstr "Nézetek száma"

@@ -6882,10 +6882,10 @@ msgstr "Dyfyniadau heb gysylltiadau"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Bydd datgysylltu dyfyniadau yn atal Apenio Office rhag diweddaru "
+"Bydd datgysylltu dyfyniadau yn atal Apenio WYSIWYG rhag diweddaru "
 "dyfyniadau a llyfryddiaeth yn y ddogfen hon."
 
 #: src/control/HRuler.ts:326
@@ -8677,7 +8677,7 @@ msgid "Update Slides"
 msgstr "Diweddaru Sleidiau"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
 "Mae angen diweddaru eich gweinydd Collabora Ar-lein. Mae fersiwn {0} ar gael."
 
@@ -8997,7 +8997,7 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
+msgid "Apenio WYSIWYG Welcome"
 msgstr "Croeso i Collabora Ar-lein"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -9006,7 +9006,7 @@ msgstr "Archwiliwch y {coolversion} Newydd"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
+msgid "Apenio WYSIWYG"
 msgstr "Fersiwn Datblygiadol Ar-lein Collabora"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
@@ -9031,7 +9031,7 @@ msgstr "Darganfod yr Holl Newidiadau"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Darllenwch y <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
@@ -9734,7 +9734,7 @@ msgstr ""
 #~ msgstr "Mae'r gweinydd yn ailgylchu a bydd ar gael cyn bo hir"
 
 #, fuzzy
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
 #~ msgstr "Wps, mae anhawster cysylltu â LibreOffice Ar-lein : "
 
 #~ msgid "Number of views"

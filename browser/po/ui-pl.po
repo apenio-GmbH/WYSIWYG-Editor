@@ -6924,10 +6924,10 @@ msgstr "Rozłączone cytaty"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Rozłączenie cytatów uniemożliwi Apenio Office aktualizowanie cytatów i "
+"Rozłączenie cytatów uniemożliwi Apenio WYSIWYG aktualizowanie cytatów i "
 "bibliografii w tym dokumencie."
 
 #: src/control/HRuler.ts:326
@@ -8710,9 +8710,9 @@ msgid "Update Slides"
 msgstr "Zaktualizuj slajdy"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Twój serwer Apenio Office wymaga aktualizacji. Wersja {0} jest dostępna."
+"Twój serwer Apenio WYSIWYG wymaga aktualizacji. Wersja {0} jest dostępna."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -9030,8 +9030,8 @@ msgid "Welcome to Presentation"
 msgstr "Witamy w prezentacji"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Witamy w Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Witamy w Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -9039,8 +9039,8 @@ msgstr "Poznaj nową wersję {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -9064,12 +9064,12 @@ msgstr "Odkryj wszystkie zmiany"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Sprawdź <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">informacje o wydaniu</a> i "
-"dowiedz się wszystkiego o najnowszej wersji Apenio Office Development "
+"dowiedz się wszystkiego o najnowszej wersji Apenio WYSIWYG Development "
 "Edition, skierowanej do użytkowników domowych i małych zespołów."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9954,8 +9954,8 @@ msgstr ""
 #~ "przerobionej liście awatarów, zapisywaniu asynchronicznym, szybszym "
 #~ "sprawdzaniu pisowni i nie tylko."
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Zintegruj Apenio Office z własną aplikacją internetową"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Zintegruj Apenio WYSIWYG z własną aplikacją internetową"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Albo zaangażuj się w rozwój"
@@ -9963,7 +9963,7 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a href="
-#~ "\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head over to "
+#~ "\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head over to "
 #~ "the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
@@ -9971,7 +9971,7 @@ msgstr ""
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
 #~ "Dowiedz się więcej o integracji z aplikacją internetową w <a href=\"%"
-#~ "coolSdkURL\" target=\"_blank\">SDK Apenio Office</a>. Lub przejdź do <a "
+#~ "coolSdkURL\" target=\"_blank\">SDK Apenio WYSIWYG</a>. Lub przejdź do <a "
 #~ "href=\"%coolStepByStepURL\" target=\"_blank\">instrukcji krok po kroku</a> i "
 #~ "skompiluj CODE od podstaw. Możesz również pomóc w <a href=\"%"
 #~ "coolTranslationsURL\" target=\"_blank\">tłumaczeniu</a> lub poprzez <a href="
@@ -10046,5 +10046,5 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Serwer jest poddawany pracom konserwacyjnym i wkrótce będzie dostępny"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Ups, wystąpił problem z połączeniem z Apenio Office: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Ups, wystąpił problem z połączeniem z Apenio WYSIWYG: "

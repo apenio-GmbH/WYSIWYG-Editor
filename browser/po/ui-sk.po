@@ -6798,10 +6798,10 @@ msgstr "Zrušiť odkazy na citácie"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Odpojenie citácií zabráni Apenio Office v aktualizácii citácií a "
+"Odpojenie citácií zabráni Apenio WYSIWYG v aktualizácii citácií a "
 "bibliografie v tomto dokumente."
 
 #: src/control/HRuler.ts:326
@@ -8573,9 +8573,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Váš server Apenio Office vyžaduje aktualizáciu. Je dostupná verzia {0}."
+"Váš server Apenio WYSIWYG vyžaduje aktualizáciu. Je dostupná verzia {0}."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8898,8 +8898,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Vitajte v Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Vitajte v Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8907,8 +8907,8 @@ msgstr "Zoznámte sa s novou verziou {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office, developerská edícia"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG, developerská edícia"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8934,12 +8934,12 @@ msgstr "Zoznámte sa so všetkými zmenami"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Pozrite si <a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">poznámky k vydaniu</a> a zistite všetko o "
-"najnovšej verzii Apenio Office, určenej pre domácich "
+"najnovšej verzii Apenio WYSIWYG, určenej pre domácich "
 "používateľov a malé tímy."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9460,8 +9460,8 @@ msgstr ""
 #~ "paneli, prepracovanom zozname avatarov používateľov, asynchrónnom ukladaní, "
 #~ "rýchlejšej kontrole pravopisu a ďalších zmenách."
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Integrujte aplikáciu Apenio Office do svojej webovej aplikácie"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Integrujte aplikáciu Apenio WYSIWYG do svojej webovej aplikácie"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Alebo sa zapojte do vývoja"
@@ -9469,7 +9469,7 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a href="
-#~ "\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head over to "
+#~ "\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head over to "
 #~ "the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
@@ -9477,7 +9477,7 @@ msgstr ""
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
 #~ "Informácie o integrácii webovej aplikácie nájdete na stránke <a href=\"%"
-#~ "coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Prostredníctvom <a "
+#~ "coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Prostredníctvom <a "
 #~ "href=\"%coolStepByStepURL\" target=\"_blank\">názorných postupov</a> možno "
 #~ "CODE zostaviť od nuly. Pomôcť môžete aj s <a href=\"%coolTranslationsURL\" "
 #~ "target=\"_blank\">prekladmi</a> alebo <a href=\"%coolBugreportURL\" target=\""
@@ -9543,8 +9543,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Server bude reštartovaný a o chvíľu bude opäť dostupný"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Vyskytol sa problém s pripojením k Apenio Office: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Vyskytol sa problém s pripojením k Apenio WYSIWYG: "
 
 #~ msgid "Number of views"
 #~ msgstr "Počet zobrazení"

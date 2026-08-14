@@ -6745,7 +6745,7 @@ msgstr "非リンクの引用"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr "引用のリンクを解除するこどて、コラボラオンラインをこのドキュメントの引用更新"
 "と参考文献から防げます。"
@@ -8480,7 +8480,7 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8802,8 +8802,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "ようこそApenio Officeへ"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "ようこそApenio WYSIWYGへ"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8811,8 +8811,8 @@ msgstr "新ヴァージョン{coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office 開発版"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG 開発版"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8837,7 +8837,7 @@ msgstr "すべての変更を検索"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "<a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
@@ -9183,8 +9183,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "サーバーは再利用中でもうじき利用可能になります"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "おっと、Apenio Officeへの接続で問題が発生しました : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "おっと、Apenio WYSIWYGへの接続で問題が発生しました : "
 
 #~ msgid "Number of views"
 #~ msgstr "ビューの数"

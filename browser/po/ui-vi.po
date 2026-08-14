@@ -6765,10 +6765,10 @@ msgstr "Trích dẫn chưa được liên kết"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Việc hủy liên kết các trích dẫn sẽ ngăn Apenio Office cập nhật các trích "
+"Việc hủy liên kết các trích dẫn sẽ ngăn Apenio WYSIWYG cập nhật các trích "
 "dẫn và thư mục trong tài liệu này."
 
 #: src/control/HRuler.ts:326
@@ -8532,8 +8532,8 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
-msgstr "Máy chủ Apenio Office của bạn cần cập nhật. Đã có phiên bản {0}."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
+msgstr "Máy chủ Apenio WYSIWYG của bạn cần cập nhật. Đã có phiên bản {0}."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8854,8 +8854,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office Chào mừng"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG Chào mừng"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8863,8 +8863,8 @@ msgstr "Khám phá phiên bản mới {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office bản Phát triển"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG bản Phát triển"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -8888,7 +8888,7 @@ msgstr "Khám phá tất cả các thay đổi"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Hãy xem <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
@@ -9429,8 +9429,8 @@ msgstr ""
 #~ "các nhóm lớn làm tài liệu, thanh bên mới, danh sách ảnh đại diện mới được "
 #~ "làm lại, lưu khác thời điểm, kiểm tra chính tả nhanh hơn và hơn thế nữa."
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Tích hợp Apenio Office vào ứng dụng web của bạn"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Tích hợp Apenio WYSIWYG vào ứng dụng web của bạn"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Hoặc tham gia vào việc phát triển"
@@ -9438,7 +9438,7 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head "
+#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head "
 #~ "over to the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
@@ -9446,7 +9446,7 @@ msgstr ""
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
 #~ "Tìm hiểu thêm về việc tích hợp vào ứng dụng web của bạn trong <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">SDK Apenio Office</a>. Hoặc đi tới"
+#~ "href=\"%coolSdkURL\" target=\"_blank\">SDK Apenio WYSIWYG</a>. Hoặc đi tới"
 #~ " <a href=\"%coolStepByStepURL\" target=\"_blank\">hướng dẫn từng bước</a> và"
 #~ " xây dựng CODE từ đầu. Bạn cũng có thể giúp với việc <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">phiên dịch</a> hoặc bằng "

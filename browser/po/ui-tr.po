@@ -6811,10 +6811,10 @@ msgstr "Atıfların Bağlantısını Kaldır"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Atıfların bağlantısını kaldırmak Apenio Office'ın bu belgedeki atıfları "
+"Atıfların bağlantısını kaldırmak Apenio WYSIWYG'ın bu belgedeki atıfları "
 "ve kaynakçayı güncellemesini engelleyecektir."
 
 #: src/control/HRuler.ts:326
@@ -8583,9 +8583,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Apenio Office sunucunuzun güncelleştirilmesi gerekiyor. Sürüm {0} mevcut."
+"Apenio WYSIWYG sunucunuzun güncelleştirilmesi gerekiyor. Sürüm {0} mevcut."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8908,8 +8908,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office'a Hoş Geldiniz"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG'a Hoş Geldiniz"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8917,8 +8917,8 @@ msgstr "Yeni {coolversion} sürümünü keşfedin"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8943,7 +8943,7 @@ msgstr "Tüm Değişiklikleri Keşfedin"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "<a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
@@ -9566,8 +9566,8 @@ msgstr ""
 #~ "hızlı yazım denetimi ve daha fazlası için performanstaki en son dönüm "
 #~ "noktası hakkında her şeyi öğrenin."
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Apenio Office'ı web uygulamanızla bütünleştirin"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Apenio WYSIWYG'ı web uygulamanızla bütünleştirin"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Veya geliştirmeye dahil olun"
@@ -9575,14 +9575,14 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a href="
-#~ "\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head over to "
+#~ "\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head over to "
 #~ "the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
 #~ "href=\"%coolBugreportURL\" target=\"_blank\">filing a bug report</a> with "
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
-#~ "<a href=\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>'da web "
+#~ "<a href=\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>'da web "
 #~ "uygulamanızla bütünleştirme hakkında daha fazla bilgi edinin. Veya <a href=\""
 #~ "%coolStepByStepURL\" target=\"_blank\">adım adım talimatlara</a> gidin ve "
 #~ "CODE'yi sıfırdan oluşturun. Ayrıca, <a href=\"%coolTranslationsURL\" target="
@@ -9654,5 +9654,5 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Sunucu yeniden başlatılıyor ve kısa süre sonra kullanılabilir olacak"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Apenio Office'a bağlanırken bir sorunla karşılaşıldı: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Apenio WYSIWYG'a bağlanırken bir sorunla karşılaşıldı: "
