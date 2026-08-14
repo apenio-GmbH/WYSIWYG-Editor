@@ -95,6 +95,7 @@ data = data.replace(/%BROWSER_LOGGING%/g, 'true');
 data = data.replace(/%COOLWSD_VERSION%/g, 'loadjs');
 data = data.replace(/%ENABLE_WELCOME_MSG%/g, 'false');
 data = data.replace(/%AUTO_SHOW_WELCOME%/g, 'false');
+data = data.replace(/%ENABLE_ABOUT%/g, 'true');
 data = data.replace(/%AUTO_SHOW_FEEDBACK%/g, 'false');
 data = data.replace(/%ENABLE_UPDATE_NOTIFICATION%/g, 'false');
 data = data.replace(/%USER_INTERFACE_MODE%/g, '');
