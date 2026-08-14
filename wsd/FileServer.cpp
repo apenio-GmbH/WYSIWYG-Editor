@@ -1685,6 +1685,16 @@ FileServerRequestHandler::ResourceAccessDetails FileServerRequestHandler::prepro
     Poco::replaceInPlace(preprocess, std::string("%ENABLE_WELCOME_MSG%"), enableWelcomeMessage);
     Poco::replaceInPlace(preprocess, std::string("%AUTO_SHOW_WELCOME%"), autoShowWelcome);
 
+#ifndef ENABLE_ABOUT
+#define ENABLE_ABOUT 1
+#endif
+#if ENABLE_ABOUT
+    const std::string enableAbout = "true";
+#else
+    const std::string enableAbout = "false";
+#endif
+    Poco::replaceInPlace(preprocess, std::string("%ENABLE_ABOUT%"), enableAbout);
+
     std::string enableAccessibility = stringifyBoolFromConfig(config, "accessibility.enable", Util::isMobileApp());
     Poco::replaceInPlace(preprocess, std::string("%ENABLE_ACCESSIBILITY%"), enableAccessibility);
 

@@ -78,6 +78,9 @@
 /* Should the Release notes message be shown on upgrade */
 #undef ENABLE_WELCOME_MESSAGE
 
+/* Whether to show the About dialog and menu entry */
+#undef ENABLE_ABOUT
+
 /* User feedback URL. */
 #undef FEEDBACK_URL
 

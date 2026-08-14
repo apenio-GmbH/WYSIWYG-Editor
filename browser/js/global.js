@@ -281,6 +281,7 @@ class InitializerBase {
 		window.coolwsdVersion = "";
 		window.enableWelcomeMessage = false;
 		window.autoShowWelcome = false;
+		window.enableAbout = false;
 		window.autoShowFeedback = true;
 		window.allowUpdateNotification = false;
 		window.useIntegrationTheme = false;
@@ -463,6 +464,7 @@ class BrowserInitializer extends InitializerBase {
 		window.coolwsdVersion = element.dataset.coolwsdVersion;
 		window.enableWelcomeMessage = element.dataset.enableWelcomeMessage.toLowerCase().trim() === "true";
 		window.autoShowWelcome = element.dataset.autoShowWelcome.toLowerCase().trim() === "true";
+		window.enableAbout = element.dataset.enableAbout.toLowerCase().trim() === "true";
 		window.autoShowFeedback = element.dataset.autoShowFeedback.toLowerCase().trim() === "true";
 		window.allowUpdateNotification = element.dataset.allowUpdateNotification.toLowerCase().trim() === "true";
 		window.userInterfaceMode = element.dataset.userInterfaceMode;
@@ -559,6 +561,7 @@ class MobileAppInitializer extends InitializerBase {
 		window.brandProductName = window.MobileAppName;
 		window.vendor = element.dataset.vendor;
 		window.copyrightYear = element.dataset.copyrightYear;
+		window.enableAbout = element.dataset.enableAbout === 'true';
 
 		window.coolLogging = "true";
 		window.outOfFocusTimeoutSecs = 1000000;

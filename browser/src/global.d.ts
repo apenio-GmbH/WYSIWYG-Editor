@@ -440,6 +440,7 @@ interface Window {
 	// windows. Left unset in the application, so the value is false.
 	enablePopoutDialogs?: boolean;
 	enableDebug: boolean;
+	enableAbout: boolean;
 	simulateError: (name: string) => boolean;
 	enableMacrosExecution: boolean;
 	hideLegacyScriptWarning: boolean;

@@ -454,10 +454,6 @@ class Menubar extends window.L.Control {
 				{type: 'separator', iosapp: false},
 				{name: _('Keyboard shortcuts'), id: 'keyboard-shortcuts', type: 'action', iosapp: false},
 				{type: 'separator'},
-				{name: _('Forum'), id: 'forum', type: 'action'},
-				{name: _('Report an issue'), id: 'report-an-issue', type: 'action', iosapp: false},
-				{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-				{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 				{type: 'separator'},
 				{name: _('Server audit'), id: 'serveraudit', type: 'action', mobileapp: false},
 				{type: 'separator'},
@@ -668,10 +664,6 @@ class Menubar extends window.L.Control {
 				{type: 'separator', iosapp: false},
 				{name: _('Keyboard shortcuts'), id: 'keyboard-shortcuts', type: 'action', iosapp: false},
 				{type: 'separator'},
-				{name: _('Forum'), id: 'forum', type: 'action'},
-				{name: _('Report an issue'), id: 'report-an-issue', type: 'action', iosapp: false},
-				{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-				{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 				{type: 'separator'},
 				{name: _('Server audit'), id: 'serveraudit', type: 'action', mobileapp: false},
 				{type: 'separator'},
@@ -836,10 +828,6 @@ class Menubar extends window.L.Control {
 				{type: 'separator', iosapp: false},
 				{name: _('Keyboard shortcuts'), id: 'keyboard-shortcuts', type: 'action', iosapp: false},
 				{type: 'separator'},
-				{name: _('Forum'), id: 'forum', type: 'action'},
-				{name: _('Report an issue'), id: 'report-an-issue', type: 'action', iosapp: false},
-				{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-				{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 				{type: 'separator'},
 				{name: _('Server audit'), id: 'serveraudit', type: 'action', mobileapp: false},
 				{type: 'separator'},
@@ -1154,10 +1142,6 @@ class Menubar extends window.L.Control {
 				{type: 'separator', iosapp: false},
 				{name: _('Keyboard shortcuts'), id: 'keyboard-shortcuts', type: 'action', iosapp: false},
 				{type: 'separator'},
-				{name: _('Forum'), id: 'forum', type: 'action'},
-				{name: _('Report an issue'), id: 'report-an-issue', type: 'action', iosapp: false},
-				{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-				{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 				{type: 'separator'},
 				{name: _('Server audit'), id: 'serveraudit', type: 'action', mobileapp: false},
 				{type: 'separator'},
@@ -1216,8 +1200,6 @@ class Menubar extends window.L.Control {
 					uno: '.uno:Translate'
 				} : {},
 			{name: _UNO('.uno:RunMacro'), id: 'runmacro', uno: '.uno:RunMacro'},
-			{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-			{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 			{name: _('About'), id: 'about', type: 'action'},
 		],
 
@@ -1272,8 +1254,6 @@ class Menubar extends window.L.Control {
 			},
 			{name: _UNO('.uno:RunMacro'), id: 'runmacro', uno: '.uno:RunMacro'},
 			{name: _('Fullscreen presentation'), id: 'fullscreen-presentation', type: 'action'},
-			{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-			{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 			{name: _('About'), id: 'about', type: 'action'},
 		],
 
@@ -1321,8 +1301,6 @@ class Menubar extends window.L.Control {
 				{name: _UNO('.uno:DeletePage', 'presentation'), unoid: '.uno:DeletePage', id: 'deletepage', type: 'action'}]
 			},
 			{name: _UNO('.uno:RunMacro'), id: 'runmacro', uno: '.uno:RunMacro'},
-			{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-			{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 			{name: _('About'), id: 'about', type: 'action'},
 		],
 
@@ -1388,8 +1366,6 @@ class Menubar extends window.L.Control {
 					{uno: '.uno:ShowDetail'}]}
 			]},
 			{name: _UNO('.uno:RunMacro'), id: 'runmacro', uno: '.uno:RunMacro'},
-			{name: _('Latest Updates'), id: 'latestupdates', type: 'action', iosapp: false},
-			{name: _('Send Feedback'), id: 'feedback', type: 'action', mobileapp: false},
 			{name: _('About'), id: 'about', type: 'action'},
 		],
 
@@ -2919,7 +2895,7 @@ class Menubar extends window.L.Control {
 		if (window.ThisIsTheiOSApp && menuItem.iosapp === false) {
 			return false;
 		}
-		if (menuItem.id === 'about' && (window.L.DomUtil.get('about-dialog') === null)) {
+		if (menuItem.id === 'about' && (!window.enableAbout || window.L.DomUtil.get('about-dialog') === null)) {
 			return false;
 		}
 		if (menuItem.id === 'fontworkgalleryfloater' && !this._isFileODF) {

@@ -292,6 +292,7 @@ m4_ifelse(APP, [true],
       )
       data-mobile-app-name='MOBILEAPPNAME'
       data-copyright-year='_YEAR_'
+      data-enable-about='ENABLE_ABOUT'
       data-enable-experimental-features='ENABLE_EXPERIMENTAL'
       data-vendor='VENDOR'
       />
@@ -307,6 +308,7 @@ m4_ifelse(APP, [true],
       data-allow-update-notification = "%ENABLE_UPDATE_NOTIFICATION%"
       data-auto-show-feedback = "%AUTO_SHOW_FEEDBACK%"
       data-auto-show-welcome = "%AUTO_SHOW_WELCOME%"
+      data-enable-about = "%ENABLE_ABOUT%"
       data-canvas-slideshow-enabled = "%CANVAS_SLIDESHOW_ENABLED%"
       data-check-file-info-override = "%CHECK_FILE_INFO_OVERRIDE%"
       data-cool-logging = "%BROWSER_LOGGING%"
