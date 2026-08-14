@@ -123,7 +123,7 @@ class AboutDialog {
 			productName =
 				typeof brandProductName === 'string' && brandProductName.length > 0
 					? brandProductName
-					: 'Apenio Office';
+					: 'Apenio WYSIWYG';
 		}
 
 		const productNameElement = content.querySelector(
