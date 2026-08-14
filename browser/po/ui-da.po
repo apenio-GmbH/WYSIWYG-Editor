@@ -6792,10 +6792,10 @@ msgstr "Frakobl citater"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Hvis citaternes sammenkædning fjernes, vil Apenio Office ikke længere "
+"Hvis citaternes sammenkædning fjernes, vil Apenio WYSIWYG ikke længere "
 "kunne opdatere citater og bibliografi i dette dokument."
 
 #: src/control/HRuler.ts:326
@@ -8571,8 +8571,8 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
-msgstr "Din Apenio Office server skal opdateres. Version {0} er tilgængelig."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
+msgstr "Din Apenio WYSIWYG server skal opdateres. Version {0} er tilgængelig."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8895,8 +8895,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office Velkommen"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG Velkommen"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8904,8 +8904,8 @@ msgstr "Udforsk den nye {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -8929,12 +8929,12 @@ msgstr "Se alle ændringerne"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Læs vores <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">udgivelsesnoter</a> og bliv "
-"klogere på den seneste Apenio Office, henvendt til "
+"klogere på den seneste Apenio WYSIWYG, henvendt til "
 "hjemmebrugere og mindre teams."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9416,8 +9416,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Serveren genstarter og vil snart være til rådighed"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Ups, der er et problem med forbindelsen til Apenio Office: "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Ups, der er et problem med forbindelsen til Apenio WYSIWYG: "
 
 #~ msgid "Number of views"
 #~ msgstr "Antal visninger"

@@ -6997,10 +6997,10 @@ msgstr "Détacher les citations"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Délier les citations empêchera Apenio Office de mettre à jour les "
+"Délier les citations empêchera Apenio WYSIWYG de mettre à jour les "
 "citations et la bibliographie de ce document."
 
 #: src/control/HRuler.ts:326
@@ -8814,9 +8814,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Votre serveur Apenio Office a besoin d’être mis à jour. La version {0} "
+"Votre serveur Apenio WYSIWYG a besoin d’être mis à jour. La version {0} "
 "est disponible."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -9142,8 +9142,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Bienvenue dans Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Bienvenue dans Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -9151,8 +9151,8 @@ msgstr "Explorez la nouvelle version {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office Édition Développeur"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG Édition Développeur"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -9176,12 +9176,12 @@ msgstr "Découvrir toutes les nouveautés"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Consultez les <a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">notes de mise à jour</a> et découvrez les "
-"nouveautés : La dernière édition de développement de Apenio Office, "
+"nouveautés : La dernière édition de développement de Apenio WYSIWYG, "
 "destinée aux utilisateurs privés et aux petites équipes."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9904,8 +9904,8 @@ msgstr ""
 #~ "l'enregistrement asynchrone, la vérification orthographique plus rapide, "
 #~ "etc."
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Intégrez Apenio Office dans votre application Web"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Intégrez Apenio WYSIWYG dans votre application Web"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Ou participez au développement"
@@ -9913,7 +9913,7 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio Office SDK</a>. Or head "
+#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head "
 #~ "over to the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
@@ -9921,7 +9921,7 @@ msgstr ""
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
 #~ "Pour en savoir plus sur l'intégration dans votre application web, consultez "
-#~ "le <a href=\"%coolSdkURL\" target=\"_blank\">SDK de Apenio Office</a>. Ou"
+#~ "le <a href=\"%coolSdkURL\" target=\"_blank\">SDK de Apenio WYSIWYG</a>. Ou"
 #~ " bien consultez les <a href=\"%coolStepByStepURL\" "
 #~ "target=\"_blank\">instructions étape par étape</a> et concevez le CODE en "
 #~ "partant de zéro. Vous pouvez également apporter votre aide en proposant des "
@@ -10000,8 +10000,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Le serveur est en cours de traitement et sera bientôt disponible"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Oups, il y a un problème de connexion à Apenio Office : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Oups, il y a un problème de connexion à Apenio WYSIWYG : "
 
 #~ msgid "Number of views"
 #~ msgstr "Nombre de vues"

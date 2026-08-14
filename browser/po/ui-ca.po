@@ -6788,10 +6788,10 @@ msgstr "Desenllaça les citacions"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Desvincular les cites evitarà que el Apenio Office actualitzi les cites i "
+"Desvincular les cites evitarà que el Apenio WYSIWYG actualitzi les cites i "
 "la bibliografia en aquest document."
 
 #: src/control/HRuler.ts:326
@@ -8566,7 +8566,7 @@ msgid "Update Slides"
 msgstr "Actualitza les diapositives"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8886,7 +8886,7 @@ msgid "Welcome to Presentation"
 msgstr "Us donem la benvinguda a la presentació"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
+msgid "Apenio WYSIWYG Welcome"
 msgstr "Benvinguda del Collabora Online"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -8895,8 +8895,8 @@ msgstr "Doneu un cop d'ull a la nova {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office, edició de desenvolupament"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG, edició de desenvolupament"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -8920,12 +8920,12 @@ msgstr "Descobriu-ne tots els canvis"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Llegiu les <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">notes de llançament</a> i "
-"apreneu-ho tot sobre la darrera versió del Apenio Office, edició de "
+"apreneu-ho tot sobre la darrera versió del Apenio WYSIWYG, edició de "
 "desenvolupament, dirigida als usuaris domèstics i als equips petits."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9540,9 +9540,9 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "El servidor s'està reciclant i aviat serà disponible"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
 #~ msgstr ""
-#~ "Ep! S'ha produït un problema en intentar connectar amb el Apenio Office: "
+#~ "Ep! S'ha produït un problema en intentar connectar amb el Apenio WYSIWYG: "
 
 #~ msgid "Number of views"
 #~ msgstr "Nre. de visualitzacions"

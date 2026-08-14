@@ -6838,7 +6838,7 @@ msgstr "இணைக்கப்படாத மேற்கோள்கள்"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
 "இந்த ஆவணத்தில் மேற்கோள்கள் மற்றும் நூலியல் புதுப்பிப்பதை ஆன்லைனில் "
@@ -8626,7 +8626,7 @@ msgid "Update Slides"
 msgstr "ச்லைடுகளைப் புதுப்பிக்கவும்"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
 "உங்கள் ஒத்துழைப்பு நிகழ்நிலை சேவையகத்திற்கு புதுப்பிக்க வேண்டும். பதிப்பு {0}"
 " கிடைக்கிறது."
@@ -8948,7 +8948,7 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
+msgid "Apenio WYSIWYG Welcome"
 msgstr "ஆன்லைனில் வரவேற்பு"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -8957,7 +8957,7 @@ msgstr "புதிய {coolversion} ஐ ஆராயுங்கள்"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
+msgid "Apenio WYSIWYG"
 msgstr "ஒத்துழைப்பு நிகழ்நிலை மேம்பாட்டு பதிப்பு"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
@@ -8982,7 +8982,7 @@ msgstr "அனைத்து மாற்றங்களையும் கண�
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "<a target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/Apenio-Office"

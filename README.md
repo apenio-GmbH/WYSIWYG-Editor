@@ -1,11 +1,11 @@
-# Apenio Office
+# Apenio WYSIWYG
 
 > [!IMPORTANT]
-> **This is the Apenio Office source repository.**
-> Apenio Office is based on Collabora Online (MPL 2.0). The original upstream source is at
+> **This is the Apenio WYSIWYG source repository.**
+> Apenio WYSIWYG is based on Collabora Online (MPL 2.0). The original upstream source is at
 > **https://github.com/CollaboraOnline/online**.
 >
-> - **Report issues** at the [Apenio Office issue tracker](https://github.com/apenio-marasmus/Apenio-Office/issues).
+> - **Report issues** at the [Apenio WYSIWYG issue tracker](https://github.com/apenio-marasmus/Apenio-Office/issues).
 
 [![Development: Gerrit](https://img.shields.io/badge/Development-Gerrit-orange?logo=git "Code development and review happen on Gerrit. GitHub pull requests are disabled.")](https://gerrit.collaboraoffice.com)
 [![Collabora Office Development Preview](https://img.shields.io/badge/Collabora%20Office-Development%20Preview-blue "Test the latest development snaphots of Collabora Office.")](https://www.collaboraoffice.com/downloads/CODA-Hd7wwbJWxm/)
@@ -23,7 +23,7 @@
 ![](https://www.collaboraonline.com/wp-content/uploads/2024/02/Website_COOL_2305_Home-1024x366.png)
 
 ## Learn more 💡
-* [Apenio Office Repository](https://github.com/apenio-marasmus/Apenio-Office)
+* [Apenio WYSIWYG Repository](https://github.com/apenio-marasmus/Apenio-Office)
 * [Upstream Collabora Online](https://www.collaboraonline.com/collabora-online/)
 * For additional details and build instructions, see the [SDK Documentation](https://sdk.collaboraonline.com/).
 

@@ -1,7 +1,7 @@
-# Contributing to Apenio Office
+# Contributing to Apenio WYSIWYG
 
 Thanks for taking the time to contribute! The following is a set of
-rules and guidelines for contributing to Apenio Office. Feel free
+rules and guidelines for contributing to Apenio WYSIWYG. Feel free
 to propose changes to this document via a pull request.
 
 ## Submitting issues

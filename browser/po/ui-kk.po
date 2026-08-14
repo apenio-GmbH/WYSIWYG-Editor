@@ -6786,10 +6786,10 @@ msgstr "Цитаталарды ажырату"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Цитаталарды ажырату Apenio Office жүйесіне бұл құжаттағы цитаталарды және "
+"Цитаталарды ажырату Apenio WYSIWYG жүйесіне бұл құжаттағы цитаталарды және "
 "библиографияны жаңартуға мүмкіндік бермейді."
 
 #: src/control/HRuler.ts:326
@@ -8550,9 +8550,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Сіздің Apenio Office серверіңіз жаңартуды қажет етеді. {0} нұсқасы "
+"Сіздің Apenio WYSIWYG серверіңіз жаңартуды қажет етеді. {0} нұсқасы "
 "қолжетімді."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8876,8 +8876,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office-ға қош келдіңіз"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG-ға қош келдіңіз"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8885,8 +8885,8 @@ msgstr "Жаңа {coolversion} туралы білу"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office әзірлеушілер нұсқасы"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG әзірлеушілер нұсқасы"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8912,12 +8912,12 @@ msgstr "Барлық өзгерістерді білу"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "<a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\"> шығару ескертпелері</a>-мен танысып, үй "
-"пайдаланушылары мен шағын командаларға арналған ең соңғы Apenio Office "
+"пайдаланушылары мен шағын командаларға арналған ең соңғы Apenio WYSIWYG "
 "Development Edition туралы біліңіз."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9052,7 +9052,7 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "Oops, there is a problem connecting the document"
-#~ msgstr "Қап, Apenio Office жүйесіне байланысу қатесі орын алды : "
+#~ msgstr "Қап, Apenio WYSIWYG жүйесіне байланысу қатесі орын алды : "
 
 #~ msgid "Server is down, restarting automatically. Please wait."
 #~ msgstr ""

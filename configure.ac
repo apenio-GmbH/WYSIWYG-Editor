@@ -75,7 +75,7 @@ AC_SUBST([COOLWSD_VERSION_NANO])
 AC_SUBST([COOLWSD_VERSION_BUILD_ID])
 AC_SUBST([COOLWSD_VERSION])
 
-AC_DEFINE_UNQUOTED([COOLWSD_VERSION],[["$COOLWSD_VERSION"]],[Apenio Office WebSocket server version])
+AC_DEFINE_UNQUOTED([COOLWSD_VERSION],[["$COOLWSD_VERSION"]],[Apenio WYSIWYG WebSocket server version])
 
 # try to add a git hash for a version if we're developing
 COOLWSD_VERSION_HASH="$COOLWSD_VERSION"
@@ -85,7 +85,7 @@ if test "z$git_hash" != "z"; then
 fi
 AC_SUBST([COOLWSD_VERSION_HASH])
 
-AC_DEFINE_UNQUOTED([COOLWSD_VERSION_HASH],[["$COOLWSD_VERSION_HASH"]],[Apenio Office git hash if present])
+AC_DEFINE_UNQUOTED([COOLWSD_VERSION_HASH],[["$COOLWSD_VERSION_HASH"]],[Apenio WYSIWG git hash if present])
 
 AC_CONFIG_SRCDIR([wsd/COOLWSD.cpp])
 
@@ -1234,7 +1234,7 @@ if test "$enable_windowsapp" = "yes" -a -z "$with_app_name"; then
    AC_MSG_ERROR([You must use --with-app-name])
 fi
 
-APP_NAME="Apenio Office"
+APP_NAME="Apenio WYSIWYG"
 if test -n "$with_app_name"; then
    APP_NAME="$with_app_name"
 fi

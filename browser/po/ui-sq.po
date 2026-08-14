@@ -6808,10 +6808,10 @@ msgstr "U hoqën lidhje citimesh"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Heqja e lidhjeve për te citime do të pengojë Apenio Office të përditësojë "
+"Heqja e lidhjeve për te citime do të pengojë Apenio WYSIWYG të përditësojë "
 "citime dhe bibliografi në këtë dokument."
 
 #: src/control/HRuler.ts:326
@@ -8591,9 +8591,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Shërbyesi juaj Apenio Office ka nevojë të përditësohet. Është gati "
+"Shërbyesi juaj Apenio WYSIWYG ka nevojë të përditësohet. Është gati "
 "versioni {0}."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8913,8 +8913,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Mirëseardhje në Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Mirëseardhje në Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8922,8 +8922,8 @@ msgstr "Eksploroni {coolversion} e Ri"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Edicioni Zhvillim i Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Edicioni Zhvillim i Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -8947,13 +8947,13 @@ msgstr "Shfletoni Krejt Ndryshimet"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Shihni <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">shënime hedhjeje në "
 "qarkullim</a> dhe mësoni gjithçka mbi: Edicionin më të ri Zhvillim të "
-"Apenio Office, i menduar për përdorues të thjeshtë dhe ekipe të vegjël."
+"Apenio WYSIWYG, i menduar për përdorues të thjeshtë dhe ekipe të vegjël."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"

@@ -6821,10 +6821,10 @@ msgstr "Deconectare citate"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Deconectarea citărilor va împiedica Apenio Office să actualizeze citările "
+"Deconectarea citărilor va împiedica Apenio WYSIWYG să actualizeze citările "
 "și bibliografia din acest document."
 
 #: src/control/HRuler.ts:326
@@ -8611,9 +8611,9 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Serverul dvs. Apenio Office necesită actualizare. Versiunea {0} este "
+"Serverul dvs. Apenio WYSIWYG necesită actualizare. Versiunea {0} este "
 "disponibilă."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8937,8 +8937,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Bine ați venit în Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Bine ați venit în Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8946,8 +8946,8 @@ msgstr "Explorează noua versiune {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office Ediţia Dezvoltator"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG Ediţia Dezvoltator"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8973,12 +8973,12 @@ msgstr "Descoperiți toate modificările"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Consultați <a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">notele de lansare</a> și aflați totul despre: "
-"Cea mai recentă ediție de dezvoltare Apenio Office, destinată "
+"Cea mai recentă ediție de dezvoltare Apenio WYSIWYG, destinată "
 "utilizatorilor casnici și echipelor mici."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7

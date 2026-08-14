@@ -6758,10 +6758,10 @@ msgstr "Aftengja tilvitnanir"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Aftenging tilvitnana mun koma í veg fyrir að Apenio Office geti uppfært "
+"Aftenging tilvitnana mun koma í veg fyrir að Apenio WYSIWYG geti uppfært "
 "tilvitnanir og heimildaskrár í þessu skjali."
 
 #: src/control/HRuler.ts:326
@@ -8518,7 +8518,7 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8840,8 +8840,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Velkomin í Apenio Office"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Velkomin í Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8849,8 +8849,8 @@ msgstr "Kynntu þér nýju útgáfuna af {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "þróunarútgáfu Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "þróunarútgáfu Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 #, fuzzy
@@ -8876,12 +8876,12 @@ msgstr "Sjá allar breytingarnar"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Skoðaðu <a target=\"_blank\" href=\"https://github.com/apenio-marasmus/Apenio-Office"
 "code-26-04-release-notes/\">útgáfuupplýsingarnar</a> og lærðu allt um: "
-"nýjustu þróunarútgáfu Apenio Office, sem hönnuð er fyrir heimanotendur og "
+"nýjustu þróunarútgáfu Apenio WYSIWYG, sem hönnuð er fyrir heimanotendur og "
 "smærri teymi."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9344,8 +9344,8 @@ msgstr ""
 #~ msgid "Explore the new {coolversion}"
 #~ msgstr "Kanna nýju {coolversion}"
 
-#~ msgid "Integrate Apenio Office into your webapp"
-#~ msgstr "Samþættu Apenio Office við vefhugbúnaðinn þinn"
+#~ msgid "Integrate Apenio WYSIWYG into your webapp"
+#~ msgstr "Samþættu Apenio WYSIWYG við vefhugbúnaðinn þinn"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "Eða taktu þátt í þróuninni"
@@ -9409,8 +9409,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Þjónninn er að keyra sig upp og verður tiltækur innan skamms"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
-#~ msgstr "Úbbs, það kom upp villa við að tengjast Apenio Office : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgstr "Úbbs, það kom upp villa við að tengjast Apenio WYSIWYG : "
 
 #~ msgid "Number of views"
 #~ msgstr "Fjöldi skoðana"

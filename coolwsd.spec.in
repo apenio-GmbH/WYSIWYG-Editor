@@ -10,7 +10,7 @@ Name:           coolwsd
 Version:        @PACKAGE_VERSION@
 Release:        1
 Vendor:         Apenio
-Summary:        Apenio Office WebSocket Daemon
+Summary:        Apenio WYSIWYG WebSocket Daemon
 License:        EULA
 Source0:        coolwsd-@PACKAGE_VERSION@.tar.gz
 BuildRequires:  libcap-devel pam-devel rsync
@@ -27,7 +27,7 @@ Obsoletes: loolwsd collaboraoffice-dict-br collaboraoffice-dict-et collaboraoffi
 %description
 
 %package deprecated
-Summary: Apenio Office WebSocket Daemon Deprecated Utilities
+Summary: Apenio WYSIWYG WebSocket Daemon Deprecated Utilities
 Requires: %{name} = %{version}-%{release}
 Requires(post): /usr/sbin/setcap
 

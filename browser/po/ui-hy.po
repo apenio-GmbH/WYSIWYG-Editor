@@ -6881,10 +6881,10 @@ msgstr "Անհղում վկայակոչումներ"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Մեջբերումներ կապերի անջատումը կխանգարի Apenio Office-ին թարմացնել այս "
+"Մեջբերումներ կապերի անջատումը կխանգարի Apenio WYSIWYG-ին թարմացնել այս "
 "փաստաթղթի հղումները և մատենագիտությունը։"
 
 #: src/control/HRuler.ts:326
@@ -8663,9 +8663,9 @@ msgid "Update Slides"
 msgstr "Թարմացնել սահիկները"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
-"Ձեր Apenio Office սերվերը կարիք ունի թարմացման: Հասանելի է {0} տարբերակը:"
+"Ձեր Apenio WYSIWYG սերվերը կարիք ունի թարմացման: Հասանելի է {0} տարբերակը:"
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8983,8 +8983,8 @@ msgid "Welcome to Presentation"
 msgstr "Բարի գալուստ Ներկայացում"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
-msgstr "Apenio Office ողջույն"
+msgid "Apenio WYSIWYG Welcome"
+msgstr "Apenio WYSIWYG ողջույն"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8992,8 +8992,8 @@ msgstr "Ուսումնասիրեք նոր {coolversion} -ը"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office Զարգացման տարբերակ"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG Զարգացման տարբերակ"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -9017,7 +9017,7 @@ msgstr "Բացահայտեք բոլոր փոփոխությունները"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Ստուգեք <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
