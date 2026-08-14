@@ -7244,7 +7244,7 @@ msgstr "Lenkene til siteringene er fjernet"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio Office from updating citations "
+"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
 "and bibliography in this document."
 msgstr ""
 "Når lenkene til siteringene er fjernet, kan ikke Collabora Online lenger "
@@ -9083,7 +9083,7 @@ msgid "Editing slide %1 - click outside or press Esc to finish"
 msgstr "Redigerer lysbilde %1 – klikk utenfor eller trykk Esc for å fullføre"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio Office server needs updating. Version {0} is available."
+msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
 msgstr ""
 "Collabora Online-tjeneren din må oppdateres. Versjon {0} er tilgjengelig."
 
@@ -9414,7 +9414,7 @@ msgid "Welcome to Presentation"
 msgstr "Velkommen til presentasjon"
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio Office Welcome"
+msgid "Apenio WYSIWYG Welcome"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -9423,8 +9423,8 @@ msgstr "Utforsk den nye {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio Office"
-msgstr "Apenio Office"
+msgid "Apenio WYSIWYG"
+msgstr "Apenio WYSIWYG"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
@@ -9447,7 +9447,7 @@ msgstr "Oppdag alle endringene"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio Office, aimed at home "
+"all about: The latest Apenio WYSIWYG, aimed at home "
 "users and small teams."
 msgstr ""
 "Les <a target=\"_blank\" rel=\"noopener\" href=\"https://"
@@ -9930,9 +9930,9 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Serveren starter opp og vil snart være tilgjengelig"
 
-#~ msgid "Oops, there is a problem connecting to Apenio Office : "
+#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
 #~ msgstr ""
-#~ "Uff. Det har oppstått et problem med tilkoblingen til Apenio Office: "
+#~ "Uff. Det har oppstått et problem med tilkoblingen til Apenio WYSIWYG: "
 
 #~ msgid "Number of views"
 #~ msgstr "Antall visninger"

@@ -251,7 +251,7 @@ FROM ${runtime_base}
 # some descriptive metadata - docker image inspect
 ARG author
 LABEL author=${author:-"Apenio"}
-LABEL description="Apenio Office is a powerful collaborative Office suite that supports all major document, spreadsheet and presentation file formats, which you can integrate into your own infrastructure. Apenio Office provides data security and sovereignty, and is ideally suited to the demands of a modern distributed working environment."
+LABEL description="Apenio WYSIWYG is a powerful collaborative Office suite that supports all major document, spreadsheet and presentation file formats, which you can integrate into your own infrastructure. Apenio WYSIWYG provides data security and sovereignty, and is ideally suited to the demands of a modern distributed working environment."
 ARG releasenotes
 LABEL release.notes=${releasenotes:-"https://github.com/apenio-marasmus/Apenio-Office/releases"}
 ARG version
