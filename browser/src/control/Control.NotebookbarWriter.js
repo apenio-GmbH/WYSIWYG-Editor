@@ -517,7 +517,7 @@ window.L.Control.NotebookbarWriter = window.L.Control.Notebookbar.extend({
 		const screenReadingPurpose =
 			_('Lets a screen reader follow the cursor and read the document');
 		const isDebugOn = this.map._debug.debugOn;
-		var hasAbout = window.L.DomUtil.get('about-dialog') !== null;
+		var hasAbout = window.enableAbout && window.L.DomUtil.get('about-dialog') !== null;
 		var hasServerAudit = this.getHiddenItems() ? !this.getHiddenItems().includes('server-audit') : true;
 
 		var content = [
@@ -559,58 +559,6 @@ window.L.Control.NotebookbarWriter = window.L.Control.Notebookbar.extend({
 						}
 					]
 				},
-				{ type: 'separator', id: 'help-forum-break', orientation: 'vertical' },
-				{
-					'type': 'toolbox',
-					'children': [
-						{
-							'id': 'forum',
-							'type': 'bigtoolitem',
-							'text': _('Forum'),
-							'command': '.uno:ForumHelp',
-							'accessibility': { focusBack: true, combination: 'C', de: null }
-						}
-					]
-				},
-				{
-					'type': 'toolbox',
-					'children': [
-						{
-							'id': 'report-an-issue',
-							'type': 'bigtoolitem',
-							'text': _('Report an issue'),
-							'command': '.uno:ReportIssue',
-							'accessibility': { focusBack: true, combination: 'K', de: null }
-						},
-					]
-				},
-				hasLatestUpdates ?
-					{
-						'type': 'toolbox',
-						'children': [
-							{
-								'id': 'latestupdates',
-								'type': 'bigtoolitem',
-								'text': _('Latest Updates'),
-								'command': '.uno:LatestUpdates',
-								'accessibility': { focusBack: true,	combination: 'LU', de: null }
-
-							}
-						]
-					} : {},
-				hasFeedback ?
-					{
-						'type': 'toolbox',
-						'children': [
-							{
-								'id': 'feedback',
-								'type': 'bigtoolitem',
-								'text': _('Send Feedback'),
-								'command': '.uno:Feedback',
-								'accessibility': { focusBack: true,	combination: 'SF', de: null }
-							}
-						]
-					} : {},
 				hasServerAudit ?
 					{
 						'id': 'help-serveraudit-break',
