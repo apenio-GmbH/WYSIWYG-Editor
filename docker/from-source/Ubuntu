@@ -8,15 +8,15 @@ FROM ubuntu:24.04
 # install engine run-time dependencies
 # install adduser, findutils, openssl and cpio that we need later
 # install tzdata to accept the TZ environment variable
-# install an editor
 # tdf#117557 - Add CJK Fonts to Collabora Online Docker Image
 RUN apt-get update && \
-    apt-get -y install libpng16-16 fontconfig adduser cpio tzdata \
-               findutils nano \
+    apt-get -y install --no-install-recommends \
+               libpng16-16 fontconfig adduser cpio tzdata findutils \
                libcap2-bin openssl openssh-client \
                libxcb-shm0 libxcb-render0 libxrender1 libxext6 \
                fonts-wqy-zenhei fonts-wqy-microhei fonts-droid-fallback \
-               fonts-noto-cjk ca-certificates
+               fonts-noto-cjk ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # copy freshly built engine and Collabora Online
 COPY /instdir /
@@ -31,7 +31,7 @@ RUN setcap cap_fowner,cap_chown,cap_sys_chroot=ep /usr/bin/coolforkit-caps && \
     coolwsd-systemplate-setup /opt/cool/systemplate /opt/collaboraoffice >/dev/null 2>&1 && \
     touch /var/log/coolwsd.log && \
     chown cool:cool /var/log/coolwsd.log && \
-    chown -R cool:cool /opt/ && \
+    chown -R cool:cool /opt/cool && \
     chown -R cool:cool /etc/coolwsd && \
     # coolwsd appends a mapping for an arbitrary (e.g. OpenShift) UID to
     # /etc/passwd at startup, so it must be writable by the root group
