@@ -2,20 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS runtime
 
 # refresh repos otherwise installations later may fail
 # install engine run-time dependencies
 # install adduser, findutils, openssl and cpio that we need later
 # install tzdata to accept the TZ environment variable
-# tdf#117557 - Add CJK Fonts to Collabora Online Docker Image
 RUN apt-get update && \
     apt-get -y install --no-install-recommends \
                libpng16-16 fontconfig adduser cpio tzdata findutils nano \
                libcap2-bin openssl openssh-client \
                libxcb-shm0 libxcb-render0 libxrender1 libxext6 \
-               fonts-wqy-zenhei fonts-wqy-microhei fonts-droid-fallback \
-               fonts-noto-cjk ca-certificates && \
+               ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # copy freshly built engine and Collabora Online
@@ -23,8 +21,9 @@ COPY /instdir /
 
 # set up Collabora Online (normally done by postinstall script of package)
 # Fix permissions
-RUN setcap cap_fowner,cap_chown,cap_sys_chroot=ep /usr/bin/coolforkit-caps && \
-    setcap cap_sys_admin=ep /usr/bin/coolmount && \
+RUN find /opt/collaboraoffice/share/extensions -mindepth 1 -maxdepth 1 \
+               -type d -name 'dict-*' ! -name 'dict-de' ! -name 'dict-en' \
+               -exec rm -rf {} + && \
     adduser --quiet --system --group --home /opt/cool cool && \
     rm -rf /opt/cool && \
     mkdir -p /opt/cool/child-roots /opt/cool/cache && \
@@ -36,6 +35,14 @@ RUN setcap cap_fowner,cap_chown,cap_sys_chroot=ep /usr/bin/coolforkit-caps && \
     # coolwsd appends a mapping for an arbitrary (e.g. OpenShift) UID to
     # /etc/passwd at startup, so it must be writable by the root group
     chmod g+w /etc/passwd
+
+FROM ubuntu:24.04
+
+# Copy the prepared runtime filesystem without the discarded dictionaries.
+COPY --from=runtime / /
+
+RUN setcap cap_fowner,cap_chown,cap_sys_chroot=ep /usr/bin/coolforkit-caps && \
+    setcap cap_sys_admin=ep /usr/bin/coolmount
 
 EXPOSE 9980
 
