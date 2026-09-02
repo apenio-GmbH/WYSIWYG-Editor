@@ -87,6 +87,7 @@ Util::LoadTimings KitLoadTimings;
 #endif
 
 #ifndef _WIN32
+#include <sys/stat.h>
 #include <unistd.h>
 #include <utime.h>
 #include <sys/time.h>
@@ -4222,6 +4223,14 @@ void lokit_main(
 
                 // tmpdir inside the jail for added security.
                 Poco::File(tmpSubDir).createDirectories();
+#ifndef _WIN32
+                if (chmod(tmpSubDir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO | S_ISVTX) != 0)
+                {
+                    LOG_SYS("Failed to set permissions on jail tmp directory [" << tmpSubDir
+                                                                                 << ']');
+                    return false;
+                }
+#endif
                 LOG_INF("Mounting random temp dir " << tmpSubDir << " -> " << jailTmpDir);
                 if (!JailUtil::bind(tmpSubDir, jailTmpDir))
                 {
