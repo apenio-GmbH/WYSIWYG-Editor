@@ -4385,11 +4385,9 @@ void lokit_main(
 
             copyCertificateDatabaseToTmp(jailPath);
 
-            // HOME and UserInstallation must be writable, so create them in /tmp before dropping
-            // capabilities.
+            // HOME must be writable, so create it in /tmp.
             static constexpr const char* HomePathInJail = "/tmp/home";
             Poco::File(Poco::Path(jailPath, HomePathInJail)).createDirectories();
-            Poco::File(Poco::Path(jailPath, "/tmp/user")).createDirectories();
             ::setenv("HOME", HomePathInJail, 1);
 
             jailSetupTime = std::chrono::duration_cast<std::chrono::milliseconds>(
