@@ -24,6 +24,7 @@ COPY /instdir /
 RUN find /opt/collaboraoffice/share/extensions -mindepth 1 -maxdepth 1 \
                -type d -name 'dict-*' ! -name 'dict-de' ! -name 'dict-en' \
                -exec rm -rf {} + && \
+    chmod -R a+rX /opt/collaboraoffice && \
     adduser --quiet --system --group --home /opt/cool cool && \
     rm -rf /opt/cool && \
     mkdir -p /opt/cool/child-roots /opt/cool/cache && \
