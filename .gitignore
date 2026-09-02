@@ -11,6 +11,7 @@
 .yavide_session
 /.vscode
 /.idea
+/.idea/inspectionProfiles/profiles_settings.xml
 Doxyfile.cpp.cfg
 doc/cpp/**
 **/.clangd
