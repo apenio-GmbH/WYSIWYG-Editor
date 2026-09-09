@@ -123,7 +123,7 @@ class AboutDialog {
 			productName =
 				typeof brandProductName === 'string' && brandProductName.length > 0
 					? brandProductName
-					: 'Apenio WYSIWYG';
+					: 'WYSIWYG-Editor';
 		}
 
 		const productNameElement = content.querySelector(
@@ -143,7 +143,7 @@ class AboutDialog {
 		this.appendSpanAndLink(
 			elements.coolwsdVersion,
 			' git hash:\xA0',
-			`https://github.com/apenio-marasmus/Apenio-Office/commits/${info.coolwsdHash}`,
+			`https://github.com/apenio-marasmus/WYSIWYG-Editor/commits/${info.coolwsdHash}`,
 			info.coolwsdHash,
 			info.wsdOptions,
 		);
