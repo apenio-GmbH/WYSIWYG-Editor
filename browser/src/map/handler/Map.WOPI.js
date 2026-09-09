@@ -241,7 +241,7 @@ window.L.Map.WOPI = window.L.Handler.extend({
 		var docType = this._map.getDocType();
 		var moduleName = moduleByDocType[docType];
 
-		var brand = (typeof brandProductName !== 'undefined' && brandProductName) ? brandProductName : 'Collabora Online';
+		var brand = (typeof brandProductName !== 'undefined' && brandProductName) ? brandProductName : 'WYSIWYG-Editor';
 		var product = moduleName ? brand.replace(/Online$/, moduleName).trim() : brand;
 		if (moduleName && product === brand)
 			product = brand + ' ' + moduleName;

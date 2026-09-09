@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.63])
 
-AC_INIT([coolwsd], [26.04.5.1], [https://github.com/apenio-marasmus/Apenio-Office/issues], [coolwsd], [https://github.com/apenio-marasmus/Apenio-Office])
+AC_INIT([coolwsd], [26.04.5.1], [https://github.com/apenio-marasmus/WYSIWYG-Editor/issues], [coolwsd], [https://github.com/apenio-marasmus/WYSIWYG-Editor])
 LT_INIT([shared, disable-static, dlopen])
 
 AM_INIT_AUTOMAKE([1.10 foreign subdir-objects tar-pax -Wno-portability])
@@ -75,7 +75,7 @@ AC_SUBST([COOLWSD_VERSION_NANO])
 AC_SUBST([COOLWSD_VERSION_BUILD_ID])
 AC_SUBST([COOLWSD_VERSION])
 
-AC_DEFINE_UNQUOTED([COOLWSD_VERSION],[["$COOLWSD_VERSION"]],[Apenio WYSIWYG WebSocket server version])
+AC_DEFINE_UNQUOTED([COOLWSD_VERSION],[["$COOLWSD_VERSION"]],[WYSIWYG-Editor WebSocket server version])
 
 # try to add a git hash for a version if we're developing
 COOLWSD_VERSION_HASH="$COOLWSD_VERSION"
@@ -1234,7 +1234,7 @@ if test "$enable_windowsapp" = "yes" -a -z "$with_app_name"; then
    AC_MSG_ERROR([You must use --with-app-name])
 fi
 
-APP_NAME="Apenio WYSIWYG"
+APP_NAME="WYSIWYG-Editor"
 if test -n "$with_app_name"; then
    APP_NAME="$with_app_name"
 fi
@@ -1264,7 +1264,7 @@ else
 fi
 AC_SUBST(VENDOR)
 
-INFO_URL='https://github.com/apenio-marasmus/Apenio-Office'
+INFO_URL='https://github.com/apenio-marasmus/WYSIWYG-Editor'
 if test -n "$with_info_url" -a "$with_info_url" != "no"; then
     INFO_URL="$with_info_url"
 fi
@@ -1459,8 +1459,8 @@ else
       <enable type=\"bool\" desc=\"Controls whether the welcome screen should be shown to the users on new install and updates. When enabled, your custom welcome screen must be created at /usr/share/coolwsd/browser/dist/welcome/welcome.html.\" default=\"false\">false</enable>
     </welcome>"
     CONFIG_INTERFACE_FRAGMENT="<brandProductName desc=\"Change the displayed name the application will have for the user.\" type=\"string\"></brandProductName>
-    <brandProductURL desc=\"Change the product URL, empty makes disable the link\" type=\"string\">https://www.collaboraonline.com</brandProductURL>
-    <logoURL desc=\"Change the URL of the logo used by Collabora Online, use none to hide it.\" type=\"string\"></logoURL>"
+    <brandProductURL desc=\"Change the product URL, empty makes disable the link\" type=\"string\">https://github.com/apenio-marasmus/WYSIWYG-Editor</brandProductURL>
+    <logoURL desc=\"Change the URL of the product logo, use none to hide it.\" type=\"string\"></logoURL>"
 fi
 
 AC_SUBST([WELCOME_CONFIG_FRAGMENT])

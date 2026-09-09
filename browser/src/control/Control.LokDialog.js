@@ -301,8 +301,12 @@ window.L.Control.LokDialog = window.L.Control.extend({
 			top = parseInt(e.position.split(',')[1]);
 		}
 
-		if (e.title && typeof brandProductName !== 'undefined') {
-			e.title = e.title.replace('Collabora Office', brandProductName);
+		if (e.title) {
+			var productName =
+				typeof brandProductName !== 'undefined' && brandProductName
+					? brandProductName
+					: 'WYSIWYG-Editor';
+			e.title = e.title.replace('Collabora Office', productName);
 		}
 
 		if (e.action === 'created') {

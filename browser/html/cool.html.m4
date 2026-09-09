@@ -260,7 +260,7 @@ m4_ifelse(PREVIEW, [true],
       <div id="about-dialog" tabIndex="0">
         <div id="about-dialog-header">
           <fig id="integrator-logo"></fig>
-          <h1 id="product-name">Collabora Online</h1>
+          <h1 id="product-name">WYSIWYG-Editor</h1>
         </div>
         <hr/>
         <div id="about-dialog-container">
