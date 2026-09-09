@@ -443,6 +443,10 @@ void FileServeTests::preProcessedFileSubstitution(
             replaceIfExist(orig, std::string("%RELAY_ORIGIN%"), "RELAY_ORIGIN", variables);
             replaceIfExist(orig, std::string("%BRANDING_THEME%"), "BRANDING_THEME", variables);
             replaceIfExist(orig, std::string("<!--%BRANDING_JS%-->"), "BRANDING_JS", variables);
+            replaceIfExist(orig, std::string("%PRODUCT_BRANDING_NAME%"),
+                           "PRODUCT_BRANDING_NAME", variables);
+            replaceIfExist(orig, std::string("%PRODUCT_BRANDING_URL%"),
+                           "PRODUCT_BRANDING_URL", variables);
             replaceIfExist(orig, std::string("%FOOTER%"), "FOOTER", variables);
             replaceIfExist(orig, std::string("%CHECK_FILE_INFO_OVERRIDE%"),
                            "CHECK_FILE_INFO_OVERRIDE", variables);
@@ -483,6 +487,8 @@ void FileServeTests::testPreProcessedFileSubstitution()
         { "RELAY_ORIGIN", "https://relay.example.com" },
         { "BRANDING_THEME", "cool_brand" },
         { "BRANDING_JS", "branding.js" },
+        { "PRODUCT_BRANDING_NAME", "Custom WYSIWYG Editor" },
+        { "PRODUCT_BRANDING_URL", "https://editor.example.com" },
         { "FOOTER", "<div><b>blah blah footer</b></div>" },
         { "CHECK_FILE_INFO_OVERRIDE", "DownloadAsPostMessage=true;blah=bleh" },
         { "BUYPRODUCT_URL", "https://buy.ourproduct.com/'" }
