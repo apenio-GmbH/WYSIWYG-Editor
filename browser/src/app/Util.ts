@@ -223,7 +223,7 @@ class Util {
 		let brandFAQURL =
 			typeof brandProductFAQURL !== 'undefined'
 				? brandProductFAQURL
-				: 'https://github.com/apenio-marasmus/Apenio-Office';
+				: 'https://github.com/apenio-marasmus/WYSIWYG-Editor';
 		const customWindow = window as any;
 		if (customWindow.feedbackUrl && customWindow.buyProductUrl) {
 			const integratorUrl = encodeURIComponent(customWindow.buyProductUrl);

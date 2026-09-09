@@ -341,7 +341,7 @@ class Socket {
 							'{productname}',
 							typeof brandProductName !== 'undefined'
 								? brandProductName
-								: 'Apenio WYSIWYG',
+								: 'WYSIWYG-Editor',
 						) + e,
 					cmd: 'socket',
 					kind: 'failed',
@@ -2135,7 +2135,7 @@ class Socket {
 						'{productname}',
 						typeof brandProductName !== 'undefined'
 							? brandProductName
-							: 'Apenio WYSIWYG',
+							: 'WYSIWYG-Editor',
 					);
 					msg = msg.replace('{0}', window.expectedServerId);
 					msg = msg.replace('{1}', window.routeToken);
@@ -2857,7 +2857,7 @@ class Socket {
 				'{productname}',
 				typeof brandProductName !== 'undefined'
 					? brandProductName
-					: 'Apenio WYSIWYG',
+					: 'WYSIWYG-Editor',
 			);
 			this._map.fire('infobar', {
 				msg: textMsg,

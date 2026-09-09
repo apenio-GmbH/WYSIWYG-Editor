@@ -1593,7 +1593,7 @@ window.L.Clipboard = window.L.Class.extend({
 	},
 
 	_substProductName: function (msg) {
-		var productName = (typeof brandProductName !== 'undefined') ? brandProductName : 'Apenio WYSIWYG';
+		var productName = (typeof brandProductName !== 'undefined') ? brandProductName : 'WYSIWYG-Editor';
 		return msg.replace('{productname}', productName);
 	},
 
