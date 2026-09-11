@@ -7,6 +7,6 @@
 >
 
 ## Learn more 💡
-* [Apenio WYSIWYG Repository](https://github.com/apenio-marasmus/Apenio-Office)
+* [Apenio WYSIWYG Repository](https://github.com/apenio-marasmus/WYSIWYG-Editor)
 * [Upstream Collabora Online](https://www.collaboraonline.com/collabora-online/)
 * For additional details and build instructions, see the [SDK Documentation](https://sdk.collaboraonline.com/).
