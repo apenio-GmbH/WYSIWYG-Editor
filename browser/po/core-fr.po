@@ -38,12 +38,12 @@ msgctxt ""
 "LngText.text"
 msgid ""
 "Apenio WYSIWYG, the online document editor by Apenio based on Collabora Online.\n"
-"See https://github.com/apenio-marasmus/Apenio-Office"
-"https://github.com/apenio-marasmus/Apenio-Office"
+"See https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"https://github.com/apenio-marasmus/WYSIWYG-Editor"
 msgstr ""
 "Collabora Office, la suite de bureautique basée sur la technologie "
 "LibreOffice, éditée par Collabora Productivity. Voir "
-"https://github.com/apenio-marasmus/Apenio-Office"
+"https://github.com/apenio-marasmus/WYSIWYG-Editor"
 
 #. 4rBwc
 #: include/svx/strings.hrc:1040
@@ -163,10 +163,10 @@ msgctxt ""
 "readmeitem.text"
 msgid ""
 "For more information please visit ${PRODUCTNAME} home page at <a "
-"href=\"https://github.com/apenio-marasmus/Apenio-Office\">https://CollaboraOffice.com/</a>."
+"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor\">https://CollaboraOffice.com/</a>."
 msgstr ""
 "Pour plus d'informations rendez-vous sur le site de ${PRODUCTNAME} à <a "
-"href=\"https://github.com/apenio-marasmus/Apenio-Office/fr/\">https://CollaboraOffice.com/fr/</a>."
+"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor/fr/\">https://CollaboraOffice.com/fr/</a>."
 
 #. SbQew
 #: chart2/inc/strings.hrc:51

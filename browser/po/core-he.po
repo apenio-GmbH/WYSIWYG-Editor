@@ -39,8 +39,8 @@ msgctxt ""
 "LngText.text"
 msgid ""
 "Apenio WYSIWYG, the online document editor by Apenio based on Collabora Online.\n"
-"See https://github.com/apenio-marasmus/Apenio-Office"
-"https://github.com/apenio-marasmus/Apenio-Office"
+"See https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"https://github.com/apenio-marasmus/WYSIWYG-Editor"
 msgstr ""
 
 #. 4rBwc
@@ -157,7 +157,7 @@ msgctxt ""
 "readmeitem.text"
 msgid ""
 "For more information please visit ${PRODUCTNAME} home page at <a "
-"href=\"https://github.com/apenio-marasmus/Apenio-Office\">https://CollaboraOffice.com/</a>."
+"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor\">https://CollaboraOffice.com/</a>."
 msgstr ""
 
 #. SbQew
