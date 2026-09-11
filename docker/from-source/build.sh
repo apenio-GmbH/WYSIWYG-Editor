@@ -15,7 +15,7 @@
 
 # Check env variables
 if [ -z "$DOCKER_HUB_REPO" ]; then
-  DOCKER_HUB_REPO="mydomain/apenio-office"
+  DOCKER_HUB_REPO="mydomain/WYSIWYG-Editor"
 fi;
 if [ -z "$DOCKER_HUB_TAG" ]; then
   DOCKER_HUB_TAG="latest"
@@ -23,7 +23,7 @@ fi;
 echo "Using Docker Hub Repository: '$DOCKER_HUB_REPO' with tag '$DOCKER_HUB_TAG'."
 
 if [ -z "$COLLABORA_ONLINE_REPO" ]; then
-  COLLABORA_ONLINE_REPO="https://github.com/apenio-marasmus/Apenio-Office"
+  COLLABORA_ONLINE_REPO="https://github.com/apenio-marasmus/WYSIWYG-Editor"
 fi;
 if [ -z "$COLLABORA_ONLINE_BRANCH" ]; then
   COLLABORA_ONLINE_BRANCH="main"
