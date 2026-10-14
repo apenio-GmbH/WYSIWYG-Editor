@@ -38,13 +38,13 @@ msgctxt ""
 "STR_FI_TOOLTIP_COFFICE\n"
 "LngText.text"
 msgid ""
-"Apenio WYSIWYG, the online document editor by Apenio based on Collabora Online.\n"
-"See https://github.com/apenio-marasmus/WYSIWYG-Editor"
-"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"WYSIWYG-Editor, the online document editor by Apenio based on Collabora Online.\n"
+"See https://github.com/apenio-GmbH/WYSIWYG-Editor"
+"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 msgstr ""
 "Collabora Office — це офісний пакет для продуктивності, заснований на "
 "технології LibreOffice, який надає Collabora Productivity. Див. "
-"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 
 #. 4rBwc
 #: include/svx/strings.hrc:1040
@@ -164,11 +164,11 @@ msgctxt ""
 "readmeitem.text"
 msgid ""
 "For more information please visit ${PRODUCTNAME} home page at <a "
-"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor\">https://CollaboraOffice.com/</a>."
+"href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor\">https://CollaboraOffice.com/</a>."
 msgstr ""
 "Для отримання додаткової інформації відвідайте головну сторінку "
 "${PRODUCTNAME} за адресою <a "
-"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor\">https://CollaboraOffice.com/</a>."
+"href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor\">https://CollaboraOffice.com/</a>."
 
 #. SbQew
 #: chart2/inc/strings.hrc:51

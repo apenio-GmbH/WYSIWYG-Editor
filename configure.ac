@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.63])
 
-AC_INIT([coolwsd], [26.04.5.1], [https://github.com/apenio-marasmus/WYSIWYG-Editor/issues], [coolwsd], [https://github.com/apenio-marasmus/WYSIWYG-Editor])
+AC_INIT([coolwsd], [26.04.5.1], [https://github.com/apenio-GmbH/WYSIWYG-Editor/issues], [coolwsd], [https://github.com/apenio-GmbH/WYSIWYG-Editor])
 LT_INIT([shared, disable-static, dlopen])
 
 AM_INIT_AUTOMAKE([1.10 foreign subdir-objects tar-pax -Wno-portability])
@@ -1264,7 +1264,7 @@ else
 fi
 AC_SUBST(VENDOR)
 
-INFO_URL='https://github.com/apenio-marasmus/WYSIWYG-Editor'
+INFO_URL='https://github.com/apenio-GmbH/WYSIWYG-Editor'
 if test -n "$with_info_url" -a "$with_info_url" != "no"; then
     INFO_URL="$with_info_url"
 fi
@@ -1459,7 +1459,7 @@ else
       <enable type=\"bool\" desc=\"Controls whether the welcome screen should be shown to the users on new install and updates. When enabled, your custom welcome screen must be created at /usr/share/coolwsd/browser/dist/welcome/welcome.html.\" default=\"false\">false</enable>
     </welcome>"
     CONFIG_INTERFACE_FRAGMENT="<brandProductName desc=\"Change the displayed name the application will have for the user.\" type=\"string\"></brandProductName>
-    <brandProductURL desc=\"Change the product URL, empty makes disable the link\" type=\"string\">https://github.com/apenio-marasmus/WYSIWYG-Editor</brandProductURL>
+    <brandProductURL desc=\"Change the product URL, empty makes disable the link\" type=\"string\">https://github.com/apenio-GmbH/WYSIWYG-Editor</brandProductURL>
     <logoURL desc=\"Change the URL of the product logo, use none to hide it.\" type=\"string\"></logoURL>"
 fi
 

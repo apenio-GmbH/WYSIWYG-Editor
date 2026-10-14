@@ -1,4 +1,4 @@
-Collabora Online binaries may be statically linked against POCO C++ Libraries.
+WYSIWYG-Editor binaries may be statically linked against POCO C++ Libraries.
 
 The POCO C++ Libraries are licensed under the Boost Software License. A very liberal license that encourages both commercial and non-commercial use.
 
@@ -9,7 +9,7 @@ The copyright notices in the Software and this entire statement, including the a
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Collabora Online binaries may be statically linked against OpenSSL 3.0 Libraries.
+WYSIWYG-Editor binaries may be statically linked against OpenSSL 3.0 Libraries.
 
 For the OpenSSL 3.0 release, and later releases derived from that, the Apache License v2 applies.
 
@@ -191,7 +191,7 @@ For the OpenSSL 3.0 release, and later releases derived from that, the Apache Li
 
    END OF TERMS AND CONDITIONS
 
-Collabora Online binaries may be statically linked against libpng, the free reference library for reading and writing PNGs.
+WYSIWYG-Editor binaries may be statically linked against libpng, the free reference library for reading and writing PNGs.
 
 COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
 =========================================
@@ -230,7 +230,7 @@ subject to the following restrictions:
  3. This Copyright notice may not be removed or altered from any
     source or altered source distribution.
 
-Collabora Online binaries may be statically linked against Zstandard library.
+WYSIWYG-Editor binaries may be statically linked against Zstandard library.
 
 BSD License
 
@@ -263,7 +263,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Collabora Online binaries may be statically linked against the zlib compression library.
+WYSIWYG-Editor binaries may be statically linked against the zlib compression library.
 
 Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler
 
@@ -283,7 +283,7 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 
-Collabora Online binaries may be statically linked against the Expat XML parser library.
+WYSIWYG-Editor binaries may be statically linked against the Expat XML parser library.
 
 Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
 Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
@@ -318,11 +318,11 @@ SpookyHash V2 – a 128-bit noncryptographic hash function.
 By Bob Jenkins
 Public domain
 
-Collabora Online binaries include PNG output code derived from the cairo graphics library.
+WYSIWYG-Editor binaries include PNG output code derived from the cairo graphics library.
 Copyright © 2003 University of Southern California
 Dual licensed: LGPL-2.1 or MPL-1.1
 
-Collabora Online client side JavaScript code uses the following 3rd party modules.
+WYSIWYG-Editor client side JavaScript code uses the following 3rd party modules.
 
 Autolinker.js
 Copyright(c) 2020 Gregory Jacobs <greg@greg-jacobs.com>

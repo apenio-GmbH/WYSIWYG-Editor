@@ -144,7 +144,7 @@ class AboutDialog {
 		this.appendSpanAndLink(
 			elements.coolwsdVersion,
 			' git hash:\xA0',
-			`https://github.com/apenio-marasmus/WYSIWYG-Editor/commits/${info.coolwsdHash}`,
+			`https://github.com/apenio-GmbH/WYSIWYG-Editor/commits/${info.coolwsdHash}`,
 			info.coolwsdHash,
 			info.wsdOptions,
 		);
