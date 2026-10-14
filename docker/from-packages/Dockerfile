@@ -251,13 +251,13 @@ FROM ${runtime_base}
 # some descriptive metadata - docker image inspect
 ARG author
 LABEL author=${author:-"Apenio"}
-LABEL description="Apenio WYSIWYG is a powerful collaborative Office suite that supports all major document, spreadsheet and presentation file formats, which you can integrate into your own infrastructure. Apenio WYSIWYG provides data security and sovereignty, and is ideally suited to the demands of a modern distributed working environment."
+LABEL description="WYSIWYG-Editor is a powerful collaborative Office suite that supports all major document, spreadsheet and presentation file formats, which you can integrate into your own infrastructure. WYSIWYG-Editor provides data security and sovereignty, and is ideally suited to the demands of a modern distributed working environment."
 ARG releasenotes
-LABEL release.notes=${releasenotes:-"https://github.com/apenio-marasmus/WYSIWYG-Editor/releases"}
+LABEL release.notes=${releasenotes:-"https://github.com/apenio-GmbH/WYSIWYG-Editor/releases"}
 ARG version
 LABEL version=${version:-"26.04.0.1"}
 ARG onlinetag
-LABEL commit.history.core="https://github.com/apenio-marasmus/WYSIWYG-Editor/commits/${onlinetag}"
+LABEL commit.history.core="https://github.com/apenio-GmbH/WYSIWYG-Editor/commits/${onlinetag}"
 
 # UTF-8 locale is needed to handle file names with non-ASCII characters
 ENV LC_CTYPE C.UTF-8
