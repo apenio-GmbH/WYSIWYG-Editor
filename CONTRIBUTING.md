@@ -1,7 +1,7 @@
-# Contributing to Apenio WYSIWYG
+# Contributing to WYSIWYG-Editor
 
 Thanks for taking the time to contribute! The following is a set of
-rules and guidelines for contributing to Apenio WYSIWYG. Feel free
+rules and guidelines for contributing to WYSIWYG-Editor. Feel free
 to propose changes to this document via a pull request.
 
 ## Submitting issues
