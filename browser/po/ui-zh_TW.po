@@ -6733,9 +6733,9 @@ msgstr "解除連結引用"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
+"Unlinking citations will prevent WYSIWYG-Editor from updating citations "
 "and bibliography in this document."
-msgstr "取消引用連結將阻止 Apenio WYSIWYG 更新此文件中的引用與參考文獻。"
+msgstr "取消引用連結將阻止 WYSIWYG-Editor 更新此文件中的引用與參考文獻。"
 
 #: src/control/HRuler.ts:326
 msgid "First line"
@@ -8054,7 +8054,7 @@ msgid ""
 "sdk.collaboraonline.com/docs/installation/Proxy_settings.html"
 msgstr ""
 "無法建立插座連線或插座連線意外關閉。反向代理可能設定錯誤，請聯絡管理員。關於"
-"代理組態的更多資訊，請參閱 https://github.com/apenio-marasmus/WYSIWYG-Editordocs/installation/"
+"代理組態的更多資訊，請參閱 https://github.com/apenio-GmbH/WYSIWYG-Editordocs/installation/"
 "Proxy_settings.html"
 
 #: src/errormessages.ts:65
@@ -8440,8 +8440,8 @@ msgid "Update Slides"
 msgstr "更新投影片"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
-msgstr "您的 Apenio WYSIWYG 伺服器需要更新。已有版本 {0}。"
+msgid "Your WYSIWYG-Editor server needs updating. Version {0} is available."
+msgstr "您的 WYSIWYG-Editor 伺服器需要更新。已有版本 {0}。"
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8759,8 +8759,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio WYSIWYG Welcome"
-msgstr "歡迎使用 Apenio WYSIWYG"
+msgid "WYSIWYG-Editor Welcome"
+msgstr "歡迎使用 WYSIWYG-Editor"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8768,14 +8768,14 @@ msgstr "探索新的 {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio WYSIWYG"
-msgstr "Apenio WYSIWYG 開發版"
+msgid "WYSIWYG-Editor"
+msgstr "WYSIWYG-Editor 開發版"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
@@ -8792,19 +8792,19 @@ msgstr "探索所有變更"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio WYSIWYG, aimed at home "
+"all about: The latest WYSIWYG-Editor, aimed at home "
 "users and small teams."
 msgstr ""
 "檢查<a target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline."
 "com/code-26-04-release-notes/\">發行說明</a>並了解關於："
-"針對家庭使用者與小型團隊的最新 Apenio WYSIWYG 開發版。"
+"針對家庭使用者與小型團隊的最新 WYSIWYG-Editor 開發版。"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"
 msgstr "參與"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
-msgid "https://github.com/apenio-marasmus/WYSIWYG-Editor"
+msgid "https://github.com/apenio-GmbH/WYSIWYG-Editor"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -8813,9 +8813,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "有興趣做出貢獻但不知道從哪裡開始？前往<a target=\"_blank\" rel=\"noopener\" "
@@ -9384,8 +9384,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "伺服器正在重啟循環，即將無法使用"
 
-#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
-#~ msgstr "糟糕，連接至 Apenio WYSIWYG 時發生問題： "
+#~ msgid "Oops, there is a problem connecting to WYSIWYG-Editor : "
+#~ msgstr "糟糕，連接至 WYSIWYG-Editor 時發生問題： "
 
 #~ msgid "Number of views"
 #~ msgstr "檢視的次數"

@@ -6792,10 +6792,10 @@ msgstr "Frakobl citater"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
+"Unlinking citations will prevent WYSIWYG-Editor from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Hvis citaternes sammenkædning fjernes, vil Apenio WYSIWYG ikke længere "
+"Hvis citaternes sammenkædning fjernes, vil WYSIWYG-Editor ikke længere "
 "kunne opdatere citater og bibliografi i dette dokument."
 
 #: src/control/HRuler.ts:326
@@ -8157,7 +8157,7 @@ msgstr ""
 "Det lykkedes ikke at oprette en socket-forbindelse, eller forbindelsen blev "
 "uventet lukket. Den omvendte proxy kan være forkert konfigureret – kontakt "
 "venligst administratoren. Du kan finde flere oplysninger om proxy-"
-"konfiguration her: https://github.com/apenio-marasmus/WYSIWYG-Editordocs/installation/"
+"konfiguration her: https://github.com/apenio-GmbH/WYSIWYG-Editordocs/installation/"
 "Proxy_settings.html"
 
 #: src/errormessages.ts:65
@@ -8571,8 +8571,8 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
-msgstr "Din Apenio WYSIWYG server skal opdateres. Version {0} er tilgængelig."
+msgid "Your WYSIWYG-Editor server needs updating. Version {0} is available."
+msgstr "Din WYSIWYG-Editor server skal opdateres. Version {0} er tilgængelig."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8895,8 +8895,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio WYSIWYG Welcome"
-msgstr "Apenio WYSIWYG Velkommen"
+msgid "WYSIWYG-Editor Welcome"
+msgstr "WYSIWYG-Editor Velkommen"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8904,14 +8904,14 @@ msgstr "Udforsk den nye {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio WYSIWYG"
-msgstr "Apenio WYSIWYG"
+msgid "WYSIWYG-Editor"
+msgstr "WYSIWYG-Editor"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
@@ -8929,12 +8929,12 @@ msgstr "Se alle ændringerne"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio WYSIWYG, aimed at home "
+"all about: The latest WYSIWYG-Editor, aimed at home "
 "users and small teams."
 msgstr ""
 "Læs vores <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">udgivelsesnoter</a> og bliv "
-"klogere på den seneste Apenio WYSIWYG, henvendt til "
+"klogere på den seneste WYSIWYG-Editor, henvendt til "
 "hjemmebrugere og mindre teams."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -8943,7 +8943,7 @@ msgstr "Bliv involveret"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
 #, fuzzy
-msgid "https://github.com/apenio-marasmus/WYSIWYG-Editor"
+msgid "https://github.com/apenio-GmbH/WYSIWYG-Editor"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -8952,17 +8952,17 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "Er du interesseret i at bidrage, men ved ikke, hvor du skal starte? Gå til "
-"<a target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"<a target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "post/build-code/\">trin-for-trin instruktioner</a> og byg CODE fra bunden. "
 "Du kan også hjælpe med <a target=\"_blank\" rel=\"noopener\" href=\"https"
 "://www.collaboraoffice.org/post/translate/\">oversættelse</a> eller ved <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "post/filebugs/\">udfylde en fejlrapport</a> med alle de væsentlige trin for, "
 "hvordan man genskaber fejlen."
 
@@ -9416,8 +9416,8 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Serveren genstarter og vil snart være til rådighed"
 
-#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
-#~ msgstr "Ups, der er et problem med forbindelsen til Apenio WYSIWYG: "
+#~ msgid "Oops, there is a problem connecting to WYSIWYG-Editor : "
+#~ msgstr "Ups, der er et problem med forbindelsen til WYSIWYG-Editor: "
 
 #~ msgid "Number of views"
 #~ msgstr "Antal visninger"

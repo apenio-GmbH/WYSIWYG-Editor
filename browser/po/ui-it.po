@@ -6850,10 +6850,10 @@ msgstr "Scollega citazioni"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
+"Unlinking citations will prevent WYSIWYG-Editor from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Lo scollegamento delle citazioni impedirà a Apenio WYSIWYG di aggiornare "
+"Lo scollegamento delle citazioni impedirà a WYSIWYG-Editor di aggiornare "
 "le citazioni e la bibliografia in questo documento."
 
 #: src/control/HRuler.ts:326
@@ -8216,7 +8216,7 @@ msgstr ""
 "Impossibile stabilire connessione socket oppure la connessione si è chiusa "
 "inaspettatamente. Il reverse proxy potrebbe essere malconfigurato, si prega "
 "di contattare l'amministratore di sistema. Per maggiori informazioni sulla "
-"configurazione del proxy, visionare https://github.com/apenio-marasmus/WYSIWYG-Editordocs/"
+"configurazione del proxy, visionare https://github.com/apenio-GmbH/WYSIWYG-Editordocs/"
 "installation/Proxy_settings.html"
 
 #: src/errormessages.ts:65
@@ -8645,9 +8645,9 @@ msgid "Update Slides"
 msgstr "Aggiorna le slide"
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
+msgid "Your WYSIWYG-Editor server needs updating. Version {0} is available."
 msgstr ""
-"Il server Apenio WYSIWYG deve essere aggiornato. La versione {0} è "
+"Il server WYSIWYG-Editor deve essere aggiornato. La versione {0} è "
 "disponibile."
 
 #: src/map/handler/Map.WOPI.js:223
@@ -8972,8 +8972,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio WYSIWYG Welcome"
-msgstr "Benvenuto su Apenio WYSIWYG"
+msgid "WYSIWYG-Editor Welcome"
+msgstr "Benvenuto su WYSIWYG-Editor"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8981,20 +8981,20 @@ msgstr "Esplora la nuova {coolversion}"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio WYSIWYG"
-msgstr "Apenio WYSIWYG Edizione di Sviluppo"
+msgid "WYSIWYG-Editor"
+msgstr "WYSIWYG-Editor Edizione di Sviluppo"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "Goditi gli ultimi sviluppi della produttività online, gratuito per "
 "l'utilizzo, per esplorare e da utilizzare con gli altri nel browser. Varie "
-"<a target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"<a target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "solutions/collabora-office-android-ios/\">app</a> sono disponibili anche per "
 "i dispositivi mobili."
 
@@ -9006,12 +9006,12 @@ msgstr "Scopri tutti i cambiamenti"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio WYSIWYG, aimed at home "
+"all about: The latest WYSIWYG-Editor, aimed at home "
 "users and small teams."
 msgstr ""
 "Controlla le <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">note di rilascio</a> e "
-"scopri tutto riguardo: L'ultima edizione di sviluppo di Apenio WYSIWYG, "
+"scopri tutto riguardo: L'ultima edizione di sviluppo di WYSIWYG-Editor, "
 "rivolto agli utenti domestici e ai piccoli team."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
@@ -9020,7 +9020,7 @@ msgstr "Partecipa"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
 #, fuzzy
-msgid "https://github.com/apenio-marasmus/WYSIWYG-Editor"
+msgid "https://github.com/apenio-GmbH/WYSIWYG-Editor"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -9030,9 +9030,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "Sei interessato a contribuire ma non sai da dove iniziare? Vai alle <a "
@@ -9670,5 +9670,5 @@ msgstr ""
 #~ msgid "Server is recycling and will be available shortly"
 #~ msgstr "Il server è in fase di riavvio e sarà disponibile a breve"
 
-#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
-#~ msgstr "Oops, si è verificato un problema di connessione a Apenio WYSIWYG: "
+#~ msgid "Oops, there is a problem connecting to WYSIWYG-Editor : "
+#~ msgstr "Oops, si è verificato un problema di connessione a WYSIWYG-Editor: "

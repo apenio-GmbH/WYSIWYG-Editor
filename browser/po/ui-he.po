@@ -6788,10 +6788,10 @@ msgstr "ציטוטים מנותקים"
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Apenio WYSIWYG from updating citations "
+"Unlinking citations will prevent WYSIWYG-Editor from updating citations "
 "and bibliography in this document."
 msgstr ""
-"ניתוק ציטוטים ימנע מ־Apenio WYSIWYG לעדכן את הציטוטים והביבליוגרפיה במסמך "
+"ניתוק ציטוטים ימנע מ־WYSIWYG-Editor לעדכן את הציטוטים והביבליוגרפיה במסמך "
 "הזה."
 
 #: src/control/HRuler.ts:326
@@ -8140,7 +8140,7 @@ msgid ""
 msgstr ""
 "הקמת קישוריות לשקע או החיבור לשקע נסגרו במפתיע. כנראה שהמתווך ההפוך לא מוגדר "
 "נכון, נא ליצור קשר עם ההנהלה. למידע נוסף על הגדרות מתווך נא לעיין "
-"ב־https://github.com/apenio-marasmus/WYSIWYG-Editordocs/installation/Proxy_settings.html"
+"ב־https://github.com/apenio-GmbH/WYSIWYG-Editordocs/installation/Proxy_settings.html"
 
 #: src/errormessages.ts:65
 msgid ""
@@ -8543,8 +8543,8 @@ msgid "Update Slides"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Apenio WYSIWYG server needs updating. Version {0} is available."
-msgstr "שרת ה־Apenio WYSIWYG שלך דורש עדכון. גרסה {0} זמינה."
+msgid "Your WYSIWYG-Editor server needs updating. Version {0} is available."
+msgstr "שרת ה־WYSIWYG-Editor שלך דורש עדכון. גרסה {0} זמינה."
 
 #: src/map/handler/Map.WOPI.js:223
 msgid "Creating new file from template..."
@@ -8869,8 +8869,8 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Apenio WYSIWYG Welcome"
-msgstr "ברוך בואך אל Apenio WYSIWYG"
+msgid "WYSIWYG-Editor Welcome"
+msgstr "ברוך בואך אל WYSIWYG-Editor"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
 msgid "Explore The New {coolversion}"
@@ -8878,20 +8878,20 @@ msgstr "הנה החידושים ב־{coolversion} החדשה"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
-msgid "Apenio WYSIWYG"
-msgstr "מהדורת הפיתוח של Apenio WYSIWYG"
+msgid "WYSIWYG-Editor"
+msgstr "מהדורת הפיתוח של WYSIWYG-Editor"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
 msgid ""
 "Enjoy the latest developments in online productivity, free for you to use, "
 "to explore and to use with others in the browser. Various <a "
-"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editor"
+"target=\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editor"
 "solutions/collabora-office-android-ios/\">apps</a> are also available for "
 "mobile."
 msgstr ""
 "מזמינים אותך ליהנות מכל הפיתוחים העדכניים ביותר בכלי הפקה מקוונים, ללא עלות, "
 "למטרות חקירה ושימוש בשיתוף עם אחרים דרך הדפדפן. ישנם גם מגוון <a target="
-"\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorsolutions/"
+"\"_blank\" rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorsolutions/"
 "collabora-office-android-ios/\">יישומונים</a> זמינים למכשירים ניידים."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:37-7
@@ -8902,12 +8902,12 @@ msgstr "לגלות את כל השינויים"
 msgid ""
 "Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
-"all about: The latest Apenio WYSIWYG, aimed at home "
+"all about: The latest WYSIWYG-Editor, aimed at home "
 "users and small teams."
 msgstr ""
 "ב<a target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline."
 "com/code-26-04-release-notes/\">הערות ההפצה</a> אפשר ללמוד עוד על: מהדורת "
-"הפיתוח האחרונה של Apenio WYSIWYG, שמיועדת למשתמשים ביתיים ולצוותים קטנים."
+"הפיתוח האחרונה של WYSIWYG-Editor, שמיועדת למשתמשים ביתיים ולצוותים קטנים."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"
@@ -8915,7 +8915,7 @@ msgstr "לקחת חלק"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:49-7
 #, fuzzy
-msgid "https://github.com/apenio-marasmus/WYSIWYG-Editor"
+msgid "https://github.com/apenio-GmbH/WYSIWYG-Editor"
 msgstr "https://www.collaboraonline.org/"
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:50-7
@@ -8925,9 +8925,9 @@ msgid ""
 "to the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraoffice.org/post/build-code/\">step-by-step instructions</a> and "
 "build CODE from scratch. You can also help out with <a target=\"_blank\" "
-"rel=\"noopener\" href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/translate/"
+"rel=\"noopener\" href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/translate/"
 "\">translations</a> or by <a target=\"_blank\" rel=\"noopener\" "
-"href=\"https://github.com/apenio-marasmus/WYSIWYG-Editorpost/filebugs/\">filing a bug "
+"href=\"https://github.com/apenio-GmbH/WYSIWYG-Editorpost/filebugs/\">filing a bug "
 "report</a> with all the essential steps on how to reproduce it."
 msgstr ""
 "מעניין אותך לתרום ולא ברור לך מאיפה להתחיל? כדאי לגשת אל <a target=\"_blank\""
@@ -9547,8 +9547,8 @@ msgstr ""
 #~ "שעובדות על מסמכים, סרגל צד מובנה חדש, רשימת תמונות ייצוגיות שנבנתה מחדש, "
 #~ "שמירה אסינכרונית, בדיקת איות מהירה יותר ועוד."
 
-#~ msgid "Integrate Apenio WYSIWYG into your webapp"
-#~ msgstr "שילוב Apenio WYSIWYG ביישום המקוון שלך"
+#~ msgid "Integrate WYSIWYG-Editor into your webapp"
+#~ msgstr "שילוב WYSIWYG-Editor ביישום המקוון שלך"
 
 #~ msgid "Or get involved in the development"
 #~ msgstr "או להשתלב בפיתוח"
@@ -9556,7 +9556,7 @@ msgstr ""
 #, javascript-format
 #~ msgid ""
 #~ "Learn more about integrating into your web application in the <a "
-#~ "href=\"%coolSdkURL\" target=\"_blank\">Apenio WYSIWYG SDK</a>. Or head "
+#~ "href=\"%coolSdkURL\" target=\"_blank\">WYSIWYG-Editor SDK</a>. Or head "
 #~ "over to the <a href=\"%coolStepByStepURL\" target=\"_blank\">step-by-step "
 #~ "instructions</a> and build CODE from scratch. You can also help out with <a "
 #~ "href=\"%coolTranslationsURL\" target=\"_blank\">translations</a> or by <a "
@@ -9564,7 +9564,7 @@ msgstr ""
 #~ "all the essential steps on how to reproduce it."
 #~ msgstr ""
 #~ "אפשר ללמוד עוד על שילוב יישומי הדפדפן שלך מול <a href=\"%coolSdkURL\" "
-#~ "target=\"_blank\">ה־SDK של Apenio WYSIWYG</a>. או לגשת אל <a "
+#~ "target=\"_blank\">ה־SDK של WYSIWYG-Editor</a>. או לגשת אל <a "
 #~ "href=\"%coolStepByStepURL\" target=\"_blank\">ההנחיות המפורטות</a> ולבנות את"
 #~ " CODE מאפס. אפשר לסייע גם על ידי <a href=\"%coolTranslationsURL\" "
 #~ "target=\"_blank\">תרגום</a> או ב<a href=\"%coolBugreportURL\" "
@@ -9637,7 +9637,7 @@ msgstr ""
 #~ msgstr "השרת ממחזר את הפסולת ויהיה זמין תוך זמן קצר"
 
 #, fuzzy
-#~ msgid "Oops, there is a problem connecting to Apenio WYSIWYG : "
+#~ msgid "Oops, there is a problem connecting to WYSIWYG-Editor : "
 #~ msgstr "אופס, אירעה תקלה בחיבור ל־‏LibreOffice המקוון: "
 
 #~ msgid "Number of views"
