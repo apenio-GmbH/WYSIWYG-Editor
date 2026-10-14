@@ -23,7 +23,7 @@ fi;
 echo "Using Docker Hub Repository: '$DOCKER_HUB_REPO' with tag '$DOCKER_HUB_TAG'."
 
 if [ -z "$COLLABORA_ONLINE_REPO" ]; then
-  COLLABORA_ONLINE_REPO="https://github.com/apenio-marasmus/WYSIWYG-Editor"
+  COLLABORA_ONLINE_REPO="https://github.com/apenio-GmbH/WYSIWYG-Editor"
 fi;
 if [ -z "$COLLABORA_ONLINE_BRANCH" ]; then
   COLLABORA_ONLINE_BRANCH="main"
