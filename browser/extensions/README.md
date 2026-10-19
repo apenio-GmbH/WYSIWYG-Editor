@@ -227,20 +227,23 @@ ui.json:
 
   ```json
   "keybindings": [
-    { "command": "insertDate", "key": "d", "modifier": ["ctrl", "alt"] }
+    { "command": "insertDate", "key": "d", "modifier": ["ctrl", "alt", "shift"] }
   ]
   ```
 
   `modifier` is an array drawn from `"ctrl"`/`"alt"`/`"shift"` - `"ctrl"`
-  already means Cmd on macOS, the same as every built-in shortcut. A
-  single printable `key` needs at least `"ctrl"` or `"alt"` in `modifier` -
-  `"shift"` alone, or no modifier at all, would fight with ordinary
-  typing, and is rejected with a console warning. A combination that
-  collides with an existing shortcut - built-in, or from another
-  extension - is also rejected with a console warning rather than
-  registered: two shortcuts sharing the same combination is something the
-  underlying keyboard-shortcut dispatch cannot recover from once the key
-  is actually pressed, so this is caught up front instead. Pressing the
+  already means Cmd on macOS, the same as every built-in shortcut. Every
+  `key` needs at least `"ctrl"` or `"alt"` in `modifier`: without them a
+  letter would fight with ordinary typing, and Enter, Tab, Delete or an F
+  key already means something in the document. Such a binding is
+  rejected with a console warning. A combination that collides with an
+  existing shortcut is also rejected with a console warning rather than
+  registered. That covers the editor's own shortcuts, those of the user's
+  interface language, the document commands' shortcuts that the editor
+  knows about (Ctrl+Alt+D inserts an endnote, for example), and the
+  bindings of other extensions. The engine has further shortcuts that
+  the editor does not know about, so a combination with all three
+  modifiers is the safest choice. Pressing the
   combination in read-only (viewing) mode shows the same "you are in
   view mode" attention animation a built-in shortcut shows, rather than
   running the command.
@@ -312,7 +315,7 @@ The pieces:
 |---|---|
 | `gas-wrapper.html` | The page loaded into a sidebar panel. It reads the add-on's server sources and the requested HTML through the main window, and grafts the HTML into itself, expanding `<?!= include('name') ?>`. |
 | `gas-shim.js` | Client half. Exposes `google.script.run` as a Proxy, so a leaf call asks the main window to run the named function in the kit, through the kit half. |
-| `gas-kit-runner.js` | Kit half. Shims a subset of the Apps Script services on top of scriptinterop, then calls the named function. |
+| `engine/scriptinterop/js/prelude.js` | Kit half, which the kit runs ahead of every script. It sets up the Apps Script services that work the same for any script (`DocumentApp`, `SlidesApp`, `SpreadsheetApp`, `Utilities`, `Logger`, `Session`), and defines the runner that shims the services that depend on the add-on and then calls the named function. |
 
 The sidebar and dialog frames run in a sandbox without `allow-same-origin`, so
 they have an origin of their own, as HtmlService pages do in GAS, and they reach
@@ -338,10 +341,44 @@ Extension load asks the runner for that menu through the reserved name
 the Extensions menu and in the Extensions notebookbar tab, where an editor
 add-on's menu belongs.
 
-Choosing an item ships the runner, the add-on's sources and a call to the item's
-function to the kit as one `executescript` message, the same way any contributed
-command runs. Messages the add-on passes to `getUi().alert()` then arrive as a
+Choosing an item ships the add-on's sources and a call to the item's function to
+the kit as one `executescript` message, the same way any contributed command
+runs. Messages the add-on passes to `getUi().alert()` then arrive as a
 snackbar.
+
+### Contributions beyond the menu
+
+Apps Script gives an add-on no way to add to the context menu, the notebookbar
+or the keyboard shortcuts. An add-on that wants to can have a
+`_cool-gas-contributes.json` next to its `appsscript.json`, with the same
+content as the `contributes` file of a native extension (see above). Only its
+`extensionsMenu` is not used, as the menu that `onOpen()` builds takes that
+place.
+
+A command's `script` names one of the add-on's own server files. Instead of the
+`commands` of a native extension, that file has a top-level binding
+`__coolGasCommands`. Its functions run in the kit like the add-on's other server
+code, with all of the shimmed services:
+
+```js
+var __coolGasCommands = {
+    editMath: function () { openEditor('general'); },
+};
+```
+
+```json
+{
+  "commands": [
+    { "id": "editMath", "title": "Edit with MathType", "script": "cool-commands.js" }
+  ],
+  "contextMenu": [
+    { "command": "editMath", "contexts": ["image"] }
+  ]
+}
+```
+
+Titles are translated through the add-on's `l10n/<lang>.json`, as for a native
+extension.
 
 ### What the shims cover
 

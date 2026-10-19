@@ -11,6 +11,9 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 class Socket {
+	// Close status for a connection that the browser ends on purpose, for example because the
+	// user closed the document.
+	private static readonly UserExitCode: number = 4000;
 	private ProtocolVersionNumber: string = '0.1';
 	private ReconnectCount: number = 0;
 	private WasShownLimitDialog: boolean = false;
@@ -397,7 +400,7 @@ class Socket {
 		this.socket.onmessage = window.ThisIsAMobileApp
 			? this._onShellEventWhileClosed.bind(this)
 			: function () {};
-		this.socket.close();
+		this.socket.close(code ?? Socket.UserExitCode, reason);
 
 		// Reset wopi's app loaded so that reconnecting again informs outerframe about initialization
 		this._map['wopi'].resetAppLoaded();
@@ -506,6 +509,7 @@ class Socket {
 			msg += ' focusRingColor=' + focusRingColor;
 		}
 
+		window.seedCypressAccessibilityState();
 		msg += ' accessibilityState=' + window.getAccessibilityState();
 
 		msg += ' clientvisiblearea=' + window.makeClientVisibleArea();
@@ -2897,6 +2901,11 @@ class Socket {
 		const json = new TextDecoder().decode(
 			(window as any).fzstd.decompress(compressed),
 		);
+		// The header line carries this view's input sequence, which goes after the command
+		// name, where an uncompressed response has it.
+		const sequence = parseInt(
+			event.textMsg.split('\n')[0].split('inputSequence=')[1] ?? '',
+		);
 		let type = 'unknown';
 		let detail = '';
 		try {
@@ -2931,7 +2940,12 @@ class Socket {
 		);
 		const docLayer = (this._map as any)?._docLayer;
 		if (docLayer && docLayer._onCommandValuesMsg)
-			docLayer._onCommandValuesMsg('commandvalues: ' + json);
+			docLayer._onCommandValuesMsg(
+				'commandvalues:' +
+					(sequence > 0 ? ' inputSequence=' + sequence : '') +
+					' ' +
+					json,
+			);
 	}
 
 	// 'sliderenderingcomplete: ' message.

@@ -130,6 +130,10 @@ class RenderManager {
 		RenderManager.ensureInstance().clearPreFetch();
 	}
 
+	static initPreFetchAdjacentTiles(): void {
+		RenderManager.ensureInstance().initPreFetchAdjacentTiles();
+	}
+
 	static sendProcessedResponse(): void {
 		RenderManager.ensureInstance().sendProcessedResponse();
 	}
@@ -228,6 +232,22 @@ class RenderManager {
 
 	static isVectorRendering(): boolean {
 		return RenderManager.ensureInstance().isVectorRendering();
+	}
+
+	static predictTextInsert(text: string): boolean {
+		return RenderManager.ensureInstance().predictTextInsert(text);
+	}
+
+	static predictTextDelete(before: number, after: number): boolean {
+		return RenderManager.ensureInstance().predictTextDelete(before, after);
+	}
+
+	static keepPredictedCaret(update: cool.CaretUpdate): boolean {
+		return RenderManager.ensureInstance().keepPredictedCaret(update);
+	}
+
+	static canPredictAtCaret(): boolean {
+		return RenderManager.ensureInstance().canPredictAtCaret();
 	}
 
 	static requestThumbnail(

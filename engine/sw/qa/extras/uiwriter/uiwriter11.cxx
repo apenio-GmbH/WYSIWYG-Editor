@@ -18,6 +18,18 @@
 #include <vcl/pdf/PDFPageObjectType.hxx>
 #include <vcl/scheduler.hxx>
 #include <svl/srchitem.hxx>
+#include <com/sun/star/frame/XStorable.hpp>
+#include <com/sun/star/accessibility/AccessibleRole.hpp>
+#include <com/sun/star/accessibility/XAccessibleSelection.hpp>
+#include <cppuhelper/implbase.hxx>
+#include <com/sun/star/accessibility/AccessibleEventId.hpp>
+#include <com/sun/star/accessibility/XAccessibleComponent.hpp>
+#include <com/sun/star/accessibility/XAccessibleEventBroadcaster.hpp>
+#include <com/sun/star/accessibility/XAccessibleEventListener.hpp>
+#include <com/sun/star/awt/Point.hpp>
+#include <unotools/streamwrap.hxx>
+#include <tools/stream.hxx>
+#include <o3tl/unit_conversion.hxx>
 
 #include <comphelper/propertyvalue.hxx>
 #include <comphelper/propertysequence.hxx>
@@ -27,7 +39,9 @@
 
 #include <svx/svdpage.hxx>
 #include <svx/svdview.hxx>
+#include <svx/svdpagv.hxx>
 #include <sfx2/bindings.hxx>
+#include <sfx2/viewfrm.hxx>
 #include <sfx2/request.hxx>
 #include <com/sun/star/text/XText.hpp>
 #include <com/sun/star/text/XTextTable.hpp>
@@ -1412,6 +1426,225 @@ CPPUNIT_TEST_FIXTURE(SwUiWriterTest11, testSelectSeveralImages)
     CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pWrtShell->GetSelectedFlyFrames().size());
     CPPUNIT_ASSERT_EQUAL(DynCastSwVirtFlyDrawObj(pSecond)->GetFlyFrame(),
                          pWrtShell->GetSelectedFlyFrame());
+}
+
+CPPUNIT_TEST_FIXTURE(SwUiWriterTest11, testSelectImagesAgainAfterUndoOfDeletion)
+{
+    // After two selected images are deleted with the Delete key and the deletion is undone,
+    // each image can be selected again, by its object and by a click at its centre.
+    createSwDoc("two-images.fodt");
+    SwDoc* pDoc = getSwDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    SdrPage* pPage = pDoc->getIDocumentDrawModelAccess().GetDrawModel()->GetPage(0);
+    SdrView* pView = pWrtShell->GetDrawView();
+
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), 0, pPage->GetObj(0)));
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), SW_ADD_SELECT, pPage->GetObj(1)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), pWrtShell->GetSelectedFlyFrames().size());
+
+    pWrtShell->DelRight();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(0), pPage->GetObjCount());
+
+    pWrtShell->Do(SwWrtShell::UNDO);
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), pPage->GetObjCount());
+
+    for (size_t nObject = 0; nObject < 2; ++nObject)
+    {
+        SdrObject* pObject = pPage->GetObj(nObject);
+        CPPUNIT_ASSERT(pObject->IsInserted());
+        CPPUNIT_ASSERT(pView->GetSdrPageView()->IsObjMarkable(pObject));
+
+        CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), 0, pObject));
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pWrtShell->GetSelectedFlyFrames().size());
+        CPPUNIT_ASSERT_EQUAL(DynCastSwVirtFlyDrawObj(pObject)->GetFlyFrame(),
+                             pWrtShell->GetSelectedFlyFrame());
+
+        // A click at the centre of the image selects it as well.
+        pWrtShell->UnSelectFrame();
+        CPPUNIT_ASSERT(!pWrtShell->IsFrameSelected());
+        CPPUNIT_ASSERT(pWrtShell->SelectObj(pObject->GetSnapRect().Center()));
+        CPPUNIT_ASSERT_EQUAL(DynCastSwVirtFlyDrawObj(pObject)->GetFlyFrame(),
+                             pWrtShell->GetSelectedFlyFrame());
+    }
+}
+
+CPPUNIT_TEST_FIXTURE(SwUiWriterTest11, testSelectionPictureOfSeveralImages)
+{
+    // The SVG picture of a selection that holds two images shows both images at the places
+    // they have in the layout, and each image reports that place as its layout position.
+    createSwDoc("two-images.fodt");
+    SwDoc* pDoc = getSwDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    SdrPage* pPage = pDoc->getIDocumentDrawModelAccess().GetDrawModel()->GetPage(0);
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), 0, pPage->GetObj(0)));
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), SW_ADD_SELECT, pPage->GetObj(1)));
+    std::vector<SwFlyFrame*> aFlyFrames = pWrtShell->GetSelectedFlyFrames();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), aFlyFrames.size());
+
+    for (size_t nImage = 0; nImage < 2; ++nImage)
+    {
+        const SwRect& rArea = aFlyFrames[nImage]->getFrameArea();
+        const awt::Point aPosition
+            = getProperty<awt::Point>(getShape(nImage + 1), u"LayoutPosition"_ustr);
+        CPPUNIT_ASSERT_EQUAL(o3tl::convert(rArea.Left(), o3tl::Length::twip, o3tl::Length::mm100),
+                             static_cast<tools::Long>(aPosition.X));
+        CPPUNIT_ASSERT_EQUAL(o3tl::convert(rArea.Top(), o3tl::Length::twip, o3tl::Length::mm100),
+                             static_cast<tools::Long>(aPosition.Y));
+    }
+
+    // Export the selection the way the selection picture is made.
+    SvMemoryStream aStream;
+    uno::Reference<io::XOutputStream> xOutput = new utl::OOutputStreamWrapper(aStream);
+    uno::Reference<frame::XStorable> xStorable(mxComponent, uno::UNO_QUERY_THROW);
+    xStorable->storeToURL(u"private:stream"_ustr,
+                          { comphelper::makePropertyValue(u"FilterName"_ustr, u"writer_svg_Export"_ustr),
+                            comphelper::makePropertyValue(u"SelectionOnly"_ustr, true),
+                            comphelper::makePropertyValue(u"OutputStream"_ustr, xOutput) });
+    aStream.Seek(0);
+    xmlDocUniquePtr pXmlDoc = parseXmlStream(&aStream);
+    CPPUNIT_ASSERT(pXmlDoc);
+    // The picture holds one graphic per image, the second to the right of the first.
+    assertXPath(pXmlDoc, "//*[@class='Graphic']", 2);
+    const sal_Int32 nFirstX = getXPath(pXmlDoc, "(//*[@class='BoundingBox'])[1]", "x").toInt32();
+    const sal_Int32 nSecondX = getXPath(pXmlDoc, "(//*[@class='BoundingBox'])[2]", "x").toInt32();
+    CPPUNIT_ASSERT(nSecondX > nFirstX);
+}
+
+CPPUNIT_TEST_FIXTURE(SwUiWriterTest11, testTransformStaysEnabledForSeveralImages)
+{
+    // With two images selected, moving and resizing them stays available while the commands
+    // that act on one image are disabled.
+    createSwDoc("two-images.fodt");
+    SwDoc* pDoc = getSwDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    SdrPage* pPage = pDoc->getIDocumentDrawModelAccess().GetDrawModel()->GetPage(0);
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), 0, pPage->GetObj(0)));
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), SW_ADD_SELECT, pPage->GetObj(1)));
+    CPPUNIT_ASSERT(pWrtShell->IsMultipleFlyFramesSelected());
+    // The view switches to the frame shell on a timer after a selection change, so do that
+    // switch here.
+    SwView& rView = pWrtShell->GetView();
+    rView.SelectShell();
+
+    std::unique_ptr<SfxPoolItem> pItem;
+    CPPUNIT_ASSERT(rView.GetViewFrame().GetBindings().QueryState(SID_ATTR_TRANSFORM, pItem)
+                   != SfxItemState::DISABLED);
+    CPPUNIT_ASSERT_EQUAL(SfxItemState::DISABLED,
+                         rView.GetViewFrame().GetBindings().QueryState(FN_FORMAT_FRAME_DLG, pItem));
+}
+
+CPPUNIT_TEST_FIXTURE(SwUiWriterTest11, testAccessibleSelectionOfSeveralImages)
+{
+    // Every accessible context counts only the selected images that are its own children, and
+    // hands out exactly those by index.
+    createSwDoc("two-images.fodt");
+    SwDoc* pDoc = getSwDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    SdrPage* pPage = pDoc->getIDocumentDrawModelAccess().GetDrawModel()->GetPage(0);
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), 0, pPage->GetObj(0)));
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), SW_ADD_SELECT, pPage->GetObj(1)));
+    CPPUNIT_ASSERT(pWrtShell->IsMultipleFlyFramesSelected());
+
+    uno::Reference<accessibility::XAccessible> xDocumentAccessible
+        = pWrtShell->GetView().GetEditWin().GetAccessible();
+    uno::Reference<accessibility::XAccessibleContext> xDocumentContext
+        = xDocumentAccessible->getAccessibleContext();
+    uno::Reference<accessibility::XAccessibleSelection> xDocumentSelection(xDocumentContext,
+                                                                           uno::UNO_QUERY_THROW);
+    // Both images hang below the document, so both are its selected children.
+    CPPUNIT_ASSERT_EQUAL(sal_Int64(2), xDocumentSelection->getSelectedAccessibleChildCount());
+    for (sal_Int64 nIndex = 0; nIndex < 2; ++nIndex)
+    {
+        uno::Reference<accessibility::XAccessible> xChild
+            = xDocumentSelection->getSelectedAccessibleChild(nIndex);
+        CPPUNIT_ASSERT(xChild.is());
+        CPPUNIT_ASSERT_EQUAL(accessibility::AccessibleRole::GRAPHIC,
+                             xChild->getAccessibleContext()->getAccessibleRole());
+    }
+
+    // The paragraph holds neither image, so it has no selected child. Before, it reported two
+    // and threw for the first index.
+    uno::Reference<accessibility::XAccessibleSelection> xParagraphSelection;
+    for (sal_Int64 nIndex = 0; nIndex < xDocumentContext->getAccessibleChildCount(); ++nIndex)
+    {
+        uno::Reference<accessibility::XAccessibleContext> xChildContext
+            = xDocumentContext->getAccessibleChild(nIndex)->getAccessibleContext();
+        if (xChildContext->getAccessibleRole() == accessibility::AccessibleRole::PARAGRAPH)
+        {
+            xParagraphSelection.set(xChildContext, uno::UNO_QUERY);
+            break;
+        }
+    }
+    CPPUNIT_ASSERT(xParagraphSelection.is());
+    CPPUNIT_ASSERT_EQUAL(sal_Int64(0), xParagraphSelection->getSelectedAccessibleChildCount());
+}
+
+// Collects the children that an accessible context reports as newly selected.
+class SelectionEventListener : public cppu::WeakImplHelper<accessibility::XAccessibleEventListener>
+{
+public:
+    std::vector<uno::Reference<accessibility::XAccessible>> m_aSelectedChildren;
+
+    void notifyEvent(const accessibility::AccessibleEventObject& rEvent) override
+    {
+        if (rEvent.EventId != accessibility::AccessibleEventId::SELECTION_CHANGED)
+            return;
+        uno::Reference<accessibility::XAccessible> xChild;
+        rEvent.NewValue >>= xChild;
+        m_aSelectedChildren.push_back(xChild);
+    }
+
+    void disposing(const lang::EventObject&) override {}
+};
+
+CPPUNIT_TEST_FIXTURE(SwUiWriterTest11, testAccessibleEventForImageJoiningSelection)
+{
+    // An image that joins the selection is announced to the document's accessible as a newly
+    // selected child, the same as the first selected image.
+    createSwDoc("two-images.fodt");
+    SwDoc* pDoc = getSwDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    SdrPage* pPage = pDoc->getIDocumentDrawModelAccess().GetDrawModel()->GetPage(0);
+
+    uno::Reference<accessibility::XAccessibleContext> xDocumentContext
+        = pWrtShell->GetView().GetEditWin().GetAccessible()->getAccessibleContext();
+    uno::Reference<accessibility::XAccessible> xLeftImage;
+    uno::Reference<accessibility::XAccessible> xRightImage;
+    for (sal_Int64 nIndex = 0; nIndex < xDocumentContext->getAccessibleChildCount(); ++nIndex)
+    {
+        uno::Reference<accessibility::XAccessible> xChild = xDocumentContext->getAccessibleChild(nIndex);
+        if (xChild->getAccessibleContext()->getAccessibleRole() != accessibility::AccessibleRole::GRAPHIC)
+            continue;
+        uno::Reference<accessibility::XAccessibleComponent> xComponent(xChild->getAccessibleContext(),
+                                                                       uno::UNO_QUERY_THROW);
+        if (!xLeftImage.is() || xComponent->getBounds().X < uno::Reference<accessibility::XAccessibleComponent>(
+                xLeftImage->getAccessibleContext(), uno::UNO_QUERY_THROW)->getBounds().X)
+        {
+            xRightImage = xLeftImage;
+            xLeftImage = xChild;
+        }
+        else
+            xRightImage = xChild;
+    }
+    CPPUNIT_ASSERT(xLeftImage.is());
+    CPPUNIT_ASSERT(xRightImage.is());
+
+    rtl::Reference<SelectionEventListener> xListener(new SelectionEventListener);
+    uno::Reference<accessibility::XAccessibleEventBroadcaster> xBroadcaster(xDocumentContext,
+                                                                             uno::UNO_QUERY_THROW);
+    xBroadcaster->addAccessibleEventListener(xListener);
+
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), 0, pPage->GetObj(0)));
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), xListener->m_aSelectedChildren.size());
+    CPPUNIT_ASSERT_EQUAL(xLeftImage.get(), xListener->m_aSelectedChildren[0].get());
+
+    CPPUNIT_ASSERT(pWrtShell->SelectObj(Point(), SW_ADD_SELECT, pPage->GetObj(1)));
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), xListener->m_aSelectedChildren.size());
+    CPPUNIT_ASSERT_EQUAL(xRightImage.get(), xListener->m_aSelectedChildren[1].get());
+
+    xBroadcaster->removeAccessibleEventListener(xListener);
 }
 
 } // end of anonymous namespace

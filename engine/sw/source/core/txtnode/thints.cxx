@@ -1951,6 +1951,17 @@ bool SwTextNode::SetAttr(
     const SetAttrMode nMode,
     SwTextAttr **ppNewTextAttr )
 {
+    return SetAttr(rSet, nStt, nEnd, std::nullopt, nMode, ppNewTextAttr);
+}
+
+bool SwTextNode::SetAttr(
+    const SfxItemSet& rSet,
+    const sal_Int32 nStt,
+    const sal_Int32 nEnd,
+    std::optional<bool> oInMergedPaste,
+    const SetAttrMode nMode,
+    SwTextAttr **ppNewTextAttr )
+{
     if( !rSet.Count() )
         return false;
 
@@ -1984,7 +1995,7 @@ bool SwTextNode::SetAttr(
             // we want to set them at the paragraph:
             if( aTextSet.Count() != rSet.Count() )
             {
-                const bool bRet = SetAttr( rSet );
+                const bool bRet = SetAttr( rSet, oInMergedPaste );
                 if( !aTextSet.Count() )
                     return bRet;
             }
@@ -2529,6 +2540,25 @@ SwTextNode::impl_FormatToTextAttr(const SfxItemSet& i_rAttrSet)
         return;
     }
 
+    SfxItemSet aFiltered(i_rAttrSet);
+    if (GetDoc().IsInMergedPaste())
+    {
+        // Merged paste: non-whitelisted paragraph properties stay at paragraph
+        // scope so they also apply to clipboard content joined into this node.
+        SfxWhichIter aIter(aFiltered);
+        for (sal_uInt16 nWhich = aIter.FirstWhich(); nWhich; nWhich = aIter.NextWhich())
+        {
+            if (!IsCharItemKeptInMergedPaste(nWhich))
+            {
+                aFiltered.ClearItem(nWhich);
+            }
+        }
+        if (aFiltered.Count() == 0)
+        {
+            return;
+        }
+    }
+
     // 1. Identify all spans in hints' array
 
     lcl_CollectHintSpans(*m_pSwpHints, m_Text.getLength(), aAttrSpanMap);
@@ -2545,7 +2575,7 @@ SwTextNode::impl_FormatToTextAttr(const SfxItemSet& i_rAttrSet)
 
         // 2a. Collect attributes to insert
 
-        SfxItemSet aCurSet(i_rAttrSet);
+        SfxItemSet aCurSet(aFiltered);
         std::for_each(aRange.first, aRange.second, RemovePresentAttrs(aCurSet));
 
         // 2b. Insert automatic style containing the collected attributes
@@ -2581,7 +2611,7 @@ SwTextNode::impl_FormatToTextAttr(const SfxItemSet& i_rAttrSet)
 
     // 3. Clear items from the node
     std::vector<sal_uInt16> aClearedIds;
-    lcl_FillWhichIds(i_rAttrSet, aClearedIds);
+    lcl_FillWhichIds(aFiltered, aClearedIds);
     ClearItemsFromAttrSet(aClearedIds);
 }
 

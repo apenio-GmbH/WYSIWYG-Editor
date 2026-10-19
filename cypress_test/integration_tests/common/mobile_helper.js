@@ -390,8 +390,59 @@ function pressPushButtonOfDialog(name) {
 	cy.log('<< pressPushButtonOfDialog - end');
 }
 
+// Tap the document at the given pixel offset from the text cursor.
+function tapNextToCursor(horizontalOffset, verticalOffset = 0) {
+	cy.log('>> tapNextToCursor - start');
+
+	cy.cGet('.blinking-cursor').should('be.visible').then(function(cursor) {
+		const cursorRect = cursor[0].getBoundingClientRect();
+		cy.cGet('#document-container').then(function(container) {
+			const containerRect = container[0].getBoundingClientRect();
+			cy.cGet('#document-container').click(
+				cursorRect.left - containerRect.left + horizontalOffset,
+				cursorRect.top - containerRect.top + cursorRect.height / 2 + verticalOffset);
+		});
+	});
+
+	cy.log('<< tapNextToCursor - end');
+}
+
 function getCompactIcon(unoCommand) {
 	return cy.cGet('#toolbar-down .uno' + unoCommand + ':visible');
+}
+
+// Counts the times the text input stops accepting input, which closes the keyboard on a phone.
+function watchKeyboardClosing(win) {
+	var textInput = win.app.map._textInput;
+	var original = textInput._setAcceptInput;
+	var closings = { count: 0 };
+	textInput._setAcceptInput = function(acceptInput) {
+		if (!acceptInput) closings.count++;
+		return original.call(this, acceptInput);
+	};
+	return closings;
+}
+
+// Shrink the frame as the keyboard would, then grow it back. expectKept runs after each.
+function relayoutForKeyboard(win, expectKept) {
+	var layout = win.app.activeDocument.activeLayout;
+	var frameHeight;
+
+	cy.then(function() {
+		frameHeight = layout.frameSize.pY;
+	});
+	cy.viewport(375, 500);
+	// The relayout runs from the resize event, after cy.viewport returns.
+	cy.wrap(layout, { log: false }).its('frameSize.pY').should(function(height) {
+		expect(height).to.be.lessThan(frameHeight);
+	});
+	cy.then(function() {
+		helper.processToIdle(win);
+	});
+	expectKept();
+
+	cy.viewport('iphone-6');
+	expectKept();
 }
 
 module.exports.enableEditingMobile = enableEditingMobile;
@@ -415,3 +466,6 @@ module.exports.deleteImage = deleteImage;
 module.exports.insertComment = insertComment;
 module.exports.pressPushButtonOfDialog = pressPushButtonOfDialog;
 module.exports.getCompactIcon = getCompactIcon;
+module.exports.tapNextToCursor = tapNextToCursor;
+module.exports.watchKeyboardClosing = watchKeyboardClosing;
+module.exports.relayoutForKeyboard = relayoutForKeyboard;

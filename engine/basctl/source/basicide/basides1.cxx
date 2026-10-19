@@ -364,7 +364,7 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
         break;
         case SID_BASICIDE_CHOOSEMACRO:
         {
-            ChooseMacro(rReq.GetFrameWeld(), nullptr);
+            ChooseMacro(rReq.GetFrameWeld());
         }
         break;
         case SID_BASICIDE_CREATEMACRO:
@@ -873,7 +873,6 @@ void Shell::ExecuteGlobal( SfxRequest& rReq )
         case SID_BASICIDE_MANAGE_LANG:
         {
             auto xRequest = std::make_shared<SfxRequest>(rReq);
-            rReq.Ignore(); // the 'old' request is not relevant any more
             auto xDlg = std::make_shared<ManageLanguageDialog>(pCurWin ? pCurWin->GetFrameWeld() : nullptr, m_pCurLocalizationMgr);
             weld::DialogController::runAsync(xDlg, [xRequest=std::move(xRequest)](sal_Int32 /*nResult*/){
                     xRequest->Done();

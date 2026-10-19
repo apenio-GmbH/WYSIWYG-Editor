@@ -372,6 +372,8 @@ void SwView::ExecSearch(SfxRequest& rReq)
                         break;
                     }
                     SwSearchOptions aOpts( m_pWrtShell.get(), s_pSrchItem->GetBackward() );
+                    aOpts.eStart
+                        = s_pSrchItem->GetBackward() ? SwDocPositions::End : SwDocPositions::Start;
                     s_bExtra = false;
                     sal_Int32 nFound;
 
@@ -429,12 +431,6 @@ void SwView::ExecSearch(SfxRequest& rReq)
                 }
                 break;
             }
-
-            uno::Reference< frame::XDispatchRecorder > xRecorder =
-                    GetViewFrame().GetBindings().GetRecorder();
-            //prevent additional dialogs in recorded macros
-            if ( xRecorder.is() )
-                rReq.AppendItem(SfxBoolItem(SID_SEARCH_QUIET, true));
 
             rReq.Done();
             m_eLastSearchCommand = s_pSrchItem->GetCommand();
@@ -714,6 +710,7 @@ sal_Int32 SwView::SearchAll()
     m_pWrtShell->StartAllAction();
 
     SwSearchOptions aOpts( m_pWrtShell.get(), s_pSrchItem->GetBackward() );
+    aOpts.eStart = s_pSrchItem->GetBackward() ? SwDocPositions::End : SwDocPositions::Start;
 
     if (!s_pSrchItem->GetSelection())
     {

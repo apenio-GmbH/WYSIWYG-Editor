@@ -99,9 +99,13 @@ void WrappedPropertySet::setPropertyValue( std::unique_lock<std::mutex>& rGuard,
         Reference< beans::XPropertySet > xInnerPropertySet( getInnerPropertySet() );
         if( pWrappedProperty )
         {
+            // clearWrappedPropertySet() may run in the callback while the
+            // mutex is released. Keep the map, and thus this property, alive.
+            auto xMap = m_pWrappedPropertyMap;
             // some of these call into things that take the solarmutex
             rGuard.unlock();
             pWrappedProperty->setPropertyValue( rValue, xInnerPropertySet );
+            xMap.reset(); // destruct wrapped properties without m_aMutex
             rGuard.lock();
         }
         else if( xInnerPropertySet.is() )
@@ -367,10 +371,15 @@ Sequence< beans::PropertyState > WrappedPropertySet::getPropertyStates( const Se
 void WrappedPropertySet::setPropertyToDefault( const OUString& rPropertyName )
 {
     std::unique_lock aGuard(m_aMutex);
+    setPropertyToDefault(aGuard, rPropertyName);
+}
+
+void WrappedPropertySet::setPropertyToDefault( std::unique_lock<std::mutex>& rGuard, const OUString& rPropertyName )
+{
     Reference< beans::XPropertyState > xInnerPropertyState( getInnerPropertyState() );
     if( xInnerPropertyState.is() )
     {
-        const WrappedProperty* pWrappedProperty = getWrappedProperty( aGuard, rPropertyName );
+        const WrappedProperty* pWrappedProperty = getWrappedProperty( rGuard, rPropertyName );
         if( pWrappedProperty )
             pWrappedProperty->setPropertyToDefault( xInnerPropertyState );
         else
@@ -380,11 +389,16 @@ void WrappedPropertySet::setPropertyToDefault( const OUString& rPropertyName )
 Any WrappedPropertySet::getPropertyDefault( const OUString& rPropertyName )
 {
     std::unique_lock aGuard(m_aMutex);
+    return getPropertyDefault(aGuard, rPropertyName);
+}
+
+Any WrappedPropertySet::getPropertyDefault( std::unique_lock<std::mutex>& rGuard, const OUString& rPropertyName )
+{
     Any aRet;
     Reference< beans::XPropertyState > xInnerPropertyState( getInnerPropertyState() );
     if( xInnerPropertyState.is() )
     {
-        const WrappedProperty* pWrappedProperty = getWrappedProperty( aGuard, rPropertyName );
+        const WrappedProperty* pWrappedProperty = getWrappedProperty( rGuard, rPropertyName );
         if( pWrappedProperty )
             aRet = pWrappedProperty->getPropertyDefault(xInnerPropertyState);
         else
@@ -438,26 +452,39 @@ tWrappedPropertyMap& WrappedPropertySet::getWrappedPropertyMap(std::unique_lock<
     if(!m_pWrappedPropertyMap)
     {
         std::vector< std::unique_ptr<WrappedProperty> > aPropList( createWrappedProperties() );
-        auto p = new tWrappedPropertyMap;
-
-        for (auto & elem : aPropList)
+        std::unique_ptr<tWrappedPropertyMap> p;
+        try
         {
-            sal_Int32 nHandle = getInfoHelper(rGuard).getHandleByName( elem->getOuterName() );
+            p = std::make_unique<tWrappedPropertyMap>();
+            for (auto & elem : aPropList)
+            {
+                sal_Int32 nHandle = getInfoHelper(rGuard).getHandleByName( elem->getOuterName() );
 
-            if( nHandle == -1 )
-            {
-                OSL_FAIL( "missing property in property list" );
+                if( nHandle == -1 )
+                {
+                    OSL_FAIL( "missing property in property list" );
+                }
+                else if( p->find( nHandle ) != p->end() )
+                {
+                    //duplicate Wrapped property
+                    OSL_FAIL( "duplicate Wrapped property" );
+                }
+                else
+                    (*p)[ nHandle ] = std::move(elem);
             }
-            else if( p->find( nHandle ) != p->end() )
-            {
-                //duplicate Wrapped property
-                OSL_FAIL( "duplicate Wrapped property" );
-            }
-            else
-                (*p)[ nHandle ] = std::move(elem);
+            m_pWrappedPropertyMap = std::move(p);
         }
-
-        m_pWrappedPropertyMap.reset(p);
+        catch (...)
+        {
+            // Wrapped-property destructors may release UNO references that
+            // require SolarMutex. Dispose of the partial map and remaining
+            // properties without holding m_aMutex, then restore the guard.
+            rGuard.unlock();
+            p.reset();
+            aPropList.clear();
+            rGuard.lock();
+            throw;
+        }
     }
     return *m_pWrappedPropertyMap;
 }

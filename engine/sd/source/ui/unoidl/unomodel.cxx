@@ -186,6 +186,7 @@
 #include <sdmod.hxx>
 #include <sdresid.hxx>
 #include <sdpage.hxx>
+#include <anminfo.hxx>
 
 #include <strings.hrc>
 #include <strings.hxx>
@@ -3872,15 +3873,21 @@ private:
         if (const auto* pPicture = dynamic_cast<const SdrGrafObj*>(&rObject))
             takeInThePicture(*pPicture, aContent);
 
+        /*
+            The place held fast holds the turn and the mirror fast as well, and the size held fast
+            the shear, as the office's own view has it.
+        */
         SdrObjTransformInfoRec aWhatItAllows;
         rObject.TakeObjInfo(aWhatItAllows);
-        aContent.mbCanBeMoved = !rObject.IsMoveProtect();
-        aContent.mbCanBeResized = !rObject.IsResizeProtect();
-        aContent.mbCanBeTurned = aWhatItAllows.bRotateFreeAllowed;
+        const bool bPlaceHeldFast(rObject.IsMoveProtect());
+        const bool bSizeHeldFast(rObject.IsResizeProtect());
+        aContent.mbCanBeMoved = !bPlaceHeldFast;
+        aContent.mbCanBeResized = !bSizeHeldFast;
+        aContent.mbCanBeTurned = aWhatItAllows.bRotateFreeAllowed && !bPlaceHeldFast;
         aContent.mbCanBeResizedFreely = aWhatItAllows.bResizeFreeAllowed;
-        aContent.mbCanBeMirrored = aWhatItAllows.bMirrorFreeAllowed;
-        aContent.mbCanBeSheared = aWhatItAllows.bShearAllowed;
-        aContent.mbCanBeFlipped = aWhatItAllows.bMirror90Allowed;
+        aContent.mbCanBeMirrored = aWhatItAllows.bMirrorFreeAllowed && !bPlaceHeldFast;
+        aContent.mbCanBeSheared = aWhatItAllows.bShearAllowed && !bSizeHeldFast;
+        aContent.mbCanBeFlipped = aWhatItAllows.bMirror90Allowed && !bPlaceHeldFast;
         aContent.mbCanBeChangedToCurves = aWhatItAllows.bCanConvToPath;
 
         aContent.maPaintedBox = paintedRectangleInTwips(rObject, aContent.maPrimitives);
@@ -7848,6 +7855,26 @@ void SdXImpressDocument::initializeDocument()
     }
 }
 
+// The visible slide a bookmark click action names, or null when it names none.
+static SdPage* getBookmarkSlide(SdrObject* pObject)
+{
+    SdAnimationInfo* pInfo = pObject ? SdDrawDocument::GetAnimationInfo(pObject) : nullptr;
+    auto* pDoc = pInfo ? dynamic_cast<SdDrawDocument*>(&pObject->getSdrModelFromSdrObject()) : nullptr;
+    if (!pDoc)
+        return nullptr;
+
+    bool bIsMasterPage = false;
+    const sal_uInt16 nPageNum = pDoc->GetPageByName(pInfo->GetBookmark(), bIsMasterPage);
+    if (nPageNum == SDRPAGE_NOTFOUND || bIsMasterPage)
+        return nullptr;
+
+    auto* pPage = static_cast<SdPage*>(pDoc->GetPage(nPageNum));
+    if (pPage->GetPageKind() != PageKind::Standard || pPage->IsExcluded())
+        return nullptr;
+
+    return pPage;
+}
+
 static
 void getShapeClickAction(const uno::Reference<drawing::XShape> &xShape, ::tools::JsonWriter& rJsonWriter)
 {
@@ -7897,6 +7924,13 @@ void getShapeClickAction(const uno::Reference<drawing::XShape> &xShape, ::tools:
             case presentation::ClickAction_BOOKMARK:
                 rJsonWriter.put("action", "bookmark");
                 rJsonWriter.put("bookmark", sBookmark);
+                // The hash of the slide to jump to, the same one the slide reports itself.
+                if (SdPage* pTarget = getBookmarkSlide(SdrObject::getSdrObjectFromXShape(xShape)))
+                {
+                    auto* pTargetSlide = dynamic_cast<SdGenericDrawPage*>(pTarget->getUnoPage().get());
+                    if (pTargetSlide)
+                        rJsonWriter.put("targetSlide", GetInterfaceHash(cppu::getXWeak(pTargetSlide)));
+                }
                 break;
             case presentation::ClickAction_DOCUMENT:
                 rJsonWriter.put("action", "document");
@@ -8104,8 +8138,7 @@ std::string SdXImpressDocument::getPresentationInfo(bool bAllyState) const
                 aJsonWriter.put("part", pPage->GetGuid().getString());
                 aJsonWriter.put("guid", pPage->GetGuid().getOUString());
 
-                auto aName = SdDrawPage::getPageApiNameFromUiName(pPage->GetName());
-                aJsonWriter.put("name", aName);
+                aJsonWriter.put("name", pPage->GetRealName());
 
                 const Size aSlizeSize = const_cast<SdXImpressDocument*>(this)->getPartSize(i);
                 aJsonWriter.put("slideWidth", aSlizeSize.getWidth());

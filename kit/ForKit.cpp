@@ -319,16 +319,8 @@ bool haveCorrectCapabilities()
 }
 #endif // HAVE_LIBCAP
 
-/// Remove the shared settings directory of the configuration with the given subforkit id.
-void removeSharedPresets(const std::string& childRoot, const std::string& ident)
-{
-    Poco::Path sharedPresets(childRoot, JailUtil::CHILDROOT_TMP_SHARED_PRESETS_PATH);
-    std::string presetsPath = Poco::Path(sharedPresets, Uri::encode(ident)).toString();
-    FileUtil::removeFile(presetsPath, true);
-}
-
 /// Check if some previously forked kids have died.
-void cleanupChildren(const std::string& childRoot)
+void cleanupChildren()
 {
     if (Util::isKitInProcess())
         return;
@@ -412,18 +404,7 @@ void cleanupChildren(const std::string& childRoot)
             LOG_INF("SubForKit " << exitedChildPid << " [" << subit->second
                     << "] has exited with status " << status << ".");
 
-            const std::string ident = subit->second;
             subForKitPids.erase(subit);
-
-            // A subforkit that exits normally has removed its settings directory already. Every
-            // subforkit of one configuration reads the same settings directory, so it stays while
-            // another of them runs.
-            const bool exitedNormally = info.si_code == CLD_EXITED && status == EX_OK;
-            const bool identInUse =
-                std::any_of(subForKitPids.begin(), subForKitPids.end(),
-                            [&ident](const auto& pair) { return pair.second == ident; });
-            if (!exitedNormally && !identInUse)
-                removeSharedPresets(childRoot, ident);
         }
         else
         {
@@ -743,7 +724,7 @@ void forkCOKit(const std::string& childRoot,
                         bool useMountNamespaces)
 {
     // Cleanup first, to reduce disk load.
-    cleanupChildren(childRoot);
+    cleanupChildren();
 
     if (ForkCounter > 0)
     {
@@ -1109,9 +1090,6 @@ int forkit_main(int argc, char** argv)
 
     LOG_INF("Preinit stage OK.");
 
-    if (!Util::isKitInProcess())
-        UnitBase::startKitTimeout();
-
     // We must have at least one child, more are created dynamically.
     // Ask this first child to send version information to master process and trace startup.
     ::setenv("COOL_TRACE_STARTUP", "1", 1);
@@ -1155,11 +1133,16 @@ int forkit_main(int argc, char** argv)
     parentPid = getppid();
     LOG_INF("ForKit process is ready. Parent: " << parentPid);
 
+    const auto startTime = std::chrono::steady_clock::now();
     while (!SigUtil::getShutdownRequestFlag())
     {
         UnitKit::get().invokeForKitTest();
 
         ForKitPoll->poll(std::chrono::seconds(POLL_FORKIT_TIMEOUT_SECS));
+
+        if (UnitKit::isUnitTesting())
+            UnitKit::get().checkTimeout(std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime));
 
         SigUtil::checkDumpGlobalState(dump_forkit_state);
 
@@ -1184,9 +1167,6 @@ int forkit_main(int argc, char** argv)
 
     if (!ForKitIdent.empty() && getppid() == parentPid)
     {
-        // No document uses this configuration any more, so its settings are removed now.
-        removeSharedPresets(childRoot, ForKitIdent);
-
         // A subForKit that was told to exit is still the parent of its kits. It stays until they
         // have exited, and removes their jails. The wait is a little longer than a crashed jail is
         // kept, so that jail is removed too.
@@ -1194,12 +1174,12 @@ int forkit_main(int argc, char** argv)
                               << " kits to exit.");
         const std::chrono::seconds maxWait(CrashedJailKeepSecs + 2 * POLL_FORKIT_TIMEOUT_SECS);
         const auto deadline = std::chrono::steady_clock::now() + maxWait;
-        cleanupChildren(childRoot);
+        cleanupChildren();
         while ((!childJails.empty() || !cleanupJailPaths.empty()) && getppid() == parentPid &&
                std::chrono::steady_clock::now() < deadline)
         {
             ForKitPoll->poll(std::chrono::seconds(POLL_FORKIT_TIMEOUT_SECS));
-            cleanupChildren(childRoot);
+            cleanupChildren();
         }
 
         if (!childJails.empty() || !cleanupJailPaths.empty())

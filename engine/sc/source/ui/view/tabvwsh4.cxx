@@ -115,10 +115,21 @@ bool inChartOrMathContext(const ScTabViewShell* pViewShell)
 
 } // anonymous namespace
 
+void ScTabViewShell::UpdateKitChangeTrackUser()
+{
+    // Changes are recorded under the document's one change track user, so
+    // switch it to the user of the view that is about to edit.
+    if (!comphelper::COKit::isActive() || GetKitAuthor().isEmpty())
+        return;
+    if (ScChangeTrack* pChangeTrack = GetViewData().GetDocument().GetChangeTrack())
+        pChangeTrack->SetUser(GetKitAuthor());
+}
+
 void ScTabViewShell::Activate(bool bMDI)
 {
     SfxViewShell::Activate(bMDI);
     bIsActive = true;
+    UpdateKitChangeTrackUser();
     // here no GrabFocus, otherwise there will be problems when something is edited inplace!
 
     if ( bMDI )
@@ -314,7 +325,7 @@ bool ScTabViewShell::PrepareClose(bool bUI)
     {
         // "clean" end of text edit, including note handling, subshells and draw func switching,
         // as in FuDraw and ScTabView::DrawDeselectAll
-        GetViewData().GetDispatcher().Execute( pPoor->GetSlotID(), SfxCallMode::SLOT | SfxCallMode::RECORD );
+        GetViewData().GetDispatcher().Execute( pPoor->GetSlotID(), SfxCallMode::SLOT );
     }
     ScDrawView* pDrView = GetScDrawView();
     if ( pDrView )
@@ -1481,10 +1492,10 @@ bool ScTabViewShell::TabKeyInput(const KeyEvent& rKEvt)
                         {
                             if( bShift )
                                 GetViewData().GetDispatcher().Execute( SID_CURSORENTERUP,
-                                            SfxCallMode::SLOT | SfxCallMode::RECORD );
+                                            SfxCallMode::SLOT );
                             else
                                 GetViewData().GetDispatcher().Execute( SID_CURSORENTERDOWN,
-                                            SfxCallMode::SLOT | SfxCallMode::RECORD );
+                                            SfxCallMode::SLOT );
                         }
                         else
                             UpdateInputHandler(true);
@@ -1555,7 +1566,7 @@ bool ScTabViewShell::TabKeyInput(const KeyEvent& rKEvt)
         }
         if ( nSlotId )
         {
-            GetViewData().GetDispatcher().Execute( nSlotId, SfxCallMode::SLOT | SfxCallMode::RECORD );
+            GetViewData().GetDispatcher().Execute( nSlotId, SfxCallMode::SLOT );
             bUsed = true;
         }
     }
@@ -1599,7 +1610,7 @@ bool ScTabViewShell::TabKeyInput(const KeyEvent& rKEvt)
         {
             sal_uInt16 nMode = GetLockedModifiers();
             LockModifiers(KEY_MOD1);
-            GetViewData().GetDispatcher().Execute( nSlotId, SfxCallMode::SLOT | SfxCallMode::RECORD );
+            GetViewData().GetDispatcher().Execute( nSlotId, SfxCallMode::SLOT );
             LockModifiers(nMode);
             bUsed = true;
         }
@@ -1748,7 +1759,7 @@ void ScTabViewShell::Construct( TriState nForceDesignMode )
                 if(mod->GetCurRefDlgId()==0)
                 {
                         pFirst->GetDispatcher()->Execute( SID_UPDATETABLINKS,
-                                            SfxCallMode::ASYNCHRON | SfxCallMode::RECORD );
+                                            SfxCallMode::ASYNCHRON );
                 }
             }
             else
@@ -1776,7 +1787,7 @@ void ScTabViewShell::Construct( TriState nForceDesignMode )
                 if(mod->GetCurRefDlgId()==0)
                 {
                     pFirst->GetDispatcher()->Execute( SID_REIMPORT_AFTER_LOAD,
-                                            SfxCallMode::ASYNCHRON | SfxCallMode::RECORD );
+                                            SfxCallMode::ASYNCHRON );
                 }
             }
         }

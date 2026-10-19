@@ -192,7 +192,6 @@ void SwFrameShell::Execute(SfxRequest &rReq)
     // commands are written for a single fly frame, so with several selected they do nothing.
     if (rSh.IsMultipleFlyFramesSelected() && nSlot != SID_ATTR_TRANSFORM)
     {
-        rReq.Ignore();
         return;
     }
 
@@ -228,7 +227,7 @@ void SwFrameShell::Execute(SfxRequest &rReq)
                 SfxStringItem aDefPage(FN_FORMAT_FRAME_DLG, u"columns"_ustr);
                 rSh.GetView().GetViewFrame().GetDispatcher()->ExecuteList(
                         FN_FORMAT_FRAME_DLG,
-                        SfxCallMode::SYNCHRON|SfxCallMode::RECORD,
+                        SfxCallMode::SYNCHRON,
                         { &aDefPage });
 
             }
@@ -320,7 +319,7 @@ void SwFrameShell::Execute(SfxRequest &rReq)
         }
         case SID_OPEN_XML_FILTERSETTINGS:
         {
-            HandleOpenXmlFilterSettings(rReq);
+            HandleOpenXmlFilterSettings();
         }
         break;
         case FN_WORDCOUNT_DIALOG:
@@ -836,10 +835,17 @@ void SwFrameShell::GetState(SfxItemSet& rSet)
     if (!rSh.IsFrameSelected())
         return;
 
-    // The frame commands act on one fly frame, so with several selected they are all disabled.
+    // The frame commands act on one fly frame, so with several selected they are disabled.
+    // Moving and resizing the whole selection stays available, so the transform slot keeps
+    // its default state.
     if (rSh.IsMultipleFlyFramesSelected())
     {
-        StateDisableItems(rSet);
+        SfxWhichIter aIter( rSet );
+        for (sal_uInt16 nWhich = aIter.FirstWhich(); nWhich; nWhich = aIter.NextWhich())
+        {
+            if (nWhich != SID_ATTR_TRANSFORM)
+                rSet.DisableItem(nWhich);
+        }
         return;
     }
 

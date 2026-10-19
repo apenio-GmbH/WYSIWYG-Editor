@@ -62,6 +62,10 @@ Bridge* attachRemoteBridge(QWebEnginePage* page,
 void addRemoteCoolParams(QUrl& url, const coda::DocumentData& document);
 } // namespace coda
 
+// The language of the user interface, such as "pt-BR", from the locale environment variables, or
+// "en-US" when they name none.
+std::string getUILanguage();
+
 // The user's portal "color-scheme" preference, cached on first call to avoid a
 // D-Bus round-trip per tab: true = dark, false = light, nullopt = no preference.
 std::optional<bool> portalPrefersDark();
@@ -176,6 +180,9 @@ public:
     QString composedWindowTitle() const;
 
     QString documentTitle() const { return _docTitle; }
+    // The full path of the local file the document is in. Empty for the starter screen, the
+    // welcome slideshow and a remote document.
+    QString documentPath() const;
     // "writer" / "calc" / "impress" / "draw" / "starter" / "welcome" / "other"
     QString documentType() const { return _docType; }
 

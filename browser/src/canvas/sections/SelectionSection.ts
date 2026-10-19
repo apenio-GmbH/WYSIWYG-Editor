@@ -38,7 +38,33 @@ abstract class SelectionSection extends CanvasSectionObject {
 		() => this.handles(),
 		(handle: SelectionHandle, towards: cool.Point, event: KeyboardEvent) =>
 			this.moveHandleBy(handle, towards, event),
+		(handle: SelectionHandle, event: KeyboardEvent) =>
+			this.pressTheHandle(handle, event),
 	);
+
+	/*
+		Space, Return or 0 on a handle the keyboard is on. On the handle above the selection, 0
+		brings the turn or the slant back to nought, and Space and Return switch between turning
+		and shearing, where both are offered, as a click on it does. Other handles take no such
+		key.
+	*/
+	private pressTheHandle(
+		handle: SelectionHandle,
+		event: KeyboardEvent,
+	): boolean {
+		if (handle.kind !== SelectionSection.turningKind) return false;
+
+		if (event.key === '0') {
+			const group = this.groupOf(handle);
+			if (group instanceof TurningHandle) group.backToNought(handle);
+			return true;
+		}
+
+		if (!this.shearingIsOffered()) return false;
+
+		this.switchTheHandleMode();
+		return true;
+	}
 
 	/// The handles as they were last worked out from the objects of the selection.
 	private known: SelectionHandle[] = [];
@@ -85,6 +111,258 @@ abstract class SelectionSection extends CanvasSectionObject {
 
 	/// The handle the mouse is over, marked so, or null while it is over none.
 	private hovered: string | null = null;
+
+	/*
+		The objects the handle above the selection shears, as a key of their ids in any order, or
+		null while it turns. It is kept apart from the section, which is made anew, and from the
+		order of the ids, which an answer from the engine may change, so the shearing mode stays
+		for as long as the same objects are selected, and any other selection turns.
+	*/
+	private static shearing: string | null = null;
+
+	/// The key of the selected objects, the same for the same objects in any order.
+	private keyOfTheSelection(): string {
+		return SelectionSection.keyOf(this.selectedObjects());
+	}
+
+	private static keyOf(objectIds: number[]): string {
+		return objectIds
+			.slice()
+			.sort((a: number, b: number) => a - b)
+			.join(',');
+	}
+
+	/// Those objects are selected here: where they are not the ones that were sheared, the
+	/// handle turns again, as it does for every new selection.
+	public static selectedHere(objectIds: number[]): void {
+		if (SelectionSection.shearing !== SelectionSection.keyOf(objectIds))
+			SelectionSection.shearing = null;
+	}
+
+	/// The mode the handle above the selection is in. It shears only where every selected object
+	/// may be sheared; otherwise turning is the only mode.
+	public handleMode(): 'turn' | 'shear' {
+		return SelectionSection.shearing === this.keyOfTheSelection() &&
+			this.shearingIsOffered()
+			? 'shear'
+			: 'turn';
+	}
+
+	/// Whether shearing is offered for this selection: where every object in it may be sheared.
+	public shearingIsOffered(): boolean {
+		return ObjectHandles.canBeSheared(this.selectedObjects());
+	}
+
+	/// Switches the handle above the selection to the other mode, where shearing is offered.
+	public switchTheHandleMode(): void {
+		if (!this.shearingIsOffered()) return;
+
+		SelectionSection.shearing =
+			this.handleMode() === 'shear' ? null : this.keyOfTheSelection();
+		this.containerObject.requestReDraw();
+	}
+
+	/// The kind of the handle beside the one above the selection that switches it to the other
+	/// mode.
+	public static readonly otherModeKind: string = 'othermode';
+
+	/*
+		Whether the handle that switches to the other mode is shown beside the one above the
+		selection: while the mouse is on that one and shearing is offered.
+	*/
+	private otherModeShown: boolean = false;
+
+	public showsTheOtherMode(): boolean {
+		return this.otherModeShown;
+	}
+
+	/*
+		The bar behind the handle above the selection and the handle of the other mode while that
+		one is shown, in canvas pixels: the two points its line runs between and how far the bar
+		reaches out from that line. Its ends are half circles around those points, as wide as the
+		bar. The points are the middles of the two handles, and beyond the one that shows the
+		slanted symbol of shearing the line goes on a little, since that symbol is wider than the
+		circle and needs more room to the end. Nothing while the handle of the other mode is not
+		shown.
+	*/
+	private barToTheOtherMode(): {
+		from: cool.Point;
+		to: cool.Point;
+		reach: number;
+	} | null {
+		if (!this.otherModeShown) return null;
+
+		const shown = this.handles();
+		const from = shown.find(
+			(handle: SelectionHandle) => handle.kind === SelectionSection.turningKind,
+		);
+		const to = shown.find(
+			(handle: SelectionHandle) =>
+				handle.kind === SelectionSection.otherModeKind,
+		);
+		if (!from || !to) return null;
+
+		const start = HandleLook.drawnAt(from);
+		const end = HandleLook.drawnAt(to);
+		const a = new cool.Point(start.vX, start.vY);
+		const b = new cool.Point(end.vX, end.vY);
+		const length = b.subtract(a).length();
+		if (!length) return null;
+
+		const size = ShapeHandlesSection.handleSize();
+		const along = b.subtract(a).multiplyBy((0.5 * size) / length);
+		const shearingFirst = this.handleMode() === 'shear';
+		return {
+			from: shearingFirst ? a.subtract(along) : a,
+			to: shearingFirst ? b : b.add(along),
+			reach: 1.25 * size,
+		};
+	}
+
+	/*
+		The middle of the bar to the handle of the other mode, the angle it lies at and its half
+		length, in canvas pixels; the half height is how far it reaches out.
+	*/
+	private static layOfTheBar(bar: {
+		from: cool.Point;
+		to: cool.Point;
+		reach: number;
+	}): { middle: cool.Point; turn: number; halfLength: number } {
+		const way = bar.to.subtract(bar.from);
+		return {
+			middle: bar.from.add(way.multiplyBy(0.5)),
+			turn: Math.atan2(way.y, way.x),
+			halfLength: way.length() / 2 + bar.reach,
+		};
+	}
+
+	/// Whether that point on the canvas lies on the bar to the handle of the other mode: no
+	/// further from the line between the two middles than the bar reaches out.
+	private onTheBarToTheOtherMode(mouse: cool.Point): boolean {
+		const bar = this.barToTheOtherMode();
+		if (!bar) return false;
+
+		const way = bar.to.subtract(bar.from);
+		const length = way.length();
+		if (!length) return false;
+
+		const along = Math.max(
+			0,
+			Math.min(length, mouse.subtract(bar.from).dot(way) / length),
+		);
+		const nearest = bar.from.add(way.multiplyBy(along / length));
+		return mouse.distanceTo(nearest) <= bar.reach;
+	}
+
+	/*
+		Draws the bar to the handle of the other mode, behind the handles, where it is shown: a
+		rectangle along the upper side with half circles for ends, filled and edged as a handle
+		under the mouse is, as both handles on it are drawn.
+	*/
+	private drawTheBarToTheOtherMode(): void {
+		const bar = this.barToTheOtherMode();
+		if (!bar) return;
+
+		const lay = SelectionSection.layOfTheBar(bar);
+		const width = lay.halfLength;
+		const height = bar.reach;
+		const corner = height;
+
+		this.context.save();
+		this.context.translate(lay.middle.x, lay.middle.y);
+		this.context.rotate(lay.turn);
+		this.context.beginPath();
+		this.context.moveTo(-width + corner, -height);
+		this.context.arcTo(width, -height, width, height, corner);
+		this.context.arcTo(width, height, -width, height, corner);
+		this.context.arcTo(-width, height, -width, -height, corner);
+		this.context.arcTo(-width, -height, width, -height, corner);
+		this.context.closePath();
+		this.context.fillStyle = HandleLook.colourOfTheKind.turning;
+		this.context.strokeStyle = SelectionSection.underTheMouse(
+			HandleLook.colourOfTheKind.turning,
+		);
+		this.context.lineWidth = 2 * app.dpiScale;
+		this.context.fill();
+		this.context.stroke();
+		this.context.restore();
+	}
+
+	/// The wait before the handle of the other mode comes up, while it runs.
+	private otherModeWait: any = null;
+
+	/// How long the mouse rests on the handle above the selection before the handle of the other
+	/// mode comes up, in milliseconds (vectorOtherModeDelay).
+	private static otherModeDelay(): number {
+		const delay = window.prefs?.getNumber('vectorOtherModeDelay', 2000) ?? 2000;
+		return delay >= 0 ? delay : 2000;
+	}
+
+	/// Puts the handle of the other mode away, and calls off a wait for it.
+	private dropTheOtherMode(): void {
+		if (this.otherModeWait !== null) {
+			app.timerRegistry.clearTimeout(this.otherModeWait);
+			this.otherModeWait = null;
+		}
+		if (this.otherModeShown) {
+			this.otherModeShown = false;
+			this.containerObject.requestReDraw();
+		}
+	}
+
+	/*
+		Follows the mouse for the switch to the other mode. Once the mouse has rested on the handle
+		above the selection for a while, the handle of the other mode comes up beside it, with a
+		bar behind both, and stays while the mouse is on the bar, given as the point on the
+		canvas. A press on the handle, which begins a drag, comes before that, so a drag starts
+		without the bar. Reaching that handle switches the mode, and it goes again with the bar,
+		so the mouse stands beside the handle and nothing switches again until it comes back onto
+		it. Answers whether the mode was switched.
+	*/
+	private followTheOtherMode(
+		over: SelectionHandle | undefined,
+		mouse?: cool.Point,
+	): boolean {
+		if (over?.kind === SelectionSection.otherModeKind) {
+			this.dropTheOtherMode();
+			this.switchTheHandleMode();
+			return true;
+		}
+
+		const onTheHandle =
+			over?.kind === SelectionSection.turningKind &&
+			!over.deactivated &&
+			!this.interaction &&
+			this.shearingIsOffered();
+
+		if (this.otherModeShown) {
+			const onTheBar =
+				!over &&
+				!!mouse &&
+				!this.interaction &&
+				this.onTheBarToTheOtherMode(mouse);
+			if (!onTheHandle && !onTheBar) this.dropTheOtherMode();
+			return false;
+		}
+
+		if (!onTheHandle) {
+			this.dropTheOtherMode();
+			return false;
+		}
+
+		if (this.otherModeWait === null)
+			this.otherModeWait = app.timerRegistry.setTimeout(
+				'otherMode',
+				() => {
+					this.otherModeWait = null;
+					if (this.interaction) return;
+					this.otherModeShown = true;
+					this.containerObject.requestReDraw();
+				},
+				SelectionSection.otherModeDelay(),
+			);
+		return false;
+	}
 
 	/// What a drag is doing to the selection, null while nothing is being dragged.
 	private interaction: SelectionInteraction | null = null;
@@ -271,9 +549,9 @@ abstract class SelectionSection extends CanvasSectionObject {
 	public redraw(): void {
 		this.tellWhoStandsIn();
 
-		// The button of a diagram and the player of a video are things of their own beside the
-		// canvas, so they are moved rather than drawn along with the rest.
-		GraphicSelection.diagramButton?.follow();
+		// The buttons beside the bands and the player of a video are things of their own beside
+		// the canvas, so they are moved rather than drawn along with the rest.
+		GraphicSelection.followTheGroupButtons();
 		GraphicSelection.followThePlayer();
 
 		this.containerObject.requestReDraw();
@@ -415,6 +693,11 @@ abstract class SelectionSection extends CanvasSectionObject {
 	*/
 	isHit(point: number[]): boolean {
 		if (this.handleAt(point[0], point[1]) !== undefined) return true;
+
+		// The bar to the handle of the other mode belongs to the section while it is shown, so
+		// the mouse stays here on the way along it.
+		if (this.onTheBarToTheOtherMode(new cool.Point(point[0], point[1])))
+			return true;
 
 		return this.groups().some((group: HandleGroup) =>
 			group.takesAPress(point[0], point[1]),
@@ -762,71 +1045,74 @@ abstract class SelectionSection extends CanvasSectionObject {
 	}
 
 	/*
-		The four places the band round that object goes through, in twips, in the order they go
-		round it. For the object that is itself selected they are the places the framing handles
-		stand on, so its band follows a drag as they do; for one of several selected objects they
-		are the corners of its box with the running drag laid over them, which does the same; for
-		a group holding what is selected they are the corners of the box that group takes up.
+		The four places the band round that group or diagram goes through, in twips, in the order
+		they go round it: the corners of the upright box round its frame. For the one that is
+		selected that frame is the selection's, the dashed one the handles stand on; for a group
+		holding what is selected it is the group's own mapping. So the band is upright and holds
+		the frame, however that is turned.
 	*/
 	private surroundPlaces(objectId: number): cool.SimplePoint[] {
 		const objects = this.selectedObjects();
+		const frame =
+			objects.length === 1 && objects[0] === objectId
+				? this.squareNow()
+				: RenderGeometrySection.transformOf(objectId);
 
-		if (objects.length === 1 && objects[0] === objectId) {
-			const framing = ['1', '3', '8', '6']
-				.map((kind: string) =>
-					this.handles().find(
-						(handle: SelectionHandle) => handle.kind === kind,
-					),
-				)
-				.filter((handle): handle is SelectionHandle => handle !== undefined)
-				.map(
-					(handle: SelectionHandle) =>
-						new cool.SimplePoint(handle.point.x, handle.point.y),
-				);
-
-			if (framing.length === 4) return framing;
-		}
-
-		const box = this.boxAround(
-			RenderGeometrySection.theOnesThatDraw([objectId]),
-		);
+		// Without a mapping of its own the band goes round the boxes of what it holds.
+		const box = frame
+			? cool.Range2D.fromPoints([
+					frame.apply(0, 0),
+					frame.apply(1, 0),
+					frame.apply(1, 1),
+					frame.apply(0, 1),
+				])
+			: this.boxAround(RenderGeometrySection.theOnesThatDraw([objectId]));
 		if (!box) return [];
 
-		const corners = [
-			new cool.Point(box.minX, box.minY),
-			new cool.Point(box.maxX, box.minY),
-			new cool.Point(box.maxX, box.maxY),
-			new cool.Point(box.minX, box.maxY),
+		return [
+			new cool.SimplePoint(box.minX, box.minY),
+			new cool.SimplePoint(box.maxX, box.minY),
+			new cool.SimplePoint(box.maxX, box.maxY),
+			new cool.SimplePoint(box.minX, box.maxY),
 		];
-		const drag = objects.includes(objectId)
-			? this.interaction?.ghostTransformation()
-			: null;
-
-		return corners.map((corner: cool.Point) => {
-			const at = drag ? drag.apply(corner.x, corner.y) : corner;
-			return new cool.SimplePoint(at.x, at.y);
-		});
 	}
 
 	/*
-		The box the band of the diagram goes round, in core pixels, or nothing where the selection
-		sits in no diagram. Whatever stands beside that band is placed against this box, so that
-		it sits beside what is drawn and not beside something else.
+		The groups and diagrams whose bands take a column of buttons beside them. Where the
+		selection sits inside a group or a diagram it is the outermost of those, the one the page
+		holds, whatever the depth. Otherwise it is every selected group and diagram, which then
+		stand side by side on the page.
 	*/
-	public surroundBox(): number[] | undefined {
-		const diagram = this.surroundObjects().find(
-			(objectId: number) => RenderGeometrySection.objectOf(objectId)?.isDiagram,
-		);
-		if (diagram === undefined) return undefined;
+	public bandsWithButtons(): number[] {
+		const objects = this.selectedObjects();
+		if (!objects.length) return [];
 
-		const places = this.surroundPlaces(diagram);
+		let outermost: number | undefined;
+		for (
+			let walking = RenderGeometrySection.parentOf(objects[0]), guard = 0;
+			walking && guard < 100;
+			walking = RenderGeometrySection.parentOf(walking), ++guard
+		)
+			outermost = walking;
+		if (outermost !== undefined) return [outermost];
+
+		return objects.filter((objectId: number) =>
+			RenderGeometrySection.holdsObjects(objectId),
+		);
+	}
+
+	/*
+		The box the band round that group or diagram goes round, in core pixels, or nothing where
+		it has none. Whatever stands beside that band is placed against this box, so that it sits
+		beside what is drawn and not beside something else.
+	*/
+	public bandBox(objectId: number): cool.Range2D | undefined {
+		const places = this.surroundPlaces(objectId);
 		if (places.length !== 4) return undefined;
 
-		const box = cool.Range2D.fromPoints(
+		return cool.Range2D.fromPoints(
 			places.map((place) => new cool.Point(place.pX, place.pY)),
 		);
-
-		return [box.minX, box.minY, box.width, box.height];
 	}
 
 	/*
@@ -909,8 +1195,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 	/*
 		Draws the band round one group or diagram: two rounded paths, the inner one through the
 		places the band goes round and the outer one that much further out, with the space between
-		them filled. Where the band goes round what is selected those places follow whatever is
-		being done to it, so the band turns with a turn and grows with a scale while a drag runs.
+		them filled.
 
 		Everything it is drawn with comes from the one color of its kind: the fill runs from the
 		darker of that color through it to the lighter, and both bounds are drawn in the darker.
@@ -967,8 +1252,14 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.context.stroke();
 	}
 
-	/// Draws a band for every group the selection sits in, the outermost first.
+	/*
+		Draws a band for every group the selection sits in, the outermost first. While a drag
+		runs there is none, as there are no buttons beside it then: the band stands where the
+		objects stand once the drag is over.
+	*/
 	private drawTheSurrounds(): void {
+		if (this.isDragged()) return;
+
 		const holding = this.surroundObjects();
 		if (!holding.length) return;
 
@@ -1046,17 +1337,22 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.context.save();
 		this.context.setTransform(1, 0, 0, 1, 0, 0);
 
+		this.drawTheBarToTheOtherMode();
+
 		const size = ShapeHandlesSection.handleSize();
 		for (const handle of this.handles()) {
 			const group = this.groupOf(handle);
 			if (!group) continue;
 
 			const point = HandleLook.drawnAt(handle);
+			// The handle of the other mode is drawn as one under the mouse, as large as the
+			// handle it stands beside.
 			const hovered =
 				(!handle.deactivated &&
 					handle.name !== '' &&
 					handle.name === this.hovered) ||
-				handle.lit === true;
+				handle.lit === true ||
+				handle.kind === SelectionSection.otherModeKind;
 
 			/*
 				The handle the keyboard is on is drawn a third larger, at the larger half of its
@@ -1106,6 +1402,325 @@ abstract class SelectionSection extends CanvasSectionObject {
 		}
 
 		this.context.restore();
+
+		this.drawTheMarks();
+		this.drawTheReading();
+	}
+
+	/*
+		Draws the marks of a turn or a shear on the circle the handle runs on: a small triangle
+		pointing to the middle, with what it stands for written inside it. They lie over
+		everything else, since the handle is taken to them.
+	*/
+	private drawTheMarks(): void {
+		const marks = this.interaction?.marks() ?? [];
+		if (!marks.length) return;
+
+		this.context.save();
+		this.context.setTransform(1, 0, 0, 1, 0, 0);
+		this.context.lineWidth = 1;
+		const font = Math.round(11 * app.dpiScale) + 'px sans-serif';
+		this.context.font = font;
+		this.context.textAlign = 'center';
+		this.context.textBaseline = 'middle';
+
+		// The mark the mouse is on is marked as a handle under the mouse is: a quarter larger,
+		// grown from its middle, with its edge drawn again in the color kept for it.
+		const mouse = this.lastMoved?.at;
+
+		for (const mark of marks) {
+			const hit = !!mouse && SelectionInteraction.isOnTheMark(mark, mouse);
+			const middle = mark.corners
+				.reduce((sum: cool.Point, corner: cool.Point) => sum.add(corner))
+				.divideBy(mark.corners.length);
+			const corners = mark.corners.map((corner: cool.Point) => {
+				const grown = hit
+					? middle.add(corner.subtract(middle).multiplyBy(1.25))
+					: corner;
+				return new cool.SimplePoint(grown.x, grown.y);
+			});
+
+			this.context.beginPath();
+			corners.forEach((corner: cool.SimplePoint, at: number) =>
+				at
+					? this.context.lineTo(corner.vX, corner.vY)
+					: this.context.moveTo(corner.vX, corner.vY),
+			);
+			this.context.closePath();
+			this.context.fillStyle = HandleLook.colourOfTheKind.turning;
+			this.context.strokeStyle = HandleLook.outlineColour;
+			this.context.fill();
+			this.context.stroke();
+
+			if (hit) {
+				this.context.strokeStyle = SelectionSection.underTheMouse(
+					String(this.context.fillStyle),
+				);
+				this.context.lineWidth = 2 * app.dpiScale;
+				this.context.stroke();
+				this.context.lineWidth = 1;
+			}
+
+			// The label stands upright in the middle of the triangle, in bold on its white fill.
+			const written = new cool.SimplePoint(middle.x, middle.y);
+			this.context.font = 'bold ' + font;
+			this.context.fillStyle = HandleLook.outlineColour;
+			this.context.fillText(mark.label, written.vX, written.vY);
+			this.context.font = font;
+		}
+
+		this.context.restore();
+	}
+
+	/*
+		Writes an angle beside where it is changed, below and to the right, where the pointer
+		leaves it free: what the running interaction reads beside the mouse, and while nothing
+		runs, the turn or the slant beside the handle above the selection when the keyboard is
+		on it. It has a light edge, so it reads on any page. Each of the two can be switched off in
+		the client's preferences: vectorAngleAtMouse and vectorAngleAtHandle.
+	*/
+	private drawTheReading(): void {
+		let reading: string | null = null;
+		let x = 0;
+		let y = 0;
+
+		if (this.interaction) {
+			const mouse = this.lastMoved?.at;
+			if (!mouse || !window.prefs?.getBoolean('vectorAngleAtMouse', true))
+				return;
+			reading = this.interaction.reading();
+			const at = new cool.SimplePoint(mouse.x, mouse.y);
+			x = at.vX + 16 * app.dpiScale;
+			y = at.vY + 24 * app.dpiScale;
+		} else {
+			const handle = this.travel.activeHandle() as SelectionHandle | undefined;
+			if (
+				handle?.kind !== SelectionSection.turningKind ||
+				handle.deactivated ||
+				!window.prefs?.getBoolean('vectorAngleAtHandle', true)
+			)
+				return;
+			reading = this.readingOfTheHandleAbove(handle);
+			const at = HandleLook.drawnAt(handle);
+			const size = ShapeHandlesSection.handleSize();
+			x = at.vX + size;
+			y = at.vY + size;
+		}
+		if (!reading) return;
+
+		this.context.save();
+		this.context.setTransform(1, 0, 0, 1, 0, 0);
+		this.context.font = Math.round(11 * app.dpiScale) + 'px sans-serif';
+		this.context.textAlign = 'left';
+		this.context.textBaseline = 'middle';
+		this.context.strokeStyle = '#FFFFFF';
+		this.context.lineWidth = 3;
+		this.context.strokeText(reading, x, y);
+		this.context.fillStyle = HandleLook.outlineColour;
+		this.context.fillText(reading, x, y);
+		this.context.restore();
+	}
+
+	/// The angle of the selection in the mode of the handle above it: the turn as the engine
+	/// counts it, or the slant.
+	private readingOfTheHandleAbove(handle: SelectionHandle): string {
+		return this.handleMode() === 'shear'
+			? ShearingInteraction.readingOf(
+					ShearingInteraction.slantOf(this, handle.turnedBy ?? 0),
+				)
+			: TurningInteraction.readingOf(this.turnOfTheSelection());
+	}
+
+	/// Whether the selection is one object that draws itself, not several and not a group.
+	public isOneObject(): boolean {
+		const objects = this.selectedObjects();
+		const drawing = RenderGeometrySection.theOnesThatDraw(
+			RenderGeometrySection.standingFor(objects),
+		);
+		return (
+			objects.length === 1 && drawing.length === 1 && drawing[0] === objects[0]
+		);
+	}
+
+	/// The turn of a mapping: the angle of its across axis, as the canvas counts angles.
+	private static turnOfTheMapping(mapping: cool.Matrix2D): number {
+		return Math.atan2(mapping.b, mapping.a);
+	}
+
+	/*
+		The slant of a mapping: the angle its axis down from the upper side stands at against the
+		right angle to that side, in the slant's own coordinates. On a mapping turned over that
+		axis points up, and the slant is measured against its own way.
+	*/
+	private static slantOfTheMapping(mapping: cool.Matrix2D): number {
+		const turn = SelectionSection.turnOfTheMapping(mapping);
+		const across = mapping.c * Math.cos(turn) + mapping.d * Math.sin(turn);
+		const down = -mapping.c * Math.sin(turn) + mapping.d * Math.cos(turn);
+		return down >= 0 ? Math.atan2(-across, down) : Math.atan2(across, -down);
+	}
+
+	/*
+		The turns or the slants of the objects that draw for this selection, members of groups
+		included: whether any of them has one, and the one all of them share, or nothing where
+		they differ, in radians. The engine keeps angles in hundredths of a degree, so a little is
+		allowed for.
+	*/
+	public anglesOf(kind: 'turn' | 'slant'): {
+		any: boolean;
+		shared: number | null;
+	} {
+		const angles = RenderGeometrySection.theOnesThatDraw(
+			RenderGeometrySection.standingFor(this.selectedObjects()),
+		)
+			.map((objectId: number) => RenderGeometrySection.transformOf(objectId))
+			.filter((mapping) => !!mapping)
+			.map((mapping) =>
+				kind === 'turn'
+					? SelectionSection.turnOfTheMapping(mapping as cool.Matrix2D)
+					: SelectionSection.slantOfTheMapping(mapping as cool.Matrix2D),
+			);
+		if (!angles.length) return { any: false, shared: null };
+
+		const apart = (one: number, other: number) =>
+			Math.abs(Math.sin((one - other) / 2));
+		const any = angles.some((angle: number) => apart(angle, 0) > 0.0005);
+		const shared = angles.every(
+			(angle: number) => apart(angle, angles[0]) < 0.001,
+		);
+		return { any, shared: shared ? angles[0] : null };
+	}
+
+	/*
+		The mapping that stands for several objects or a group where they all have the same turn
+		and the same slant: the first one's. Nothing where they differ.
+	*/
+	public mappingTheyShare(): cool.Matrix2D | null {
+		if (this.anglesOf('turn').shared === null) return null;
+		if (this.anglesOf('slant').shared === null) return null;
+
+		const first = RenderGeometrySection.theOnesThatDraw(
+			RenderGeometrySection.standingFor(this.selectedObjects()),
+		)[0];
+		return first === undefined
+			? null
+			: (RenderGeometrySection.transformOf(first) ?? null);
+	}
+
+	/*
+		Takes the turns away by the 0 key, the 0 of the row of digits or of the number pad: every
+		turn where some object is turned, otherwise every slant where some object is slanted. A 0
+		that finds neither is left alone and goes on as any other key. Answers whether the key was
+		used.
+	*/
+	public resetByKey(event: KeyboardEvent): boolean {
+		if (event.code !== 'Digit0' && event.code !== 'Numpad0') return false;
+		if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
+			return false;
+
+		if (this.anglesOf('turn').any && this.takeTheAnglesAway('turn'))
+			return true;
+		return this.anglesOf('slant').any && this.takeTheAnglesAway('slant');
+	}
+
+	/*
+		Takes the turn or the slant away from every object that draws for the selection, members
+		of groups included, each by its own angle around its own middle. The engine is sent every
+		object's new mapping as one change, and each object's own change is laid on it here at
+		once, so a further key reads the objects as they will be. The frame is made anew from the
+		objects: a single object's from its mapping, that of several objects or a group as their
+		upright box until the engine has answered. Answers whether any object was changed.
+	*/
+	private takeTheAnglesAway(kind: 'turn' | 'slant'): boolean {
+		const reached = new Map<number, cool.Matrix2D>();
+		const changes = new Map<number, cool.Matrix2D>();
+		for (const objectId of RenderGeometrySection.theOnesThatDraw(
+			RenderGeometrySection.standingFor(this.selectedObjects()),
+		)) {
+			const mapping = RenderGeometrySection.transformOf(objectId);
+			if (!mapping) continue;
+
+			// An object that may not be turned keeps its turn, one that may not be sheared its
+			// slant.
+			const object = RenderGeometrySection.objectOf(objectId);
+			if (kind === 'turn' ? object?.cannotBeTurned : object?.cannotBeSheared)
+				continue;
+
+			const middle = mapping.apply(0.5, 0.5);
+			const change =
+				kind === 'slant'
+					? SelectionSection.slantTakenAway(mapping, middle)
+					: cool.Matrix2D.IDENTITY.rotateAround(
+							middle.x,
+							middle.y,
+							-SelectionSection.turnOfTheMapping(mapping),
+						);
+			changes.set(objectId, change);
+			reached.set(objectId, mapping.then(change));
+		}
+
+		if (!reached.size) return false;
+
+		ShearingInteraction.forgetTheKeys();
+		TurningInteraction.forgetTheKeys();
+		SelectionSection.sendMappings(reached, kind === 'turn' ? 'turn' : 'shear');
+
+		// A tied connector is laid out anew by the engine between what it is tied to.
+		for (const [objectId, change] of changes)
+			if (!ObjectHandles.isATiedConnector(objectId))
+				RenderGeometrySection.changeObject(objectId, change);
+
+		if (this.isOneObject()) this.square = null;
+		else {
+			this.frameFollowsTheObjects = true;
+			this.square = null;
+		}
+		this.known = this.handlesOfTheGroups();
+		this.redraw();
+		return true;
+	}
+
+	/*
+		The change that takes the slant of that mapping away around that point: in the frame along
+		its upper side, the upper side stays and the axis down from it is stood at a right angle
+		to it, keeping its length.
+	*/
+	private static slantTakenAway(
+		mapping: cool.Matrix2D,
+		around: cool.Point,
+	): cool.Matrix2D {
+		const turn = SelectionSection.turnOfTheMapping(mapping);
+		const cos = Math.cos(turn);
+		const sin = Math.sin(turn);
+		const frame = new cool.Matrix2D(cos, sin, -sin, cos, around.x, around.y);
+		const back = frame.invert();
+		const across = mapping.c * cos + mapping.d * sin;
+		const down = -mapping.c * sin + mapping.d * cos;
+		if (!back || !down) return cool.Matrix2D.IDENTITY;
+
+		const length = Math.hypot(across, down);
+		const upright = new cool.Matrix2D(
+			1,
+			0,
+			-across / down,
+			(Math.sign(down) * length) / down,
+			0,
+			0,
+		);
+		return back.then(upright).then(frame);
+	}
+
+	/*
+		The angle the selection stands at, as the canvas counts angles: the one the turn keys left
+		it at, where they did; for several objects or a group the turn they all share, where they
+		do; otherwise the one its square stands at, which for a single object also knows whether
+		it was turned over.
+	*/
+	public turnOfTheSelection(): number {
+		const byKeys = TurningInteraction.keysStillHold(this);
+		if (byKeys) return (-byKeys.stands * Math.PI) / 180;
+
+		const shared = this.isOneObject() ? null : this.anglesOf('turn').shared;
+		return shared ?? this.squareNow()?.rotation() ?? 0;
 	}
 
 	/*
@@ -1453,7 +2068,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 		it is worked out from the boxes they carry, which is the same box the handles are worked
 		out from; otherwise it is the one the engine sends with the selection.
 	*/
-	private boxOfTheSelection(): number[] | undefined {
+	private boxOfTheSelection(): cool.Range2D | undefined {
 		const box = this.boxAround(
 			RenderGeometrySection.theOnesThatDraw(this.selectedObjects()),
 		);
@@ -1461,12 +2076,12 @@ abstract class SelectionSection extends CanvasSectionObject {
 
 		const scale = app.twipsToPixels;
 
-		return [
+		return new cool.Range2D(
 			box.minX * scale,
 			box.minY * scale,
-			box.width * scale,
-			box.height * scale,
-		];
+			box.maxX * scale,
+			box.maxY * scale,
+		);
 	}
 
 	/*
@@ -1500,14 +2115,14 @@ abstract class SelectionSection extends CanvasSectionObject {
 	/// the selected objects, or where this section stands while no object is known.
 	public selectionCorner(): number[] {
 		const box = this.boxOfTheSelection();
-		return box ? [box[0], box[1]] : this.position;
+		return box ? [box.minX, box.minY] : this.position;
 	}
 
 	/// How wide and how high the selection is, in core pixels: the box round what is drawn of
 	/// the selected objects, or the size of this section while no object is known.
 	public selectionSize(): number[] {
 		const box = this.boxOfTheSelection();
-		return box ? [box[2], box[3]] : this.size;
+		return box ? [box.width, box.height] : this.size;
 	}
 
 	/*
@@ -1547,13 +2162,59 @@ abstract class SelectionSection extends CanvasSectionObject {
 		if (!ObjectHandles.canBeMoved(this.selectedObjects())) return;
 
 		const step = HandleTravel.stepFor(event);
-		const matrix = cool.Matrix2D.IDENTITY.translate(
-			towards.x * step,
-			towards.y * step,
+		const by = this.heldInsideTheLawn(
+			new cool.Point(towards.x * step, towards.y * step),
 		);
+		if (!by.x && !by.y) return;
+
+		const matrix = cool.Matrix2D.IDENTITY.translate(by.x, by.y);
 
 		SelectionSection.sendTransform(this.selectedObjects(), matrix, 'move');
 		this.layTheChangeOn(matrix);
+
+		// The view follows every step, a key held down included.
+		GraphicSelection.showTheObjects(this.selectedObjects());
+	}
+
+	/*
+		How far the selection may be moved of that much, in twips, so that its box does not go
+		past the lawn the page gives, and no object goes where it cannot be reached. The lawn the
+		view shows grows round objects lying further out, so it is not what is held to, or a
+		move would push it on and on. A move back towards the page is never held: a selection that
+		lies outside already may come in, and is not pulled in by the hold.
+	*/
+	public heldInsideTheLawn(by: cool.Point): cool.Point {
+		const lawn = ViewLayoutVector.lawnOfThePageInView();
+		const box = this.boxAround(
+			RenderGeometrySection.theOnesThatDraw(this.selectedObjects()),
+		);
+		if (!lawn || !box) return by;
+
+		// On an axis where the selection is larger than the lawn it moves freely.
+		const held = (
+			move: number,
+			least: number,
+			most: number,
+			larger: boolean,
+		): number =>
+			larger
+				? move
+				: Math.min(Math.max(move, Math.min(least, 0)), Math.max(most, 0));
+
+		return new cool.Point(
+			held(
+				by.x,
+				lawn.minX - box.minX,
+				lawn.maxX - box.maxX,
+				box.width > lawn.width,
+			),
+			held(
+				by.y,
+				lawn.minY - box.minY,
+				lawn.maxY - box.maxY,
+				box.height > lawn.height,
+			),
+		);
 	}
 
 	/// Lays a change a key made over the objects, as the end of a drag does with its own.
@@ -1573,25 +2234,71 @@ abstract class SelectionSection extends CanvasSectionObject {
 	private square: cool.Matrix2D | null = null;
 
 	public squareNow(): cool.Matrix2D | undefined {
+		// After a change that turned or sheared several objects or a group, and until the engine
+		// has answered for all it touched, the frame is their upright box, made afresh each time.
+		if (this.frameFollowsTheObjects) {
+			if (this.isWaitingForTheEngine()) {
+				const box = this.uprightBoxOfTheObjects();
+				return box ? cool.Matrix2D.fromRange(box) : undefined;
+			}
+			this.frameFollowsTheObjects = false;
+			this.square = null;
+		}
 		if (this.square) return this.square;
 
 		const objects = this.selectedObjects();
 		if (!objects.length) return undefined;
 
+		// One object or one group is framed by its own mapping from the engine, several objects
+		// by the upright box round them.
 		if (objects.length === 1) {
 			this.square = RenderGeometrySection.transformOf(objects[0]);
 			return this.square ?? undefined;
 		}
 
-		const box = this.boxAround(RenderGeometrySection.theOnesThatDraw(objects));
-		if (!box || !box.width || !box.height) return undefined;
+		const box = this.uprightBoxOfTheObjects();
+		this.square = box ? cool.Matrix2D.fromRange(box) : null;
+		return this.square ?? undefined;
+	}
 
-		this.square = cool.Matrix2D.fromRange(box);
-		return this.square;
+	/// The upright box round the objects that draw for the selection, in twips, or nothing where
+	/// it has no size.
+	private uprightBoxOfTheObjects(): cool.Range2D | undefined {
+		const box = this.boxAround(
+			RenderGeometrySection.theOnesThatDraw(this.selectedObjects()),
+		);
+		return box && box.width && box.height ? box : undefined;
 	}
 
 	public forgetTheSquare(): void {
 		this.square = null;
+		this.frameFollowsTheObjects = false;
+	}
+
+	/*
+		Whether the frame of several objects or a group is the upright box round them, after a
+		change that turned or sheared them, until the engine has answered for it.
+	*/
+	private frameFollowsTheObjects: boolean = false;
+
+	/// Whether a change laid on here still waits for the engine's answer for anything it touched:
+	/// the objects that draw and the groups above them.
+	private isWaitingForTheEngine(): boolean {
+		return RenderGeometrySection.theOnesAChangeTouches(
+			this.selectedObjects(),
+		).some((objectId: number) =>
+			RenderGeometrySection.awaitsAnAnswer(objectId),
+		);
+	}
+
+	/*
+		Whether that change leaves the frame upright rather than taking it along: where it turns
+		or shears several objects or a group, rather than only moving, scaling or mirroring them
+		along the page's own axes.
+	*/
+	private keepsAnUprightFrame(matrix: cool.Matrix2D | null): boolean {
+		if (!matrix || this.isOneObject()) return false;
+		return Math.abs(matrix.b) > 1e-9 || Math.abs(matrix.c) > 1e-9;
 	}
 
 	/*
@@ -1603,9 +2310,18 @@ abstract class SelectionSection extends CanvasSectionObject {
 		if (!matrix) return;
 		if (!SelectionSection.withinReason(this.selectedObjects(), matrix)) return;
 
-		// The square goes through the change along with the objects.
+		/*
+			The square goes through the change along with the objects. Several objects or a group
+			keep an upright frame, though: after a change that turns or shears them it is the
+			upright box round the objects, as their band is, until the engine has answered and the
+			square is made from what it says.
+		*/
+		const keepsUpright = this.keepsAnUprightFrame(matrix);
 		const square = this.squareNow();
-		if (square) this.square = square.then(matrix);
+		if (keepsUpright) {
+			this.frameFollowsTheObjects = true;
+			this.square = null;
+		} else if (square) this.square = square.then(matrix);
 
 		/*
 			The change goes to the objects that draw, and to the groups above them as well: a
@@ -1631,6 +2347,9 @@ abstract class SelectionSection extends CanvasSectionObject {
 				this.connectorsAwaitingAnswer.add(connectorId);
 			this.tellWhoStandsIn();
 		}
+
+		// The handles are laid on that upright frame at once.
+		if (keepsUpright) this.known = this.handlesOfTheGroups();
 
 		app.sectionContainer?.requestReDraw();
 	}
@@ -1664,15 +2383,22 @@ abstract class SelectionSection extends CanvasSectionObject {
 		The mapping travels whole rather than as the change alone, because the client is the one
 		that holds what the object is drawn by: the engine would have to read that again and the
 		two could then disagree.
+
+		Where mappings are given for objects, the change is laid over those instead of over what
+		the objects are drawn by now.
 	*/
 	public static sendTransform(
 		objectIds: number[],
 		matrix: cool.Matrix2D,
 		what: string,
+		from?: Map<number, cool.Matrix2D>,
 	): void {
 		if (!SelectionSection.withinReason(objectIds, matrix)) return;
 
-		const mappings: string[] = [];
+		// A change worked out from what the objects are drawn by now ends a slant keys gave, and
+		// any change ends a turn they gave, which a turn by a key takes up again after it.
+		if (!from) ShearingInteraction.forgetTheKeys();
+		TurningInteraction.forgetTheKeys();
 
 		/*
 			A group is named to the engine as the objects it holds. It has no mapping of its own
@@ -1680,36 +2406,50 @@ abstract class SelectionSection extends CanvasSectionObject {
 			what is inside it - so naming the group would lose the turn. Naming the objects
 			cannot: each of them has a mapping and takes it whole.
 		*/
+		const reached = new Map<number, cool.Matrix2D>();
 		for (const objectId of RenderGeometrySection.theOnesThatDraw(
 			RenderGeometrySection.standingFor(objectIds),
 		)) {
-			const mapping = RenderGeometrySection.transformOf(objectId);
-			if (!mapping) continue;
+			const mapping =
+				from?.get(objectId) ?? RenderGeometrySection.transformOf(objectId);
 
 			// The change the drag stands for, laid over what the object is drawn by now.
-			const reached = mapping.then(matrix).toArray();
+			if (mapping) reached.set(objectId, mapping.then(matrix));
+		}
 
-			/*
-				A mapping that turns the object over travels whole, turn over and all. The object
-				lays that out itself, and it does it in its own frame: it builds its rectangle
-				unturned at the origin, mirrors it there, and only then shears, turns and moves
-				it. Asking for the turn over apart from the mapping would mean naming a line for
-				it, and a line that does not lie along one of the page's own two is not one the
-				drawing layer can follow.
-			*/
+		SelectionSection.sendMappings(reached, what);
+	}
+
+	/*
+		Hands the engine the mapping each of those objects is to be drawn by, as one change named
+		by the last word.
+
+		A mapping that turns the object over travels whole, turn over and all. The object lays that
+		out itself, and it does it in its own frame: it builds its rectangle unturned at the origin,
+		mirrors it there, and only then shears, turns and moves it. Asking for the turn over apart
+		from the mapping would mean naming a line for it, and a line that does not lie along one of
+		the page's own two is not one the drawing layer can follow.
+	*/
+	public static sendMappings(
+		reached: Map<number, cool.Matrix2D>,
+		what: string,
+	): void {
+		const mappings: string[] = [];
+		for (const [objectId, mapping] of reached)
 			mappings.push(
 				String(objectId) +
 					',' +
-					reached.map((value: number) => value.toFixed(4)).join(','),
+					mapping
+						.toArray()
+						.map((value: number) => value.toFixed(4))
+						.join(','),
 			);
-		}
 
 		if (!mappings.length) return;
 
-		const message =
-			'setobjecttransform to=' + mappings.join(';') + ' as=' + what;
-
-		app.socket.sendMessage(message);
+		app.socket.sendMessage(
+			'setobjecttransform to=' + mappings.join(';') + ' as=' + what,
+		);
 	}
 
 	/*
@@ -1801,8 +2541,10 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.interaction = new MovingInteraction(this, at);
 	}
 
+	/// Carries it on to that point of the document, as a drag of this section's own does, the
+	/// view scrolling along at its edge.
 	public carryTo(to: cool.SimplePoint): void {
-		this.interaction?.move(to);
+		this.dragTo(to, new cool.Point(to.vX / app.dpiScale, to.vY / app.dpiScale));
 	}
 
 	public finishCarrying(to: cool.SimplePoint): void {
@@ -1820,7 +2562,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 		Shift or Alt while the mouse stands still is taken up from these: the drag is moved to
 		the same place again with the keys as they are now.
 	*/
-	private lastMoved: { at: cool.SimplePoint; event: MouseEvent } | null = null;
+	private lastMoved: { at: cool.SimplePoint; event?: MouseEvent } | null = null;
 
 	private readonly keysChanged = (e: KeyboardEvent): void => {
 		if (!this.interaction || !this.lastMoved) return;
@@ -1870,6 +2612,10 @@ abstract class SelectionSection extends CanvasSectionObject {
 
 		if (this.interaction) {
 			this.lastMoved = null;
+
+			// The handle of the other mode goes with the press, and one waiting to come up.
+			this.dropTheOtherMode();
+
 			document.addEventListener('keydown', this.keysChanged, true);
 			document.addEventListener('keyup', this.keysChanged, true);
 		}
@@ -1884,7 +2630,11 @@ abstract class SelectionSection extends CanvasSectionObject {
 				this.myTopLeft[0] + point.pX,
 				this.myTopLeft[1] + point.pY,
 			];
-			const over = this.handleAt(onCanvas[0], onCanvas[1]);
+			let over = this.handleAt(onCanvas[0], onCanvas[1]);
+			if (
+				this.followTheOtherMode(over, new cool.Point(onCanvas[0], onCanvas[1]))
+			)
+				over = undefined;
 
 			// Off a handle but still on the object, the pointer is the object's again, or the
 			// one it left on a handle would stay: over text the text pointer, the hand where the
@@ -1908,7 +2658,10 @@ abstract class SelectionSection extends CanvasSectionObject {
 
 			// The handle under the mouse is marked, so that it is plain which one a press would
 			// take hold of where several lie close together.
-			const hovered = over?.name ?? null;
+			// On the bar to the handle of the other mode the one it stands beside stays marked.
+			const hovered =
+				over?.name ??
+				(this.otherModeShown ? SelectionSection.turningKind : null);
 			if (hovered !== this.hovered) {
 				this.hovered = hovered;
 				this.containerObject.requestReDraw();
@@ -1919,9 +2672,30 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.stopPropagating();
 		e.stopPropagation();
 
-		this.lastMoved = { at: this.inTheDocument(point), event: e };
-		this.interaction.move(this.lastMoved.at, e);
-		this.aimAtWhatIsUnder(this.lastMoved.at);
+		const onCanvas = point.clone();
+		onCanvas.pX += this.myTopLeft[0];
+		onCanvas.pY += this.myTopLeft[1];
+		this.dragTo(
+			this.inTheDocument(point),
+			new cool.Point(onCanvas.cX, onCanvas.cY),
+			e,
+		);
+	}
+
+	/*
+		Takes the running drag to that point of the document, where the mouse stands at that
+		point of the canvas, in CSS pixels, with the keys of that event held.
+	*/
+	private dragTo(
+		at: cool.SimplePoint,
+		onCanvas: cool.Point,
+		e?: MouseEvent,
+	): void {
+		if (!this.interaction) return;
+
+		this.lastMoved = { at, event: e };
+		this.interaction.move(at, e);
+		this.aimAtWhatIsUnder(at);
 
 		/*
 			Carrying the objects brings the page along: while the mouse stands near an edge of the
@@ -1929,14 +2703,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 			soon as the mouse is away from the edge again.
 		*/
 		if (this.interaction.scrollsWithTheMouse()) {
-			const onCanvas = point.clone();
-			onCanvas.pX += this.myTopLeft[0];
-			onCanvas.pY += this.myTopLeft[1];
-
-			app.map.fire('handleautoscroll', {
-				pos: new cool.Point(onCanvas.cX, onCanvas.cY),
-				map: app.map,
-			});
+			app.map.fire('handleautoscroll', { pos: onCanvas, map: app.map });
 			return;
 		}
 
@@ -1957,9 +2724,22 @@ abstract class SelectionSection extends CanvasSectionObject {
 				handle. It is the short way onto one handle among hundreds - a point of a polygon
 				among them - without walking there from the first.
 			*/
-			if (this.pressedHandle?.name) this.travel.goTo(this.pressedHandle.name);
+			if (
+				this.pressedHandle?.kind === SelectionSection.turningKind &&
+				this.shearingIsOffered()
+			) {
+				// On the handle above the selection a click switches between turning and
+				// shearing instead, where both are offered, and the handle of the other mode
+				// comes up beside it again after the wait.
+				this.switchTheHandleMode();
+				this.interaction = null;
+				this.followTheOtherMode(this.pressedHandle);
+			} else if (this.pressedHandle?.name)
+				this.travel.goTo(this.pressedHandle.name);
 
+			// The press hid the buttons beside the bands as a drag does; a click brings them back.
 			this.interaction = null;
+			GraphicSelection.followTheGroupButtons();
 			return;
 		}
 
@@ -2106,6 +2886,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 
 	/// The mouse has left what is selected, so no handle is under it any more.
 	onMouseLeave(): void {
+		this.followTheOtherMode(undefined);
 		if (this.hovered === null) return;
 
 		this.hovered = null;
@@ -2144,10 +2925,13 @@ abstract class SelectionSection extends CanvasSectionObject {
 	public keepWhatItDid(interaction: SelectionInteraction): void {
 		// A crop is named against the picture as the engine gave it, and so are the handles it
 		// moves: the ones worked out from that picture, not the ones a crop before it moved.
-		this.known = interaction.handles(
-			interaction.isACrop() ? this.handlesOfTheGroups() : this.known,
-		);
-		this.leaveTheChangeOnTheObjects(interaction.ghostTransformation());
+		// Several objects or a group turned or sheared get their upright frame, not the drag's.
+		const ghost = interaction.ghostTransformation();
+		if (!this.keepsAnUprightFrame(ghost))
+			this.known = interaction.handles(
+				interaction.isACrop() ? this.handlesOfTheGroups() : this.known,
+			);
+		this.leaveTheChangeOnTheObjects(ghost);
 
 		const window = interaction.transformation();
 		const objectId = this.selectedObjects()[0];
@@ -2175,8 +2959,12 @@ abstract class SelectionSection extends CanvasSectionObject {
 		*/
 		if (carriedOut && this.interaction) this.keepWhatItDid(this.interaction);
 
+		// A slant keys gave goes on from where the drag left the objects.
+		if (carriedOut) ShearingInteraction.forgetTheKeys();
+
 		this.interaction = null;
 		this.tellWhoStandsIn();
+		GraphicSelection.followTheGroupButtons();
 		this.lastMoved = null;
 		document.removeEventListener('keydown', this.keysChanged, true);
 		document.removeEventListener('keyup', this.keysChanged, true);

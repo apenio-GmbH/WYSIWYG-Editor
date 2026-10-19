@@ -42,6 +42,7 @@
 #include <common/Util.hpp>
 #include <net/HttpServer.hpp>
 #include <net/Socket.hpp>
+#include <net/WebSocketHandler.hpp>
 #include <wsd/COOLWSD.hpp>
 #include <wsd/CacheUtil.hpp>
 #include <wsd/ClientSession.hpp>
@@ -500,6 +501,9 @@ void DocumentBroker::pollThread()
     const auto defaultPollTimeout = std::min<std::chrono::microseconds>(
         _lockCtx->refreshPeriod(), SocketPoll::DefaultPollTimeoutMicroS);
 
+    const int parkTimeoutSecs =
+        ConfigUtil::getConfigValue<int>("net.session_park_timeout_secs", 5);
+
     // Main polling loop goodness.
     while (!_stop && _poll->continuePolling() && !SigUtil::getTerminationFlag())
     {
@@ -528,6 +532,20 @@ void DocumentBroker::pollThread()
         if (_lockCtx)
             capPollTimeout(_lockCtx->nextRefresh());
 
+        // A parked session's deadline has to wake the poll too, since its browser is away and
+        // nothing else does. A deadline already passed polls once without sleeping.
+        for (const auto& it : _sessions)
+        {
+            if (!it.second->isParked())
+                continue;
+            const auto remaining = it.second->parkedSince() +
+                                   std::chrono::seconds(parkTimeoutSecs) -
+                                   std::chrono::steady_clock::now();
+            pollTimeout = std::min<std::chrono::microseconds>(
+                pollTimeout, std::chrono::duration_cast<std::chrono::microseconds>(std::max(
+                                 remaining, std::chrono::steady_clock::duration::zero())));
+        }
+
         _poll->poll(pollTimeout);
 
         // Consolidate updates across multiple processed events.
@@ -546,6 +564,26 @@ void DocumentBroker::pollThread()
         }
 
         const auto now = std::chrono::steady_clock::now();
+
+#if !MOBILEAPP
+        // A parked session that nobody claimed goes the way a closed one does. This runs before the
+        // branches that skip to the next pass, as a passed deadline keeps the poll from sleeping.
+        for (const auto& it : _sessions)
+        {
+            const std::shared_ptr<ClientSession>& session = it.second;
+            if (session->isParked() &&
+                now - session->parkedSince() >= std::chrono::seconds(parkTimeoutSecs))
+            {
+                LOG_INF("Session [" << session->getId() << "] stayed parked for over "
+                                    << parkTimeoutSecs << " seconds, removing it");
+                // The session is leaving, so it is marked the way a closed connection is.
+                session->closeFrame();
+                removeSession(session);
+                break; // _sessions may have changed under the iterator.
+            }
+        }
+#endif
+
 #if !MOBILEAPP || defined(QTAPP) || defined(MACOS) || defined(_WIN32)
         // a tile's data is ~8k, a 4k screen is ~256 256x256 tiles -
         // so double that - 4Mb per view.
@@ -871,7 +909,10 @@ void DocumentBroker::pollThread()
         {
             LOG_TRC("Rotating clipboard keys");
             for (const auto& it : _sessions)
+            {
                 it.second->rotateClipboardKey(true);
+                it.second->rotateReconnectToken(true);
+            }
 
             lastClipboardHashUpdateTime = now;
         }
@@ -2255,9 +2296,12 @@ const std::vector<std::string>& getUploadableXcuPaths()
         "/org.openoffice.Office.Common/BulletsNumbering",
         "/org.openoffice.Office.Common/I18N/CTL",
 
-        // Only the sentence-checking subtree: its sibling
-        // GrammarChecking/LanguageTool holds an API key and a user name,
-        // which must not round-trip to the host.
+        // Only the sentence-checking subtree: its siblings
+        // GrammarChecking/LanguageTool, GrammarChecking/Duden and
+        // GrammarChecking/Grammalecte hold the servers, accounts and API
+        // keys of the remote checkers, which must not round-trip to the
+        // host. The kit applies them from the user's own xcu, where the
+        // server allows it, but never sends them back.
         "/org.openoffice.Office.Linguistic/GrammarChecking/SentenceChecking",
     };
     return sPaths;
@@ -5154,6 +5198,8 @@ std::size_t DocumentBroker::removeSession(const std::shared_ptr<ClientSession>& 
     const std::string id = session->getId();
     try
     {
+        UNITWSD_CALL_INSTANCE(_unitWsd, onDocBrokerRemovingSession(_docKey, session));
+
         const std::size_t activeSessionCount = countActiveSessions();
 
         const bool lastEditableSession = session->isEditable() && !haveAnotherEditableSession(id);
@@ -5484,6 +5530,44 @@ void DocumentBroker::finalRemoveSession(const std::shared_ptr<ClientSession>& se
     {
         LOG_ERR("Error while removing session [" << sessionId << "]: " << ex.what());
     }
+}
+
+void DocumentBroker::parkSession(const std::shared_ptr<ClientSession>& session)
+{
+    ASSERT_CORRECT_THREAD();
+    LOG_ASSERT_MSG(session, "Got null ClientSession");
+
+    session->park();
+    forwardToChild(session, "viewparked value=1");
+}
+
+std::shared_ptr<ClientSession>
+DocumentBroker::findSessionByToken(std::string_view reconnectToken)
+{
+    ASSERT_CORRECT_THREAD();
+
+    for (const auto& it : _sessions)
+    {
+        const std::shared_ptr<ClientSession>& session = it.second;
+        if (!session->matchesReconnectToken(reconnectToken))
+            continue;
+        if (!session->isParked() && !session->isLive())
+            continue; // Still loading, or already on its way out.
+        return session;
+    }
+
+    return nullptr;
+}
+
+void DocumentBroker::adoptSession(const std::shared_ptr<ClientSession>& session,
+                                  const std::shared_ptr<WebSocketHandler>& ws,
+                                  const Poco::URI& uriPublic)
+{
+    ASSERT_CORRECT_THREAD();
+    LOG_ASSERT_MSG(session && ws, "Need a session and a connection");
+
+    session->adopt(ws, uriPublic);
+    forwardToChild(session, "viewparked value=0");
 }
 
 std::shared_ptr<ClientSession> DocumentBroker::createNewClientSession(
@@ -6239,6 +6323,15 @@ bool DocumentBroker::handleInput(const std::shared_ptr<Message>& message)
         else if (message->firstTokenMatches("memorytrimmed:"))
         {
             clearCaches();
+        }
+        else if (message->firstTokenMatches("wordbookchanged:"))
+        {
+#if !MOBILEAPP
+            // Push the wordbook to the WOPI host now rather than at session teardown, so a
+            // word added to a dictionary shows up in the Custom Dictionaries settings panel
+            // (which reads the WOPI host's copy, not the jail's live one) without a reopen.
+            uploadPresetsToWopiHost();
+#endif
         }
         else if (Util::isDebugEnabled() && message->firstTokenMatches("unitresult:"))
         {
@@ -7653,6 +7746,11 @@ void DocumentBroker::dumpState(std::ostream& os)
            << std::chrono::duration_cast<std::chrono::seconds>(now - _createTime);
     os << "\n  now: " << Util::getClockAsString(now);
     os << "\n  detached: " << isDetached();
+    std::size_t parkedSessions = 0;
+    for (const auto& it : _sessions)
+        if (it.second->isParked())
+            ++parkedSessions;
+    os << "\n  parked sessions: " << parkedSessions;
     os << "\n  last view position: part " << _lastViewPosition.part << ", zoom "
        << _lastViewPosition.zoomPercent << ", edit mode "
        << _lastViewPosition.editMode << ", area "

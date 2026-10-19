@@ -147,6 +147,8 @@ export class Comment extends CanvasSectionObject {
 		this.sectionProperties.cancelButton = null;
 		this.sectionProperties.replyButton = null;
 		this.sectionProperties.cancelReplyButton = null;
+		this.sectionProperties.statusNode = null;
+		this.sectionProperties.statusTimer = null;
 		this.sectionProperties.contentText = null;
 		this.sectionProperties.lastContentRaw = '';
 		this.sectionProperties.nodeReply = null;
@@ -206,6 +208,8 @@ export class Comment extends CanvasSectionObject {
 		button = window.L.DomUtil.create('div', '', this.sectionProperties.nodeReply);
 		this.sectionProperties.cancelReplyButton = this.createButton(button, 'annotation-cancel-reply-' + this.sectionProperties.data.id, 'annotation-button button', _('Cancel'), this.handleCancelCommentButton);
 		this.sectionProperties.replyButton = this.createButton(button, 'annotation-reply-' + this.sectionProperties.data.id, 'annotation-button button button-primary', _('Reply'), this.handleReplyCommentButton);
+		this.sectionProperties.statusNode = window.L.DomUtil.create('div', 'visuallyhidden', this.sectionProperties.container);
+		this.sectionProperties.statusNode.setAttribute('role', 'status');
 		window.L.DomEvent.disableScrollPropagation(this.sectionProperties.container);
 
 		// Since this is a late called function, if the width is enough, we shouldn't collapse the comments.
@@ -262,6 +266,7 @@ export class Comment extends CanvasSectionObject {
 		if (this.sectionProperties.data.trackchange) {
 			this.sectionProperties.captionNode = window.L.DomUtil.create('div', 'cool-annotation-caption', this.sectionProperties.wrapper);
 			this.sectionProperties.captionText = window.L.DomUtil.create('div', '', this.sectionProperties.captionNode);
+			this.sectionProperties.captionText.id = 'annotation-caption-text-' + this.sectionProperties.data.id;
 		}
 
 		this.sectionProperties.contentNode = window.L.DomUtil.create('div', 'cool-annotation-content cool-dont-break', this.sectionProperties.wrapper);
@@ -283,6 +288,7 @@ export class Comment extends CanvasSectionObject {
 		this.sectionProperties.nodeModifyText.setAttribute('aria-label', Comment.editCommentLabel);
 		this.sectionProperties.nodeModifyText.id = 'annotation-modify-textarea-' + this.sectionProperties.data.id;
 		this.sectionProperties.contentText = window.L.DomUtil.create('div', '', this.sectionProperties.contentNode);
+		this.sectionProperties.contentText.id = 'annotation-content-text-' + this.sectionProperties.data.id;
 		this.sectionProperties.nodeReply = window.L.DomUtil.create('div', 'cool-annotation-edit' + ' reply-annotation', this.sectionProperties.wrapper);
 		this.sectionProperties.nodeReplyText = window.L.DomUtil.create('div', 'cool-annotation-textarea', this.sectionProperties.nodeReply);
 		this.createReplyHint(this.sectionProperties.nodeReply);
@@ -358,6 +364,7 @@ export class Comment extends CanvasSectionObject {
 
 	private createAuthorTable (): void {
 		this.sectionProperties.author = window.L.DomUtil.create('table', 'cool-annotation-table', this.sectionProperties.wrapper);
+		this.sectionProperties.author.setAttribute('role', 'presentation'); // a layout table
 
 		var tbody = window.L.DomUtil.create('tbody', '', this.sectionProperties.author);
 
@@ -384,11 +391,17 @@ export class Comment extends CanvasSectionObject {
 		this.sectionProperties.authorAvatarImg = imgAuthor;
 		this.sectionProperties.authorAvatartdImg = tdImg;
 		this.sectionProperties.contentAuthor = window.L.DomUtil.create('div', 'cool-annotation-content-author', tdAuthor);
+		this.sectionProperties.contentAuthor.id = 'annotation-content-author-' + this.sectionProperties.data.id;
 	}
 
 	private createMenu (): void {
 		var tdMenu = window.L.DomUtil.create('td', 'cool-annotation-menubar', this.sectionProperties.authorRow);
 		this.sectionProperties.menuBarCell = tdMenu;
+		// describe the buttons by the comment author and text, and the kind of change
+		const id = this.sectionProperties.data.id;
+		const describedBy = 'annotation-content-author-' + id
+			+ (this.sectionProperties.data.trackchange ? ' annotation-caption-text-' + id : '')
+			+ ' annotation-content-text-' + id;
 		if (this.isAuthor()) {
 			const edit = window.L.DomUtil.create('div', 'cool-annotation-menu-edit', tdMenu);
 			edit.id = 'comment-annotation-menu-edit-' + this.sectionProperties.data.id;
@@ -401,6 +414,8 @@ export class Comment extends CanvasSectionObject {
 			edit.onkeypress = this.editOnKeyPress.bind(this);
 			edit.dataset.title = Comment.editCommentLabel;
 			edit.setAttribute('aria-label', Comment.editCommentLabel);
+			edit.setAttribute('role', 'button');
+			edit.setAttribute('aria-describedby', describedBy);
 		}
 
 		this.sectionProperties.menu = window.L.DomUtil.create('div', this.sectionProperties.data.trackchange ? 'cool-annotation-menu-redline' : 'cool-annotation-menu', tdMenu);
@@ -410,6 +425,8 @@ export class Comment extends CanvasSectionObject {
 		this.sectionProperties.menu.onkeypress = this.menuOnKeyPress.bind(this);
 		this.sectionProperties.menu.dataset.title = Comment.openMenuLabel;
 		this.sectionProperties.menu.setAttribute('aria-label', Comment.openMenuLabel);
+		this.sectionProperties.menu.setAttribute('role', 'button');
+		this.sectionProperties.menu.setAttribute('aria-describedby', describedBy);
 	}
 
 	// Returns the final (post-clamp) top in canvas-relative CSS px, so a thread's
@@ -1432,6 +1449,9 @@ export class Comment extends CanvasSectionObject {
 			return;
 		}
 
+		if (e.keyCode !== 27)
+			this.clearStatus(); // the Escape hint is stale after any other key
+
 		if (this.isCtrlEnter(e)) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -1446,13 +1466,19 @@ export class Comment extends CanvasSectionObject {
 
 		if (e.keyCode === 27 /* Esc */) {
 			// When a comment is being edited and focus is in the textbox,
-			// Esc should not close it but mark it with attention.
-			const editingComment = Comment.isAnyEdit();
+			// Esc should not close it but mark it with attention, unless
+			// closing it discards nothing.
+			const editingComment = this.isEdit() ? this : Comment.isAnyEdit();
 			if (editingComment) {
 				e.preventDefault();
 				e.stopPropagation();
+				if (!editingComment.hasUnsavedText()) {
+					editingComment.handleCancelCommentButton(e);
+					return;
+				}
 				this.sectionProperties.commentListSection
 					.addCommentAttention(editingComment);
+				editingComment.announceUnsavedText();
 			}
 			return;
 		}
@@ -1618,6 +1644,38 @@ export class Comment extends CanvasSectionObject {
 		const brElements = element.querySelectorAll('br');
 		if (brElements.length > 0)
 			brElements[brElements.length-1].remove();
+	}
+
+	private hasUnsavedText(): boolean {
+		// Cancel deletes an autosaved new comment and reverts an autosaved edit
+		if (cool.CommentSection.autoSavedComment || cool.CommentSection.commentWasAutoAdded)
+			return true;
+		const props = this.sectionProperties;
+		if (props.nodeReply.style.display !== 'none')
+			return props.nodeReplyText.innerText.trim() !== '';
+		const node = props.nodeModifyText.cloneNode(true) as HTMLElement;
+		this.removeLastBRTag(node);
+		// a new comment has no original text; a posted one may have only HTML
+		const origHTML = props.contentText.origHTML || '';
+		if (origHTML)
+			return origHTML !== node.innerHTML;
+		return (props.contentText.origText || '').trim() !== node.innerText.trim();
+	}
+
+	private announceUnsavedText(): void {
+		const props = this.sectionProperties;
+		const cancel = props.nodeReply.style.display !== 'none' ? props.cancelReplyButton : props.cancelButton;
+		const status = props.statusNode;
+		// a live region is announced on a change, so empty it for a repeated Escape
+		this.clearStatus();
+		props.statusTimer = setTimeout(() => {
+			status.textContent = _('Press Ctrl + Enter to post, or %1 to discard').replace('%1', cancel.value);
+		}, 100);
+	}
+
+	private clearStatus(): void {
+		clearTimeout(this.sectionProperties.statusTimer);
+		this.sectionProperties.statusNode.textContent = '';
 	}
 
 	private isNodeEmpty(): boolean {

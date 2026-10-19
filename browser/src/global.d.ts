@@ -119,6 +119,7 @@ declare namespace L {
 */
 
 interface AppInterface {
+	nextInputSequence(): number;
 	sectionContainer: CanvasSectionContainer;
 	zoomControl: ZoomControl;
 	LOUtil: typeof LOUtil;
@@ -152,7 +153,7 @@ interface AppInterface {
 		decimalSeparator: null | string; // Current cell's decimal separator.
 		otherCellCursors: any;
 		splitCoordinate: null | cool.SimplePoint;
-		partHashes: null | Array<any>; // hashes used to distinguish parts (we use sheet name)
+		partHashes: null | Array<string>; // the engine's hash of each sheet, from the status message
 		filterPopupCell: any; // The cell a filter popup belongs to: { popupId, column, row }.
 		isRTL(): boolean;
 		isSelectedPartSheetView(): boolean;
@@ -205,15 +206,18 @@ interface AppInterface {
 	file: {
 		editComment: boolean;
 		allowManageRedlines: boolean;
-		reviewMode: boolean;
 		readOnly: boolean;
 		modified: boolean;
 		permission: string;
 		viewModeExtensions: string;
 		disableSidebar: boolean;
+		inputSequence: number;
 		textCursor: {
 			visible: boolean;
 			rectangle: null | cool.SimpleRectangle;
+			// The caret's paragraph and character index, or null before a
+			// cursor message carries them.
+			logical: null | cool.LogicalCaret;
 		};
 		fileBasedView: boolean;
 		writer: {
@@ -236,6 +240,8 @@ interface AppInterface {
 	languages: Array<{ translated: string; neutral: string; iso: string }>;
 	// The sentence checking rule packages the engine reports as installed.
 	sentenceCheckingPackages?: Array<{ id: string; locale: string }>;
+	// The remote sentence checkers as the engine has them set up.
+	remoteGrammarCheckers?: Array<any>;
 	// Whether this document is running with this user's own document
 	// settings. It is running with whoever opened it first's.
 	userPresetsApplied?: boolean;
@@ -535,6 +541,7 @@ interface Window {
 	unoCmdToToolbarId: (name: string) => string;
 	L: any;
 	createWebSocket(url: string): SockInterface;
+	seedCypressAccessibilityState(): void;
 	getAccessibilityState(): boolean;
 	getFocusRingColor(): string;
 	makeClientVisibleArea(): string;

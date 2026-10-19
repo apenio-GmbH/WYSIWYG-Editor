@@ -45,11 +45,9 @@
 #include <svl/ctloptions.hxx>
 #include <basic/sbx.hxx>
 #include <svl/eitem.hxx>
-#include <svl/stritem.hxx>
 #include <sfx2/ipclient.hxx>
 #include <sot/exchange.hxx>
 #include <sfx2/viewfrm.hxx>
-#include <sfx2/request.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
 #include <svl/ptitem.hxx>
@@ -87,7 +85,6 @@
 #include <viewopt.hxx>
 #include <drawbase.hxx>
 #include <dselect.hxx>
-#include <textsh.hxx>
 #include <shdwcrsr.hxx>
 #include <txatbase.hxx>
 #include <fmtanchr.hxx>
@@ -187,8 +184,6 @@ static SdrHdlKind g_eSdrMoveHdl   = SdrHdlKind::User;
 QuickHelpData* SwEditWin::s_pQuickHlpData = nullptr;
 
 Point SwEditWin::s_aDDStartPos;
-
-static SfxShell* lcl_GetTextShellFromDispatcher( SwView const & rView );
 
 /// Check if the selected shape has a TextBox: if so, go into that instead.
 static bool lcl_goIntoTextBox(SwEditWin& rEditWin, SwWrtShell& rSh)
@@ -931,8 +926,6 @@ void SwEditWin::FlushInBuffer()
         return;
 
     SwWrtShell& rSh = m_rView.GetWrtShell();
-    uno::Reference<frame::XDispatchRecorder> xRecorder
-        = m_rView.GetViewFrame().GetBindings().GetRecorder();
 
     comphelper::ScopeGuard showTooltipGuard(
         [this, &rSh]
@@ -947,7 +940,7 @@ void SwEditWin::FlushInBuffer()
                     ShowAutoCorrectQuickHelp(rSh.GetPrevAutoCorrWord(*pACorr), *pACorr);
             }
         });
-    if (!m_bMaybeShowTooltipAfterBufferFlush || xRecorder)
+    if (!m_bMaybeShowTooltipAfterBufferFlush)
         showTooltipGuard.dismiss();
     m_bMaybeShowTooltipAfterBufferFlush = false;
 
@@ -1044,19 +1037,6 @@ void SwEditWin::FlushInBuffer()
             if (!rCursor.HasMark())
                 rCursor.SetMark();
             rCursor.Start()->AdjustContent( -nExpandSelection );
-        }
-    }
-
-    if ( xRecorder.is() )
-    {
-        // determine shell
-        SfxShell *pSfxShell = lcl_GetTextShellFromDispatcher( m_rView );
-        // generate request and record
-        if (pSfxShell)
-        {
-            SfxRequest aReq(m_rView.GetViewFrame(), FN_INSERT_STRING);
-            aReq.AppendItem( SfxStringItem( FN_INSERT_STRING, m_aInBuffer ) );
-            aReq.Done();
         }
     }
 
@@ -1700,16 +1680,8 @@ void SwEditWin::KeyInput(const KeyEvent &rKEvt)
         return;
     }
 
-    SvxAutoCorrCfg* pACfg = nullptr;
-    SvxAutoCorrect* pACorr = nullptr;
-
-    uno::Reference< frame::XDispatchRecorder > xRecorder =
-            m_rView.GetViewFrame().GetBindings().GetRecorder();
-    if ( !xRecorder.is() )
-    {
-        pACfg = &SvxAutoCorrCfg::Get();
-        pACorr = pACfg->GetAutoCorrect();
-    }
+    SvxAutoCorrCfg* pACfg = &SvxAutoCorrCfg::Get();
+    SvxAutoCorrect* pACorr = pACfg->GetAutoCorrect();
 
     SwModuleOptions* pModOpt = SwModule::get()->GetModuleConfig();
 
@@ -2762,7 +2734,6 @@ KEYINPUT_CHECKTABLE_INSDEL:
 
         default:
         {
-            sal_uInt16 nSlotId = 0;
             FlushInBuffer();
             switch( eKeyState )
             {
@@ -2820,11 +2791,9 @@ KEYINPUT_CHECKTABLE_INSDEL:
             case SwKeyState::NextCell:
                 // always 'flush' in tables
                 rSh.GoNextCell(!rSh.HasReadonlySel());
-                nSlotId = FN_GOTO_NEXT_CELL;
                 break;
             case SwKeyState::PrevCell:
                 rSh.GoPrevCell();
-                nSlotId = FN_GOTO_PREV_CELL;
                 break;
             case SwKeyState::AutoFormatByInput:
                 rSh.SplitNode( true );
@@ -2928,11 +2897,6 @@ KEYINPUT_CHECKTABLE_INSDEL:
                 break;
             default:
                 break;
-            }
-            if( nSlotId && m_rView.GetViewFrame().GetBindings().GetRecorder().is() )
-            {
-                SfxRequest aReq(m_rView.GetViewFrame(), nSlotId);
-                aReq.Done();
             }
             eKeyState = SwKeyState::End;
         }
@@ -3608,7 +3572,7 @@ void SwEditWin::MouseButtonDown(const MouseEvent& _rMEvt)
                                 {
                                     GetView().GetViewFrame().GetBindings().Execute(
                                         FN_FORMAT_GRAFIC_DLG, nullptr,
-                                        SfxCallMode::RECORD|SfxCallMode::SLOT);
+                                        SfxCallMode::SLOT);
                                 }
                                 return;
 
@@ -3624,7 +3588,7 @@ void SwEditWin::MouseButtonDown(const MouseEvent& _rMEvt)
                                 {
                                     GetView().GetViewFrame().GetBindings().Execute(
                                         FN_FORMAT_FRAME_DLG, nullptr,
-                                        SfxCallMode::RECORD|SfxCallMode::SLOT);
+                                        SfxCallMode::SLOT);
                                 }
                                 return;
 
@@ -3900,7 +3864,7 @@ void SwEditWin::MouseButtonDown(const MouseEvent& _rMEvt)
                             {
                                 GetView().GetViewFrame().GetBindings().Execute(
                                     FN_FORMAT_GRAFIC_DLG, nullptr,
-                                    SfxCallMode::RECORD | SfxCallMode::SLOT);
+                                    SfxCallMode::SLOT);
                                 return;
                             }
                         }
@@ -3924,6 +3888,14 @@ void SwEditWin::MouseButtonDown(const MouseEvent& _rMEvt)
                                     rSh.LeaveSelFrameMode();
                                     m_rView.AttrChangedNotify(nullptr);
                                     g_bFrameDrag = false;
+                                }
+                                else
+                                {
+                                    // The object has joined the selection, and a drag of the
+                                    // whole selection may start from here, the same as after
+                                    // a click that selects an object. The click is complete.
+                                    ArmFrameDrag(rSh, aDocPos);
+                                    return;
                                 }
                             }
                             else
@@ -5274,7 +5246,8 @@ void SwEditWin::MouseButtonUp(const MouseEvent& rMEvt)
                                 if (comphelper::COKit::isActive())
                                 {
                                     OUString val((*static_cast<const SwFormatINetFormat*>(aContentAtPos.aFnd.pAttr)).GetValue());
-                                    if (val.startsWith("#"))
+                                    // a phone has no ctrl, so a plain tap reports the link too
+                                    if (val.startsWith("#") || m_rView.isKitMobilePhone())
                                         bExecHyperlinks = true;
                                 }
                                 if ( bExecHyperlinks && aContentAtPos.aFnd.pAttr )
@@ -5428,7 +5401,6 @@ void SwEditWin::MouseButtonUp(const MouseEvent& rMEvt)
         }
         else
         {
-            UIName aStyleName;
             switch ( m_pApplyTempl->eType )
             {
                 case SfxStyleFamily::Para:
@@ -5439,8 +5411,6 @@ void SwEditWin::MouseButtonUp(const MouseEvent& rMEvt)
                         m_pApplyTempl->nUndo =
                             std::min(m_pApplyTempl->nUndo, rSh.GetDoc()->GetIDocumentUndoRedo().GetUndoActionCount());
                         bCallBase = false;
-                        if ( m_pApplyTempl->aColl.pTextColl )
-                            aStyleName = m_pApplyTempl->aColl.pTextColl->GetName();
                     }
                     break;
                 case SfxStyleFamily::Char:
@@ -5454,8 +5424,6 @@ void SwEditWin::MouseButtonUp(const MouseEvent& rMEvt)
                         m_pApplyTempl->nUndo =
                             std::min(m_pApplyTempl->nUndo, rSh.GetDoc()->GetIDocumentUndoRedo().GetUndoActionCount());
                         bCallBase = false;
-                        if ( m_pApplyTempl->aColl.pCharFormat )
-                            aStyleName = m_pApplyTempl->aColl.pCharFormat->GetName();
                     }
                     break;
                 case SfxStyleFamily::Frame :
@@ -5467,16 +5435,12 @@ void SwEditWin::MouseButtonUp(const MouseEvent& rMEvt)
                         m_pApplyTempl->nUndo =
                             std::min(m_pApplyTempl->nUndo, rSh.GetDoc()->GetIDocumentUndoRedo().GetUndoActionCount());
                         bCallBase = false;
-                        if( m_pApplyTempl->aColl.pFrameFormat )
-                            aStyleName = m_pApplyTempl->aColl.pFrameFormat->GetName();
                     }
                     break;
                 }
                 case SfxStyleFamily::Page:
                     // no Undo with page templates
                     rSh.ChgCurPageDesc( *m_pApplyTempl->aColl.pPageDesc );
-                    if ( m_pApplyTempl->aColl.pPageDesc )
-                        aStyleName = m_pApplyTempl->aColl.pPageDesc->GetName();
                     m_pApplyTempl->nUndo =
                         std::min(m_pApplyTempl->nUndo, rSh.GetDoc()->GetIDocumentUndoRedo().GetUndoActionCount());
                     bCallBase = false;
@@ -5490,25 +5454,9 @@ void SwEditWin::MouseButtonUp(const MouseEvent& rMEvt)
                         bCallBase = false;
                         m_pApplyTempl->nUndo =
                             std::min(m_pApplyTempl->nUndo, rSh.GetDoc()->GetIDocumentUndoRedo().GetUndoActionCount());
-                        if( m_pApplyTempl->aColl.pNumRule )
-                            aStyleName = m_pApplyTempl->aColl.pNumRule->GetName();
                     }
                     break;
                 default: break;
-            }
-
-            uno::Reference< frame::XDispatchRecorder > xRecorder =
-                    m_rView.GetViewFrame().GetBindings().GetRecorder();
-            if ( !aStyleName.isEmpty() && xRecorder.is() )
-            {
-                SfxShell *pSfxShell = lcl_GetTextShellFromDispatcher( m_rView );
-                if ( pSfxShell )
-                {
-                    SfxRequest aReq(m_rView.GetViewFrame(), SID_STYLE_APPLY);
-                    aReq.AppendItem( SfxStringItem( SID_STYLE_APPLY, aStyleName.toString() ) );
-                    aReq.AppendItem( SfxUInt16Item( SID_STYLE_FAMILY, static_cast<sal_uInt16>(m_pApplyTempl->eType) ) );
-                    aReq.Done();
-                }
             }
         }
 
@@ -5996,9 +5944,6 @@ void SwEditWin::Command( const CommandEvent& rCEvt )
             {
                 bCallBase = false;
                 OUString sRecord = rSh.DeleteExtTextInput();
-                uno::Reference< frame::XDispatchRecorder > xRecorder =
-                        m_rView.GetViewFrame().GetBindings().GetRecorder();
-
                 if ( !sRecord.isEmpty() )
                 {
                     // convert quotes in IME text
@@ -6013,19 +5958,6 @@ void SwEditWin::Command( const CommandEvent& rCEvt )
                     {
                         rSh.DelLeft();
                         rSh.AutoCorrect( *pACorr, aCh );
-                    }
-
-                    if ( xRecorder.is() )
-                    {
-                        // determine Shell
-                        SfxShell *pSfxShell = lcl_GetTextShellFromDispatcher( m_rView );
-                        // generate request and record
-                        if (pSfxShell)
-                        {
-                            SfxRequest aReq(m_rView.GetViewFrame(), FN_INSERT_STRING);
-                            aReq.AppendItem( SfxStringItem( FN_INSERT_STRING, sRecord ) );
-                            aReq.Done();
-                        }
                     }
                 }
             }
@@ -6055,17 +5987,12 @@ void SwEditWin::Command( const CommandEvent& rCEvt )
                     rSh.SetExtTextInputData( *pData );
                 }
             }
-            uno::Reference< frame::XDispatchRecorder > xRecorder =
-                        m_rView.GetViewFrame().GetBindings().GetRecorder();
-            if(!xRecorder.is())
+            SvxAutoCorrCfg& rACfg = SvxAutoCorrCfg::Get();
+            if (!rACfg.IsAutoTextTip() || !ShowAutoText(rSh.GetChunkForAutoText()))
             {
-                SvxAutoCorrCfg& rACfg = SvxAutoCorrCfg::Get();
-                if (!rACfg.IsAutoTextTip() || !ShowAutoText(rSh.GetChunkForAutoText()))
-                {
-                    SvxAutoCorrect* pACorr = rACfg.GetAutoCorrect();
-                    if (pACorr && pACorr->GetSwFlags().bAutoCompleteWords)
-                        ShowAutoCorrectQuickHelp(rSh.GetPrevAutoCorrWord(*pACorr), *pACorr);
-                }
+                SvxAutoCorrect* pACorr = rACfg.GetAutoCorrect();
+                if (pACorr && pACorr->GetSwFlags().bAutoCompleteWords)
+                    ShowAutoCorrectQuickHelp(rSh.GetPrevAutoCorrWord(*pACorr), *pACorr);
             }
         }
 
@@ -6502,20 +6429,6 @@ void SwEditWin::SetSidebarWidth(const Point& rPointPixel)
     // aLastCommentSidebarPos right and left positions are the same so either can be used here
     m_rView.GetPostItMgr()->SetSidebarWidth(
         Point(aLastCommentSidebarPos.Right(), PixelToLogic(rPointPixel).Y()));
-}
-
-static SfxShell* lcl_GetTextShellFromDispatcher( SwView const & rView )
-{
-    // determine Shell
-    SfxShell* pShell;
-    SfxDispatcher* pDispatcher = rView.GetViewFrame().GetDispatcher();
-    for(sal_uInt16  i = 0; true; ++i )
-    {
-        pShell = pDispatcher->GetShell( i );
-        if( !pShell || dynamic_cast< const SwTextShell *>( pShell ) !=  nullptr )
-            break;
-    }
-    return pShell;
 }
 
 IMPL_LINK_NOARG(SwEditWin, KeyInputFlushHandler, Timer *, void)

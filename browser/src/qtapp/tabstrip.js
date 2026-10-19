@@ -24,15 +24,6 @@
 		other: 'images/x-office-document.svg',
 	};
 
-	// Doc type -> the data-doctype value color-palette.css keys --doc-type off
-	// of. Unlisted types (starter/welcome/other) fall back to the brand color.
-	const docTypeAttr = {
-		writer: 'text',
-		calc: 'spreadsheet',
-		impress: 'presentation',
-		draw: 'drawing',
-	};
-
 	let bridge = null;
 	let tabs = [];
 	let activeId = -1;
@@ -67,6 +58,11 @@
 		lastMarker.cls = cls;
 	}
 
+	// The tabs run from right to left in a language written that way.
+	function isRightToLeft() {
+		return document.documentElement.dir === 'rtl';
+	}
+
 	// For a viewport X inside the strip, return the tab under it, whether the
 	// drop goes before or after, and the resulting insert index (null if empty).
 	function dropTargetAt(clientX) {
@@ -74,8 +70,12 @@
 		for (let i = 0; i < tabEls.length; i++) {
 			const tabEl = tabEls[i];
 			const rect = tabEl.getBoundingClientRect();
-			if (clientX < rect.right) {
-				const before = clientX - rect.left < rect.width / 2;
+			// How far X is from the edge of the tab where the tab starts.
+			const fromStart = isRightToLeft()
+				? rect.right - clientX
+				: clientX - rect.left;
+			if (fromStart < rect.width) {
+				const before = fromStart < rect.width / 2;
 				return {
 					el: tabEl,
 					before: before,
@@ -141,19 +141,21 @@
 	}
 
 	// Ask the app for the tab's hover card, placed below the tab and drawn in the strip's
-	// theme colours.
+	// theme colours. The card lines up with the edge of the tab where the tab starts.
 	function startHover(tab, id) {
 		if (!bridge) return;
 		const rect = tab.getBoundingClientRect();
 		const style = getComputedStyle(document.documentElement);
 		const color = (name) => style.getPropertyValue(name).trim();
+		const rightToLeft = isRightToLeft();
 		bridge.tabHoverStarted(
 			id,
-			Math.round(rect.left),
+			Math.round(rightToLeft ? rect.right : rect.left),
 			Math.round(rect.bottom),
 			color('--color-main-background'),
 			color('--color-main-text'),
 			color('--color-border-dark'),
+			rightToLeft,
 		);
 	}
 
@@ -171,8 +173,6 @@
 			tab.dataset.id = String(t.id);
 			tab.dataset.index = String(idx);
 			tab.setAttribute('role', 'tab');
-			const doctype = docTypeAttr[t.docType];
-			if (doctype) tab.setAttribute('data-doctype', doctype);
 			// A background tab with a preview gets the app's hover card, which shows the name too.
 			// The active tab keeps the plain title tooltip.
 			if (t.hasThumbnail && t.id !== activeId) {
@@ -181,7 +181,9 @@
 					if (bridge) bridge.tabHoverEnded();
 				});
 			} else {
-				tab.title = t.title || '';
+				// The tooltip shows where the document is, the tab itself
+				// only its name.
+				tab.title = t.path || t.title || '';
 			}
 
 			const icon = el('span');

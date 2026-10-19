@@ -14,19 +14,43 @@
     <allowed_languages desc="List of supported languages of Writing Aids (spell checker, grammar checker, thesaurus, hyphenation) on this instance. Allowing too many has negative effect on startup performance." default="de_DE en_GB en_US es_ES fr_FR it nl pt_BR pt_PT ru">@ALLOWED_LANGUAGES@</allowed_languages>
 
     <!--
-        These are the settings of external (remote) spellchecker and grammar checker services. Currently LanguageTool and Duden Korrekturserver APIs are supported, you can
-        set either of them. By default they are disabled. To turn the support on, please set "enabled" property to true. It works with self hosted or cloud services, free
-        and premium as well. The "base_url" may be https://api.languagetoolplus.com/v2 if the cloud version of LanguageTool is used. Please note that your data in the
-        document e.g. the text part of it will be sent to the cloud API. Please read the respective privacy policies, e.g. https://languagetool.org/legal/privacy.
+        These are the settings of external (remote) spelling and grammar checker services: LanguageTool, the Duden Korrekturserver and Grammalecte. Each has
+        a block of its own and is disabled by default; set its "enabled" property to true to turn it on. A language served by more than one enabled checker
+        goes to the first in the order Grammalecte, Duden, LanguageTool. They work with self hosted or cloud services, free and premium alike. The LanguageTool
+        "base_url" may be https://api.languagetoolplus.com/v2 if the cloud version is used. Please note that the text of the document will be sent to the
+        service. Please read the respective privacy policies, e.g. https://languagetool.org/legal/privacy. With "allow_user_settings" users may change a
+        checker's server and account in their own settings dialog; as the document is checked by one process for everyone who has it open, this lets one user
+        send everyone's text to a server of their choosing, so it is off by default. What a checker looks for is always the user's own choice.
+        allowed_languages does not come into it: it limits the local writing aids loaded at start, and a remote checker checks every language it is configured for.
     -->
-    <languagetool desc="Remote API settings for spell and grammar checking">
+    <languagetool desc="Remote API settings for spell and grammar checking with LanguageTool">
         <enabled desc="Enable Remote Spell and Grammar Checker" type="bool" default="false">false</enabled>
         <base_url desc="HTTP endpoint for the API server, without /check or /languages postfix at the end." type="string" default=""></base_url>
-        <user_name desc="LanguageTool or Duden account username for premium usage." type="string" default=""></user_name>
-        <api_key desc="API key provided by LanguageTool or Duden account for premium usage." type="string" default=""></api_key>
+        <user_name desc="LanguageTool account username for premium usage." type="string" default=""></user_name>
+        <api_key desc="API key provided by LanguageTool account for premium usage." type="string" default=""></api_key>
         <ssl_verification desc="Enable or disable SSL verification. You may have to disable it in test environments with self-signed certificates." type="string" default="true">true</ssl_verification>
-        <rest_protocol desc="REST API protocol. For LanguageTool leave it blank, for Duden Korrekturserver use the string 'duden'." type="string" default=""></rest_protocol>
+        <rest_protocol desc="Deprecated, use the duden block instead: the string 'duden' here still drives the Duden Korrekturserver with the settings of this block." type="string" default=""></rest_protocol>
+        <allow_user_settings desc="Let users change the server and account of this checker in their own settings." type="bool" default="false">false</allow_user_settings>
     </languagetool>
+
+    <duden desc="Remote API settings for spell, grammar and style checking with the Duden Korrekturserver">
+        <enabled desc="Enable the Duden Korrekturserver checker" type="bool" default="false">false</enabled>
+        <base_url desc="The server's API root, ending in /api, e.g. https://duden.example.com/api. The checker appends /check." type="string" default=""></base_url>
+        <api_key desc="API token, created in the server's user accounts page; sent in its access_token header." type="string" default=""></api_key>
+        <ssl_verification desc="Enable or disable SSL verification. You may have to disable it in test environments with self-signed certificates." type="string" default="true">true</ssl_verification>
+        <spellchecking_level desc="0 none, 1 single words, 2 standard, 3 standard with grammar." type="int" default="3">3</spellchecking_level>
+        <orthography_standard desc="German spelling variant: duden, conservative, progressive, extended or press." type="string" default="duden">duden</orthography_standard>
+        <property_sets desc="Space-separated names of the server's correction profiles to apply, in order." type="string" default=""></property_sets>
+        <dictionaries desc="Space-separated names of the server's supplementary dictionaries to use." type="string" default=""></dictionaries>
+        <allow_user_settings desc="Let users change the server, account and profile of this checker in their own settings. The style checks are theirs to choose either way." type="bool" default="false">false</allow_user_settings>
+    </duden>
+
+    <grammalecte desc="Remote API settings for grammar checking of French text with Grammalecte">
+        <enabled desc="Enable the Grammalecte checker" type="bool" default="false">false</enabled>
+        <base_url desc="The root of the Grammalecte server, e.g. http://grammalecte:8080; the checker appends /gc_text/fr. The service has no authentication, keep it on an internal network. See docker/grammalecte for running one next to this server." type="string" default=""></base_url>
+        <ssl_verification desc="Enable or disable SSL verification. You may have to disable it in test environments with self-signed certificates." type="string" default="true">true</ssl_verification>
+        <allow_user_settings desc="Let users change the server of this checker in their own settings. The rule families it runs are theirs to choose either way." type="bool" default="false">false</allow_user_settings>
+    </grammalecte>
 
     <ai desc="AI assistant configuration. When enabled with credentials, all users on this instance get AI features without needing to configure them individually. Works with any OpenAI-compatible endpoint, including local/self-hosted models (Ollama, vLLM, LM Studio, etc.). No data is sent anywhere unless explicitly configured. Per-user WOPI settings and View Settings override these defaults.">
         <enabled desc="Master switch for AI features. When false, AI is disabled server-wide regardless of WOPI or per-user settings." type="bool" default="false">false</enabled>
@@ -38,6 +62,12 @@
         <api_key desc="Default API key for the AI provider. May be left empty for self-hosted models that do not require authentication." type="string" default=""></api_key>
         <model desc="Default AI model name. For tool use (inspecting and editing the document) the model must support native function/tool calling - e.g. gpt-4o, llama3.1, qwen2.5. Models without it (e.g. base llama3, gemma) can still chat but cannot drive document tools." type="string" default=""></model>
         <image_api_url desc="Default AI image-generation provider base URL (e.g. https://api.openai.com). Leave empty to reuse the text-AI endpoint if the same provider is used. Must support the /v1/images/generations endpoint. While ai.enabled is true, AI requests reach this host without a net.lok_allow entry. Documents that fetch external data from the same host still need one." type="string" default=""></image_api_url>
+        <allowed_hosts desc="Hosts a user may name as their own AI provider, besides the hosts of api_url and image_api_url. Each entry is one host name, matched exactly and ignoring case. The entries shipped here are the built-in providers. Remove one to stop users choosing it, or add the host of another provider. An empty list leaves only api_url and image_api_url. net.lok_allow does not apply to AI requests.">
+            <host desc="The built-in OpenAI provider.">api.openai.com</host>
+            <host desc="The built-in Groq provider.">api.groq.com</host>
+            <host desc="The built-in Together provider.">api.together.xyz</host>
+            <host desc="The built-in Mistral provider.">api.mistral.ai</host>
+        </allowed_hosts>
         <image_api_key desc="Default API key for the image-generation provider. Leave empty to reuse the text-AI key if the same provider is used, or when a self-hosted model needs no authentication." type="string" default=""></image_api_key>
         <image_model desc="Default image-generation model name (e.g. dall-e-3, stable-diffusion-3, flux-schnell)." type="string" default=""></image_model>
         <image_size desc="Default generated image size in WxH pixels (e.g. 1024x1024). Provider-specific - leave empty to let the provider pick." type="string" default=""></image_size>
@@ -232,6 +262,7 @@
       <frame_ancestors desc="OBSOLETE: Use content_security_policy. Specify who is allowed to embed the Collabora Online iframe (coolwsd and WOPI host are always allowed). Separate multiple hosts by space."></frame_ancestors>
       <connection_timeout_secs desc="Specifies the connection, send, recv timeout in seconds for connections initiated by coolwsd (such as WOPI connections)." type="int" default="30">30</connection_timeout_secs>
       <client_pong_timeout_secs desc="The number of seconds a document connection may go without answering a ping from coolwsd before it is closed. coolwsd sends a ping every 18 seconds, so keep this well above that. A browser that went away without closing its connection is dropped after this long, and its view goes with it. 0 disables the check." type="uint" default="60">60</client_pong_timeout_secs>
+      <session_park_timeout_secs desc="The number of seconds a document connection that dropped without a close frame keeps its session for the same browser to reconnect to. The view stays in the document, shown as away to the other users, and a browser reconnecting with its token gets it back with its undo stack and cursor. If it was the last view, closing the document, and the save that comes with it, wait until this time is over. 0 drops such sessions at once." type="uint" default="5">5</session_park_timeout_secs>
 
       <!-- this setting radically changes how online works, it should not be used in a production environment -->
       <proxy_prefix type="bool" default="false" desc="Enable a ProxyPrefix to be passed-in through which to redirect requests">false</proxy_prefix>

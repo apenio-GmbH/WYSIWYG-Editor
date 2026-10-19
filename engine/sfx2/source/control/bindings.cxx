@@ -105,7 +105,6 @@ public:
 class SfxBindings_Impl
 {
 public:
-    cpo::uno::Reference< css::frame::XDispatchRecorder > xRecorder;
     cpo::uno::Reference< css::frame::XDispatchProvider >  xProv;
     std::unique_ptr<SfxWorkWindow> mxWorkWin;
     SfxBindings*            pSubBindings;
@@ -1052,10 +1051,10 @@ void SfxBindings::Execute_Impl( SfxRequest& aReq, const SfxSlot* pSlot, SfxShell
             }
         }
 
-        pDispatcher->Execute_( *pShell, *pSlot, aReq, aReq.GetCallMode() | SfxCallMode::RECORD );
+        pDispatcher->Execute_( *pShell, *pSlot, aReq, aReq.GetCallMode() );
     }
     else
-        pDispatcher->Execute_( *pShell, *pSlot, aReq, aReq.GetCallMode() | SfxCallMode::RECORD );
+        pDispatcher->Execute_( *pShell, *pSlot, aReq, aReq.GetCallMode() );
 }
 
 
@@ -1736,16 +1735,6 @@ void SfxBindings::SetDispatchProvider_Impl( const cpo::uno::Reference< css::fram
 
     if ( pImpl->pSubBindings )
         pImpl->pSubBindings->SetDispatchProvider_Impl( pImpl->xProv );
-}
-
-const cpo::uno::Reference< css::frame::XDispatchRecorder >& SfxBindings::GetRecorder() const
-{
-    return pImpl->xRecorder;
-}
-
-void SfxBindings::SetRecorder_Impl( cpo::uno::Reference< css::frame::XDispatchRecorder > const & rRecorder )
-{
-    pImpl->xRecorder = rRecorder;
 }
 
 void SfxBindings::ContextChanged_Impl()

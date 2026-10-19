@@ -1953,6 +1953,7 @@ void Document::notifyViewInfo()
                 oss << "\"userextrainfo\":" << itView->second.getUserExtraInfo() << ',';
             const bool readonly = itView->second.isReadOnly();
             oss << "\"readonly\":\"" << readonly << "\",";
+            oss << "\"parked\":\"" << (itView->second.isParked() ? "true" : "false") << "\",";
             const auto it = viewColorsMap.find(username);
             if (it != viewColorsMap.end())
             {
@@ -2015,6 +2016,34 @@ void Document::notifyViewInfo()
     }
 }
 
+void Document::setViewParked(int viewId, bool parked)
+{
+    const auto it = _sessionUserInfo.find(viewId);
+    if (it == _sessionUserInfo.end())
+    {
+        LOG_WRN("No user info for view [" << viewId << "] to mark "
+                                          << (parked ? "parked" : "unparked"));
+        return;
+    }
+
+    it->second.setParked(parked);
+    notifyViewInfo();
+
+    // The browser that came back rebuilt its tile layer and starts fetching tiles once it knows its
+    // canonical view id. The id did not change, so it has to be sent again on purpose.
+    if (!parked)
+    {
+        for (const auto& session : _sessions)
+        {
+            if (session.second->getViewId() == viewId)
+            {
+                sendCanonicalIdChange(session.second);
+                break;
+            }
+        }
+    }
+}
+
 void Document::notifyViewPart(int viewId, const std::string& partId)
 {
     std::ostringstream oss;
@@ -2072,6 +2101,11 @@ void Document::invalidateCanonicalId(const std::string& sessionId)
     }
     // The session took this id over, so it is no longer one that was left.
     _retiredCanonicalIds.erase(newCanonicalId);
+    sendCanonicalIdChange(session);
+}
+
+void Document::sendCanonicalIdChange(const std::shared_ptr<ChildSession>& session)
+{
     std::string viewRenderedState = session->getViewRenderState();
     std::string stateName;
     if (!viewRenderedState.empty())
@@ -2083,7 +2117,7 @@ void Document::invalidateCanonicalId(const std::string& sessionId)
         stateName = "Empty";
     }
     std::string message = "canonicalidchange: viewid=" + std::to_string(session->getViewId()) +
-        " canonicalid=" + std::to_string(to_underlying(newCanonicalId)) +
+        " canonicalid=" + std::to_string(to_underlying(session->getCanonicalViewId())) +
         " viewrenderedstate=" + stateName;
     session->sendTextFrame(message);
 }
@@ -2237,6 +2271,25 @@ std::string removeServerLoadOptions(const std::string& filterOptions,
     }
     return result;
 }
+
+/// Append ",name=value" to the comma-separated document load options string. A value is a single
+/// option, so one that is empty or holds a comma is left out.
+void appendLoadOption(std::string& options, std::string_view name, std::string_view value)
+{
+    if (value.empty())
+        return;
+
+    if (value.find(',') != std::string_view::npos)
+    {
+        LOG_WRN("Ignoring the [" << name << "] load option, its value holds a comma");
+        return;
+    }
+
+    options += ',';
+    options += name;
+    options += '=';
+    options += value;
+}
 }
 
 std::shared_ptr<COKitDocument> Document::load(const std::shared_ptr<ChildSession>& session)
@@ -2297,10 +2350,7 @@ std::shared_ptr<COKitDocument> Document::load(const std::shared_ptr<ChildSession
         options = removeServerLoadOptions(filterOption, serverOptions);
 
     for (const auto& option : serverOptions)
-    {
-        if (!option.value.empty())
-            options += ',' + std::string(option.name) + '=' + option.value;
-    }
+        appendLoadOption(options, option.name, option.value);
 
     const std::string wopiCertDir = pathFromFileURL(session->getJailedFilePath() + ".certs");
     if (FileUtil::Stat(wopiCertDir).exists())
@@ -2857,21 +2907,19 @@ void Document::deliverVectorDelta(const std::string& payload)
     const std::string partId = payload.substr(0, newline);
     const std::string json = payload.substr(newline + 1);
 
-    // Every session that holds the part reads the same delta, so it is compressed once, for
-    // the first session that takes it, and the frame is handed to each of them. A session that
-    // draws bitmap tiles, or was never served this part, has no use for it. An inactive or
-    // disconnected session is sent no delta.
-    std::optional<std::vector<char>> frame;
+    // Every session that holds the part reads the same delta, so it is compressed once and the
+    // bytes are handed to each session. A session that draws bitmap tiles or was never served this
+    // part has no use for it, and an inactive or disconnected session gets none.
+    std::optional<std::vector<char>> compressed;
     for (const auto& it : _sessions)
     {
         ChildSession& session = *it.second;
         if (session.isCloseFrame() || session.isDisconnected() || !session.isActive() ||
             !session.holdsVectorPart(partId))
             continue;
-        if (!frame)
-            frame = ChildSession::zstdFrame("zstdvectorprimitivesdelta:\n", json.data(),
-                                            json.size());
-        session.sendVectorDelta(*frame, json);
+        if (!compressed)
+            compressed = ChildSession::zstdFrame("", json.data(), json.size());
+        session.sendVectorDelta(*compressed, json);
     }
 }
 
@@ -3262,7 +3310,8 @@ void Document::dumpState(std::ostream& oss)
             << " userName: " << Anonymizer::anonymize(it.second.getUserName())
             << " userExtraInfo: " << it.second.getUserExtraInfo()
             << " readOnly: " << it.second.isReadOnly()
-            << " connected: " << it.second.isConnected();
+            << " connected: " << it.second.isConnected()
+            << " parked: " << it.second.isParked();
     }
     oss << '\n';
 

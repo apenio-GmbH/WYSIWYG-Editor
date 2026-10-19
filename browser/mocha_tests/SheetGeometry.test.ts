@@ -69,6 +69,128 @@ describe('SheetGeometry', function () {
 				nodeassert.equal(sg.getRowGroupLevels(), 0);
 			});
 		});
+
+		describe('isForSheet: a sheet that took the index of another one is not the same sheet', function () {
+			var sgObj = {
+				commandName: '.uno:SheetGeometryData',
+				maxtiledcolumn: '1023',
+				maxtiledrow: '500000',
+				columns: {
+					sizes: '1280:1023 ',
+					hidden: '0:1023 ',
+					filtered: '0:1023 ',
+					groups: '',
+				},
+				rows: {
+					sizes: '256:1048575 ',
+					hidden: '0:1048575 ',
+					filtered: '0:1048575 ',
+					groups: '',
+				},
+			};
+
+			var tileSizePx = 256;
+			var tileWidthTwips = Math.round((tileSizePx * 15) / zoomToAbsScale(10));
+			var tileHeightTwips = tileWidthTwips;
+
+			it('keeps the hash of the sheet the data was fetched for', function () {
+				var sg = new cool.SheetGeometry(
+					sgObj,
+					tileWidthTwips,
+					tileHeightTwips,
+					tileSizePx,
+					1,
+					'sheet-b',
+				);
+				nodeassert.equal(sg.getPart(), 1);
+				nodeassert.equal(sg.getPartHash(), 'sheet-b');
+				nodeassert.equal(sg.isForSheet(1, 'sheet-b'), true);
+			});
+
+			it('is not for the sheet that moved into the same index', function () {
+				var sg = new cool.SheetGeometry(
+					sgObj,
+					tileWidthTwips,
+					tileHeightTwips,
+					tileSizePx,
+					1,
+					'sheet-b',
+				);
+				// Sheet B was deleted and sheet C took index 1.
+				nodeassert.equal(sg.isForSheet(1, 'sheet-c'), false);
+				// The same sheet at another index is not the selected one either.
+				nodeassert.equal(sg.isForSheet(2, 'sheet-b'), false);
+			});
+
+			it('falls back to the index when a hash is missing on either side', function () {
+				var sg = new cool.SheetGeometry(
+					sgObj,
+					tileWidthTwips,
+					tileHeightTwips,
+					tileSizePx,
+					1,
+				);
+				nodeassert.equal(sg.getPartHash(), undefined);
+				nodeassert.equal(sg.isForSheet(1, 'sheet-c'), true);
+				nodeassert.equal(sg.isForSheet(2, 'sheet-c'), false);
+				sg.update(sgObj, true, 1, 'sheet-b');
+				nodeassert.equal(sg.isForSheet(1, undefined), true);
+			});
+
+			it('follows its sheet to a new index without new data', function () {
+				var sg = new cool.SheetGeometry(
+					sgObj,
+					tileWidthTwips,
+					tileHeightTwips,
+					tileSizePx,
+					2,
+					'sheet-c',
+				);
+				// The sheet before it was deleted, so sheet C sits at index 1 now.
+				nodeassert.equal(sg.isSameSheet('sheet-c'), true);
+				nodeassert.equal(sg.isSameSheet('sheet-b'), false);
+				nodeassert.equal(sg.isSameSheet(undefined), false);
+				sg.setPart(1);
+				nodeassert.equal(sg.getPart(), 1);
+				nodeassert.equal(sg.getPartHash(), 'sheet-c');
+				nodeassert.equal(sg.isForSheet(1, 'sheet-c'), true);
+			});
+
+			it('takes the sheet named in the reply over the one the caller passes', function () {
+				var namedObj = Object.assign({ part: '2', hash: 'sheet-c' }, sgObj);
+				var sg = new cool.SheetGeometry(
+					namedObj,
+					tileWidthTwips,
+					tileHeightTwips,
+					tileSizePx,
+					1,
+					'sheet-b',
+				);
+				nodeassert.equal(sg.getPart(), 2);
+				nodeassert.equal(sg.getPartHash(), 'sheet-c');
+				nodeassert.equal(sg.isForSheet(2, 'sheet-c'), true);
+				nodeassert.equal(sg.isForSheet(1, 'sheet-b'), false);
+				// An update without a named sheet takes the caller's sheet again.
+				sg.update(sgObj, true, 1, 'sheet-b');
+				nodeassert.equal(sg.getPart(), 1);
+				nodeassert.equal(sg.getPartHash(), 'sheet-b');
+			});
+
+			it('takes the hash of the sheet an update was fetched for', function () {
+				var sg = new cool.SheetGeometry(
+					sgObj,
+					tileWidthTwips,
+					tileHeightTwips,
+					tileSizePx,
+					1,
+					'sheet-b',
+				);
+				sg.update(sgObj, true, 1, 'sheet-c');
+				nodeassert.equal(sg.getPartHash(), 'sheet-c');
+				nodeassert.equal(sg.isForSheet(1, 'sheet-b'), false);
+				nodeassert.equal(sg.isForSheet(1, 'sheet-c'), true);
+			});
+		});
 	});
 
 	function zoomToAbsScale(level: number): number {

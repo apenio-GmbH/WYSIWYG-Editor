@@ -36,6 +36,7 @@
 #include <shobjidl.h>
 #include <shobjidl_core.h>
 
+#include <wincodec.h>
 #include <wincrypt.h>
 #include <winhttp.h>
 
@@ -129,6 +130,9 @@ struct DocumentTab
     std::string docType = "other";
     // The document holds changes that have not reached the file yet.
     bool isModified = false;
+    // A PNG image of what the document shows, sent by the page, or empty until the page has sent
+    // one.
+    std::string thumbnailPng;
     // The page has parsed its document and its stylesheets, so the WebView2 has something
     // styled to put on the screen. It stays hidden until then.
     bool hasContent = false;
@@ -147,7 +151,7 @@ struct WindowState
     bool isTabbed = false;
     std::vector<int> tabIds;
     int activeTabId = 0;
-    // The tab strip. It is created with the window and shown at two documents.
+    // The tab strip. It is created with the window and shown while the window holds a document.
     wil::com_ptr<ICoreWebView2Controller> stripController;
     wil::com_ptr<ICoreWebView2> stripWebView;
     bool stripIsVisible = false;
@@ -225,6 +229,9 @@ static const wchar_t windowClass[] = L"CODA";
 
 // The class name of the transparent window that catches drops over the web view.
 static const wchar_t overlayWindowClass[] = L"CODADropOverlayWindow";
+
+// The class name of the card that shows a background document below its tab.
+static const wchar_t hoverCardWindowClass[] = L"CODATabHoverCard";
 
 // The hidden file open dialog and clipboard owner window class name.
 static const wchar_t hiddenOwnerWindowClass[] = L"CODAHiddenOwnerWindow";
@@ -406,6 +413,14 @@ static RECT documentArea(const WindowState& window);
 static void updateStripVisibility(WindowState& window);
 
 static void pushTabsToStrip(WindowState& window);
+
+static void hideHoverCard();
+
+static bool hasStripInTitleBar(const WindowState& window);
+
+static int topResizeBorderHeight(HWND hWnd);
+
+static int titleBarFrameHeight(const WindowState& window);
 
 [[noreturn]] static void fatal(const std::string& message)
 {
@@ -1545,6 +1560,28 @@ static void hideDropOverlay(WindowState& data);
 // The timer that watches for a drag that goes away without the overlay hearing about it.
 static const int TIMER_ID_DROP_OVERLAY = 1;
 
+// The pathnames in a CF_HDROP file list, in their order there.
+static std::vector<std::wstring> pathsInFileList(HDROP drop)
+{
+    std::vector<std::wstring> paths;
+    const UINT numFiles = DragQueryFileW(drop, 0xFFFFFFFF, NULL, 0);
+    for (UINT i = 0; i < numFiles; i++)
+    {
+        // The length returned does not count the terminating NUL character, so the buffer needs
+        // one more.
+        const UINT length = DragQueryFileW(drop, i, NULL, 0);
+        if (length == 0)
+            continue;
+
+        std::wstring path(length + 1, L'\0');
+        if (DragQueryFileW(drop, i, path.data(), length + 1) == 0)
+            continue;
+        path.resize(length);
+        paths.push_back(std::move(path));
+    }
+    return paths;
+}
+
 // Deal with the files in a drop, whether it arrived as a WM_DROPFILES message or through the drop
 // target of the overlay window. An image or media file goes into the document, everything else
 // becomes one more document to open: the first one opens right away, the rest follow one by one as
@@ -1563,29 +1600,20 @@ static void handleDroppedFiles(HWND hWnd, HDROP drop, const POINT& dropPoint)
     // The document view starts below the tab strip, and the page places the insert relative to
     // its own top left corner. A drop on the window frame arrives negative and stays that way,
     // which puts the insert at the cursor instead.
+    // The client coordinates of a mirrored window run from the right, and the page measures from
+    // the left.
     POINT documentPoint = dropPoint;
     if (window && documentPoint.x >= 0 && documentPoint.y >= 0)
     {
         const RECT area = documentArea(*window);
-        documentPoint.x -= area.left;
+        const bool mirrored = (GetWindowLongW(hWnd, GWL_EXSTYLE) & WS_EX_LAYOUTRTL) != 0;
+        documentPoint.x = mirrored ? area.right - documentPoint.x : documentPoint.x - area.left;
         documentPoint.y -= area.top;
     }
 
     bool anyDocumentToOpen = false;
-    const UINT numFiles = DragQueryFileW(drop, 0xFFFFFFFF, NULL, 0);
-    for (UINT i = 0; i < numFiles; i++)
+    for (const std::wstring& droppedPath : pathsInFileList(drop))
     {
-        // The length returned does not count the terminating NUL character, so the buffer needs
-        // one more.
-        const UINT length = DragQueryFileW(drop, i, NULL, 0);
-        if (length == 0)
-            continue;
-
-        std::wstring droppedPath(length + 1, L'\0');
-        if (DragQueryFileW(drop, i, droppedPath.data(), length + 1) == 0)
-            continue;
-        droppedPath.resize(length);
-
         auto path = Poco::Path(Util::wide_string_to_string(droppedPath));
         const std::string mimeType = mimeTypeForFileName(path.getFileName());
 
@@ -1704,11 +1732,13 @@ static void showDropOverlay(WindowState& data)
     // layer, and it is owned by the document window, which keeps it above that window and takes it
     // away when the document window goes. It stops short of the tab strip, which takes its own
     // drags.
-    const RECT bounds = documentArea(data);
+    // With exactly two points, MapWindowPoints() keeps left less than right also when it maps out
+    // of a mirrored window.
+    RECT bounds = documentArea(data);
+    MapWindowPoints(data.hWnd, HWND_DESKTOP, reinterpret_cast<POINT*>(&bounds), 2);
     const int width = bounds.right - bounds.left;
     const int height = bounds.bottom - bounds.top;
-    POINT topLeft = { bounds.left, bounds.top };
-    ClientToScreen(data.hWnd, &topLeft);
+    const POINT topLeft = { bounds.left, bounds.top };
 
     if (!data.hOverlayWnd)
     {
@@ -1859,8 +1889,88 @@ static LRESULT CALLBACK HiddenOwnerWndProc(HWND hWnd, UINT message, WPARAM wPara
 
 static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    // The system draws the caption buttons of a window with the strip in its title bar, and it
+    // handles the mouse over them. WM_NCHITTEST asks it below, after the top resize border.
+    WindowState* frameWindow = findWindow(hWnd);
+    if (frameWindow && hasStripInTitleBar(*frameWindow) && message != WM_NCHITTEST)
+    {
+        LRESULT result;
+        if (DwmDefWindowProc(hWnd, message, wParam, lParam, &result))
+            return result;
+    }
+
     switch (message)
     {
+        case WM_NCCALCSIZE:
+        {
+            if (!wParam || !frameWindow || !hasStripInTitleBar(*frameWindow))
+                return DefWindowProc(hWnd, message, wParam, lParam);
+
+            // The client area takes the place of the title bar and of the resize border above it,
+            // and the system keeps the borders at the sides and at the bottom. A maximized window
+            // reaches above the screen by the height of that border, so its client area starts
+            // lower by as much.
+            NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+            const LONG top = params->rgrc[0].top;
+            const LRESULT result = DefWindowProc(hWnd, message, wParam, lParam);
+            params->rgrc[0].top = top;
+            if (IsZoomed(hWnd))
+                params->rgrc[0].top += topResizeBorderHeight(hWnd);
+            return result;
+        }
+
+        case WM_NCHITTEST:
+        {
+            const LRESULT result = DefWindowProc(hWnd, message, wParam, lParam);
+            if (result != HTCLIENT || !frameWindow || !hasStripInTitleBar(*frameWindow))
+                return result;
+
+            // The strip takes the clicks on itself, so what comes here is the top resize border,
+            // the caption buttons, or the part of the title bar between the strip and the
+            // buttons. The resize border reaches over the buttons, as on a normal title bar.
+            POINT point = { static_cast<short>(LOWORD(lParam)),
+                            static_cast<short>(HIWORD(lParam)) };
+            ScreenToClient(hWnd, &point);
+            RECT client;
+            GetClientRect(hWnd, &client);
+            const int border = topResizeBorderHeight(hWnd);
+            if (!IsZoomed(hWnd) && point.y < border)
+            {
+                // The hit test codes name the sides of the screen, also in a mirrored window,
+                // whose client coordinates run from the right.
+                const bool mirrored = (GetWindowLongW(hWnd, GWL_EXSTYLE) & WS_EX_LAYOUTRTL) != 0;
+                if (point.x < border)
+                    return mirrored ? HTTOPRIGHT : HTTOPLEFT;
+                if (point.x >= client.right - border)
+                    return mirrored ? HTTOPLEFT : HTTOPRIGHT;
+                return HTTOP;
+            }
+            LRESULT buttonResult;
+            if (DwmDefWindowProc(hWnd, message, wParam, lParam, &buttonResult))
+                return buttonResult;
+            if (point.y < titleBarFrameHeight(*frameWindow))
+                return HTCAPTION;
+            return HTCLIENT;
+        }
+
+        case WM_PAINT:
+        {
+            if (!frameWindow || !hasStripInTitleBar(*frameWindow))
+                return DefWindowProc(hWnd, message, wParam, lParam);
+
+            // Black is clear in the frame that DWM extends into the client area, so the frame and
+            // the caption buttons show around the strip.
+            PAINTSTRUCT paint;
+            HDC dc = BeginPaint(hWnd, &paint);
+            RECT frame;
+            GetClientRect(hWnd, &frame);
+            frame.bottom =
+                std::min(frame.bottom, static_cast<LONG>(titleBarFrameHeight(*frameWindow)));
+            FillRect(dc, &frame, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+            EndPaint(hWnd, &paint);
+            return 0;
+        }
+
         case WM_CREATE:
             {
                 // Accept files dragged from Explorer onto the window, which arrive as WM_DROPFILES.
@@ -2195,7 +2305,10 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             // active one, so the key is not taken from other applications and
             // each window opens the developer tools of the document it shows.
             if (LOWORD(wParam) == WA_INACTIVE)
+            {
                 UnregisterHotKey(hWnd, HOTKEY_ID_DEVTOOLS);
+                hideHoverCard();
+            }
             else
             {
                 RegisterHotKey(hWnd, HOTKEY_ID_DEVTOOLS,
@@ -2248,9 +2361,12 @@ static bool isLightTheme()
 
 static bool darkModeEnabled() { return Desktop::getDarkMode().value_or(!isLightTheme()); }
 
-// This might not be defined for older Windows versions
+// These might not be defined for older Windows versions
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
 #endif
 
 // Make the native (DWM-drawn) title bar of a window match the effective dark mode. The document UI
@@ -2264,6 +2380,17 @@ static void applyTitleBarTheme(HWND hWnd)
     {
         LOG_DBG("DwmSetWindowAttribute() for a dark title bar failed: " << hr);
         return;
+    }
+
+    // The frame around the caption buttons of a window with the strip in its title bar has the
+    // background colour of the strip, which is --color-background-dark in the light palette and
+    // --color-background-tabs-group in the dark one. Windows 10 has no caption colour and keeps
+    // its own.
+    const WindowState* window = findWindow(hWnd);
+    if (window && hasStripInTitleBar(*window))
+    {
+        const COLORREF captionColor = darkMode ? RGB(0x30, 0x30, 0x30) : RGB(0xe8, 0xe8, 0xe8);
+        DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &captionColor, sizeof(captionColor));
     }
 
     // A window that is already on screen does not necessarily repaint its frame by itself, so ask
@@ -2803,6 +2930,71 @@ static int stripHeight(const WindowState& window)
     return MulDiv(TAB_STRIP_HEIGHT, GetDpiForWindow(window.hWnd), USER_DEFAULT_SCREEN_DPI);
 }
 
+// A tabbed window shows its tab strip where the title bar would be. The client area covers the
+// title bar, and DWM extends its frame down over the strip, so the system still draws the minimize,
+// maximize and close buttons there. A window in full screen has no frame at all.
+static bool hasStripInTitleBar(const WindowState& window)
+{
+    return window.isTabbed &&
+           (GetWindowLongW(window.hWnd, GWL_STYLE) & WS_CAPTION) == WS_CAPTION;
+}
+
+// The height of the resize border along the top of a window. A window with the strip in its title
+// bar has that border inside its client area.
+static int topResizeBorderHeight(HWND hWnd)
+{
+    const UINT dpi = GetDpiForWindow(hWnd);
+    return GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+           GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+}
+
+// Where the strip starts from the top of the client area. A strip in the title bar leaves the top
+// resize border free, except in a maximized window, which has that border above the screen.
+static int stripTop(const WindowState& window)
+{
+    if (!hasStripInTitleBar(window) || IsZoomed(window.hWnd))
+        return 0;
+    return topResizeBorderHeight(window.hWnd);
+}
+
+// The height of the frame that DWM extends into the client area, and that the caption buttons are
+// in, or 0 for a window that keeps its own title bar.
+static int titleBarFrameHeight(const WindowState& window)
+{
+    if (!hasStripInTitleBar(window))
+        return 0;
+    return stripTop(window) + MulDiv(TAB_STRIP_HEIGHT, GetDpiForWindow(window.hWnd),
+                                     USER_DEFAULT_SCREEN_DPI);
+}
+
+// Where the caption buttons start in client coordinates, or the end of the client area for a
+// window that keeps its own title bar. The buttons are at the end of the title bar, which is its
+// left end in a mirrored window, and the client coordinates of a mirrored window run from the
+// right. So in both cases the buttons are at the high end of the client coordinates.
+static LONG captionButtonsLeft(const WindowState& window)
+{
+    RECT client;
+    GetClientRect(window.hWnd, &client);
+
+    RECT buttons;
+    if (!hasStripInTitleBar(window) ||
+        FAILED(DwmGetWindowAttribute(window.hWnd, DWMWA_CAPTION_BUTTON_BOUNDS, &buttons,
+                                     sizeof(buttons))) ||
+        buttons.right <= buttons.left)
+        return client.right;
+
+    // The bounds are relative to the window, so the space between the buttons and the nearer edge
+    // of the window, less the border at the side of the client area, is what the client area has
+    // beyond the buttons.
+    RECT windowRect;
+    GetWindowRect(window.hWnd, &windowRect);
+    const LONG windowWidth = windowRect.right - windowRect.left;
+    const LONG border = (windowWidth - (client.right - client.left)) / 2;
+    const LONG beyond = std::max(0L, std::min(buttons.left, windowWidth - buttons.right) - border);
+    return std::clamp(client.right - beyond - (buttons.right - buttons.left), client.left,
+                      client.right);
+}
+
 // A minimized window has no client area at all, so both of these keep the
 // bottom edge at or below the top one: a web view rejects a rectangle that is
 // the wrong way round.
@@ -2810,7 +3002,9 @@ static RECT stripBounds(const WindowState& window)
 {
     RECT bounds;
     GetClientRect(window.hWnd, &bounds);
+    bounds.top = std::min(bounds.bottom, bounds.top + stripTop(window));
     bounds.bottom = std::min(bounds.bottom, bounds.top + stripHeight(window));
+    bounds.right = captionButtonsLeft(window);
     return bounds;
 }
 
@@ -2818,12 +3012,38 @@ static RECT documentArea(const WindowState& window)
 {
     RECT bounds;
     GetClientRect(window.hWnd, &bounds);
-    bounds.top = std::min(bounds.bottom, bounds.top + stripHeight(window));
+    bounds.top = std::min(bounds.bottom, bounds.top + stripTop(window) + stripHeight(window));
     return bounds;
+}
+
+// DWM draws its frame, with the caption buttons, in the top of the client area of a window with the
+// strip in its title bar.
+static void updateTitleBarFrame(const WindowState& window)
+{
+    MARGINS margins = { 0, 0, titleBarFrameHeight(window), 0 };
+    DwmExtendFrameIntoClientArea(window.hWnd, &margins);
+}
+
+// A point that the strip page gives in its own CSS pixels from the top left corner of the strip,
+// in screen coordinates. The page itself is never mirrored, so its left is the left of the screen
+// also in a mirrored window.
+static POINT stripPointToScreen(const WindowState& window, double x, double y)
+{
+    // With exactly two points, MapWindowPoints() keeps left less than right also when it maps out
+    // of a mirrored window.
+    RECT strip = stripBounds(window);
+    MapWindowPoints(window.hWnd, HWND_DESKTOP, reinterpret_cast<POINT*>(&strip), 2);
+
+    // The strip does not zoom, so the window's DPI is all that tells the two units apart.
+    const UINT dpi = GetDpiForWindow(window.hWnd);
+    return { strip.left + MulDiv(static_cast<int>(std::lround(x)), dpi, USER_DEFAULT_SCREEN_DPI),
+             strip.top + MulDiv(static_cast<int>(std::lround(y)), dpi, USER_DEFAULT_SCREEN_DPI) };
 }
 
 static void layoutTabs(WindowState& window)
 {
+    updateTitleBarFrame(window);
+
     if (window.stripController)
         window.stripController->put_Bounds(stripBounds(window));
 
@@ -2857,9 +3077,14 @@ static std::string currentTabsJson(const WindowState& window)
         Poco::JSON::Object::Ptr entry = new Poco::JSON::Object();
         entry->set("id", tab->tabId);
         entry->set("title", tab->filenameAndUri.filename);
+        // The full path of the document file. The starter backstage and the welcome slideshow
+        // have none.
+        if (tab->mode != DocumentMode::STARTER && tab->mode != DocumentMode::WELCOME)
+            entry->set("path", fileUriToWindowsPath(tab->filenameAndUri.uri));
         entry->set("docType", tab->docType);
         entry->set("modified", tab->isModified);
         entry->set("active", tab->tabId == window.activeTabId);
+        entry->set("hasThumbnail", !tab->thumbnailPng.empty());
         tabs.add(entry);
     }
 
@@ -2892,13 +3117,15 @@ static void notifyStrip(WindowState& window, const std::string& signal,
 
 static void updateStripVisibility(WindowState& window)
 {
-    // A single document needs no strip to pick from, and a presentation wants
-    // the whole monitor.
-    const bool visible = window.tabIds.size() > 1 && !window.isFullScreen;
+    // The strip is to take the place of the title bar, so a tabbed window shows it also with a
+    // single document. A presentation wants the whole monitor.
+    const bool visible = window.isTabbed && !window.tabIds.empty() && !window.isFullScreen;
     if (visible == window.stripIsVisible)
         return;
 
     window.stripIsVisible = visible;
+    if (!visible)
+        hideHoverCard();
     if (window.stripController)
         window.stripController->put_IsVisible(visible && window.stripHasContent);
     layoutTabs(window);
@@ -2919,12 +3146,368 @@ static void focusActiveDocument(const WindowState& window)
         tab->webViewController->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
 }
 
+// How long the pointer has to rest on a tab before its hover card shows, in milliseconds.
+static const UINT HOVER_CARD_DELAY = 500;
+// The timer of the hover card window that holds that delay.
+static const int TIMER_ID_HOVER_CARD = 1;
+// The frame of the image in the hover card, at the standard resolution.
+static const int HOVER_CARD_IMAGE_WIDTH = 218;
+static const int HOVER_CARD_IMAGE_HEIGHT = 170;
+
+// The card with the name and the image of a background document, below the tab that the pointer
+// rests on. One card serves every window, because the pointer rests on one tab at a time.
+struct HoverCard
+{
+    HWND hWnd = 0;
+    // The tab the card is for, or 0 when the pointer rests on no tab.
+    int tabId = 0;
+    // The bottom corner of that tab where the tab starts, in screen coordinates.
+    POINT position = {};
+    // The tabs run from right to left, so the card lines up with the right edge of its tab.
+    bool rightToLeft = false;
+    // The colours of the card, from the theme of the strip.
+    COLORREF background = RGB(0xf8, 0xf9, 0xfa);
+    COLORREF text = RGB(0x33, 0x33, 0x33);
+    COLORREF border = RGB(0x94, 0x94, 0x94);
+    // What the card shows, laid out in the client area of the card.
+    std::wstring title;
+    HFONT font = nullptr;
+    RECT titleRect = {};
+    HBITMAP image = nullptr;
+    RECT imageRect = {};
+};
+
+static HoverCard hoverCard;
+
+// A colour from the strip page, which gives it as a CSS colour string such as "#f8f9fa" or
+// "rgb(248, 249, 250)". Any other form gives the fallback.
+static COLORREF cssColor(const std::string& css, COLORREF fallback)
+{
+    const std::size_t first = css.find_first_not_of(" \t");
+    if (first == std::string::npos)
+        return fallback;
+    const std::string value = css.substr(first, css.find_last_not_of(" \t") - first + 1);
+
+    if (value[0] == '#')
+    {
+        const std::string hex = value.substr(1);
+        if (hex.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos)
+            return fallback;
+        // The short forms have one digit for each channel, and an alpha channel is ignored.
+        if (hex.size() == 3 || hex.size() == 4)
+            return RGB(std::stoi(hex.substr(0, 1), nullptr, 16) * 17,
+                       std::stoi(hex.substr(1, 1), nullptr, 16) * 17,
+                       std::stoi(hex.substr(2, 1), nullptr, 16) * 17);
+        if (hex.size() == 6 || hex.size() == 8)
+            return RGB(std::stoi(hex.substr(0, 2), nullptr, 16),
+                       std::stoi(hex.substr(2, 2), nullptr, 16),
+                       std::stoi(hex.substr(4, 2), nullptr, 16));
+        return fallback;
+    }
+
+    if (value.starts_with("rgb(") || value.starts_with("rgba("))
+    {
+        const char* p = value.c_str() + value.find('(') + 1;
+        int channels[3];
+        for (int& channel : channels)
+        {
+            char* end;
+            const long number = std::strtol(p, &end, 10);
+            if (end == p || number < 0 || number > 255)
+                return fallback;
+            channel = static_cast<int>(number);
+            p = end + std::strspn(end, " ,");
+        }
+        return RGB(channels[0], channels[1], channels[2]);
+    }
+
+    return fallback;
+}
+
+// A PNG image fitted inside a box of the given size in pixels, keeping its shape, and drawn over
+// the background colour where it is transparent. The size of the bitmap goes to size. There is no
+// bitmap when the PNG cannot be read.
+static HBITMAP fittedImage(const std::string& png, int boxWidth, int boxHeight,
+                           COLORREF background, SIZE& size)
+{
+    wil::com_ptr<IWICImagingFactory> factory;
+    if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
+                                IID_PPV_ARGS(factory.put()))))
+        return nullptr;
+
+    wil::com_ptr<IWICStream> stream;
+    if (FAILED(factory->CreateStream(&stream)) ||
+        FAILED(stream->InitializeFromMemory(
+            reinterpret_cast<BYTE*>(const_cast<char*>(png.data())),
+            static_cast<DWORD>(png.size()))))
+        return nullptr;
+
+    wil::com_ptr<IWICBitmapDecoder> decoder;
+    wil::com_ptr<IWICBitmapFrameDecode> frame;
+    UINT width, height;
+    if (FAILED(factory->CreateDecoderFromStream(stream.get(), nullptr,
+                                                WICDecodeMetadataCacheOnDemand, &decoder)) ||
+        FAILED(decoder->GetFrame(0, &frame)) || FAILED(frame->GetSize(&width, &height)) ||
+        width == 0 || height == 0)
+        return nullptr;
+
+    const double scale = std::min(static_cast<double>(boxWidth) / width,
+                                  static_cast<double>(boxHeight) / height);
+    const UINT fittedWidth = std::max(1U, static_cast<UINT>(std::lround(width * scale)));
+    const UINT fittedHeight = std::max(1U, static_cast<UINT>(std::lround(height * scale)));
+
+    // The pixels come out with the colour already multiplied by the alpha, so the background
+    // only has to be added in proportion to what the image leaves uncovered.
+    wil::com_ptr<IWICBitmapScaler> scaler;
+    wil::com_ptr<IWICFormatConverter> converter;
+    if (FAILED(factory->CreateBitmapScaler(&scaler)) ||
+        FAILED(scaler->Initialize(frame.get(), fittedWidth, fittedHeight,
+                                  WICBitmapInterpolationModeFant)) ||
+        FAILED(factory->CreateFormatConverter(&converter)) ||
+        FAILED(converter->Initialize(scaler.get(), GUID_WICPixelFormat32bppPBGRA,
+                                     WICBitmapDitherTypeNone, nullptr, 0.0,
+                                     WICBitmapPaletteTypeCustom)))
+        return nullptr;
+
+    BITMAPINFO info = {};
+    info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    info.bmiHeader.biWidth = static_cast<LONG>(fittedWidth);
+    // A negative height makes the rows run from the top down, as WIC gives them.
+    info.bmiHeader.biHeight = -static_cast<LONG>(fittedHeight);
+    info.bmiHeader.biPlanes = 1;
+    info.bmiHeader.biBitCount = 32;
+    info.bmiHeader.biCompression = BI_RGB;
+
+    void* bits = nullptr;
+    HBITMAP bitmap = CreateDIBSection(nullptr, &info, DIB_RGB_COLORS, &bits, nullptr, 0);
+    if (!bitmap)
+        return nullptr;
+
+    const UINT stride = fittedWidth * 4;
+    if (FAILED(converter->CopyPixels(nullptr, stride, stride * fittedHeight,
+                                     static_cast<BYTE*>(bits))))
+    {
+        DeleteObject(bitmap);
+        return nullptr;
+    }
+
+    BYTE* pixel = static_cast<BYTE*>(bits);
+    for (UINT i = 0; i < fittedWidth * fittedHeight; i++, pixel += 4)
+    {
+        const int uncovered = 255 - pixel[3];
+        pixel[0] = static_cast<BYTE>(pixel[0] + (GetBValue(background) * uncovered + 127) / 255);
+        pixel[1] = static_cast<BYTE>(pixel[1] + (GetGValue(background) * uncovered + 127) / 255);
+        pixel[2] = static_cast<BYTE>(pixel[2] + (GetRValue(background) * uncovered + 127) / 255);
+        pixel[3] = 255;
+    }
+
+    size = { static_cast<LONG>(fittedWidth), static_cast<LONG>(fittedHeight) };
+    return bitmap;
+}
+
+static void hideHoverCard()
+{
+    hoverCard.tabId = 0;
+    if (hoverCard.hWnd)
+    {
+        KillTimer(hoverCard.hWnd, TIMER_ID_HOVER_CARD);
+        ShowWindow(hoverCard.hWnd, SW_HIDE);
+    }
+}
+
+// Show the card for the tab that the pointer rests on, with the image that its document sent
+// last. The active tab shows the document itself, so it gets no card.
+static void showHoverCard()
+{
+    DocumentTab* tab = findTab(hoverCard.tabId);
+    WindowState* window = tab ? findWindow(tab->hWnd) : nullptr;
+    if (!hoverCard.hWnd || !window || tab->thumbnailPng.empty() ||
+        window->activeTabId == tab->tabId)
+    {
+        if (hoverCard.hWnd)
+            ShowWindow(hoverCard.hWnd, SW_HIDE);
+        return;
+    }
+
+    const UINT dpi = GetDpiForWindow(window->hWnd);
+    const auto scaled = [dpi](int value) { return MulDiv(value, dpi, USER_DEFAULT_SCREEN_DPI); };
+
+    if (hoverCard.font)
+        DeleteObject(hoverCard.font);
+    NONCLIENTMETRICSW metrics = { sizeof(NONCLIENTMETRICSW) };
+    hoverCard.font = SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(metrics),
+                                                &metrics, 0, dpi)
+                         ? CreateFontIndirectW(&metrics.lfStatusFont)
+                         : nullptr;
+
+    int titleHeight = scaled(16);
+    if (HDC dc = GetDC(nullptr))
+    {
+        const HGDIOBJ oldFont = SelectObject(dc, hoverCard.font ? hoverCard.font
+                                                                : GetStockObject(DEFAULT_GUI_FONT));
+        TEXTMETRICW textMetrics;
+        if (GetTextMetricsW(dc, &textMetrics))
+            titleHeight = textMetrics.tmHeight;
+        SelectObject(dc, oldFont);
+        ReleaseDC(nullptr, dc);
+    }
+
+    // The title above the image, with margins of 8 at the sides and the bottom, 6 at the top and
+    // 6 between the two. Every card has the same size, and an image of another shape is fitted
+    // inside the frame and centred.
+    const int imageWidth = scaled(HOVER_CARD_IMAGE_WIDTH);
+    const int imageHeight = scaled(HOVER_CARD_IMAGE_HEIGHT);
+    hoverCard.titleRect = { scaled(8), scaled(6), scaled(8) + imageWidth,
+                            scaled(6) + titleHeight };
+    const RECT imageFrame = { scaled(8), hoverCard.titleRect.bottom + scaled(6),
+                              scaled(8) + imageWidth,
+                              hoverCard.titleRect.bottom + scaled(6) + imageHeight };
+    const int cardWidth = imageFrame.right + scaled(8);
+    const int cardHeight = imageFrame.bottom + scaled(8);
+
+    if (hoverCard.image)
+        DeleteObject(hoverCard.image);
+    SIZE size = {};
+    hoverCard.image =
+        fittedImage(tab->thumbnailPng, imageWidth, imageHeight, hoverCard.background, size);
+    const int left = imageFrame.left + (imageWidth - size.cx) / 2;
+    const int top = imageFrame.top + (imageHeight - size.cy) / 2;
+    hoverCard.imageRect = { left, top, left + size.cx, top + size.cy };
+
+    // The tooltip of a tab shows the full path of its document, so the card does too.
+    const std::string path = fileUriToWindowsPath(tab->filenameAndUri.uri);
+    hoverCard.title =
+        Util::string_to_wide_string(path.empty() ? tab->filenameAndUri.filename : path);
+    std::wstring accessibleName = translate("TabManager", "Preview of %1");
+    const std::size_t placeholder = accessibleName.find(L"%1");
+    if (placeholder != std::wstring::npos)
+        accessibleName.replace(placeholder, 2, hoverCard.title);
+    SetWindowTextW(hoverCard.hWnd, accessibleName.c_str());
+
+    // The card stays on the monitor of the tab, even for a tab near its edge.
+    POINT position = hoverCard.position;
+    if (hoverCard.rightToLeft)
+        position.x -= cardWidth;
+    MONITORINFO monitor = { sizeof(MONITORINFO) };
+    if (GetMonitorInfoW(MonitorFromPoint(position, MONITOR_DEFAULTTONEAREST), &monitor))
+        position.x = std::max(monitor.rcWork.left,
+                              std::min(position.x, monitor.rcWork.right - cardWidth));
+
+    SetWindowPos(hoverCard.hWnd, HWND_TOPMOST, position.x, position.y, cardWidth, cardHeight,
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    InvalidateRect(hoverCard.hWnd, nullptr, TRUE);
+}
+
+// The pointer has come to rest on a tab of the window. The point is the bottom corner of the tab
+// where the tab starts, in the CSS pixels of the strip, which is its right corner when the tabs run
+// from right to left. The colours are those of the theme of the strip.
+static void startHoverCard(const WindowState& window, int tabId, POINT point,
+                           const std::string& background, const std::string& text,
+                           const std::string& border, bool rightToLeft)
+{
+    if (!hoverCard.hWnd)
+        hoverCard.hWnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
+                                         hoverCardWindowClass, L"", WS_POPUP, 0, 0, 0, 0,
+                                         nullptr, nullptr, appInstance, nullptr);
+    if (!hoverCard.hWnd)
+        return;
+
+    hoverCard.tabId = tabId;
+    hoverCard.position = stripPointToScreen(window, point.x, point.y);
+    hoverCard.rightToLeft = rightToLeft;
+    hoverCard.background = cssColor(background, RGB(0xf8, 0xf9, 0xfa));
+    hoverCard.text = cssColor(text, RGB(0x33, 0x33, 0x33));
+    hoverCard.border = cssColor(border, RGB(0x94, 0x94, 0x94));
+
+    // Moving from one tab to the next while a card is up swaps the card at once.
+    if (IsWindowVisible(hoverCard.hWnd))
+        showHoverCard();
+    else
+        SetTimer(hoverCard.hWnd, TIMER_ID_HOVER_CARD, HOVER_CARD_DELAY, nullptr);
+}
+
+// The card only shows what the pointer rests on, so it takes neither the focus nor the mouse.
+static LRESULT CALLBACK HoverCardWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+        case WM_TIMER:
+            if (wParam != TIMER_ID_HOVER_CARD)
+                break;
+            KillTimer(hWnd, TIMER_ID_HOVER_CARD);
+            showHoverCard();
+            return 0;
+
+        case WM_MOUSEACTIVATE:
+            return MA_NOACTIVATE;
+
+        case WM_NCHITTEST:
+            return HTTRANSPARENT;
+
+        case WM_PAINT:
+        {
+            PAINTSTRUCT paint;
+            HDC dc = BeginPaint(hWnd, &paint);
+
+            RECT client;
+            GetClientRect(hWnd, &client);
+            HBRUSH backgroundBrush = CreateSolidBrush(hoverCard.background);
+            FillRect(dc, &client, backgroundBrush);
+            DeleteObject(backgroundBrush);
+            HBRUSH borderBrush = CreateSolidBrush(hoverCard.border);
+            FrameRect(dc, &client, borderBrush);
+            DeleteObject(borderBrush);
+
+            const HGDIOBJ font =
+                hoverCard.font ? hoverCard.font : GetStockObject(DEFAULT_GUI_FONT);
+            const HGDIOBJ oldFont = SelectObject(dc, font);
+            SetBkMode(dc, TRANSPARENT);
+            SetTextColor(dc, hoverCard.text);
+            RECT titleRect = hoverCard.titleRect;
+            DrawTextW(dc, hoverCard.title.c_str(), -1, &titleRect,
+                      DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_PATH_ELLIPSIS);
+            SelectObject(dc, oldFont);
+
+            if (hoverCard.image)
+            {
+                if (HDC imageDC = CreateCompatibleDC(dc))
+                {
+                    const HGDIOBJ oldBitmap = SelectObject(imageDC, hoverCard.image);
+                    BitBlt(dc, hoverCard.imageRect.left, hoverCard.imageRect.top,
+                           hoverCard.imageRect.right - hoverCard.imageRect.left,
+                           hoverCard.imageRect.bottom - hoverCard.imageRect.top, imageDC, 0, 0,
+                           SRCCOPY);
+                    SelectObject(imageDC, oldBitmap);
+                    DeleteDC(imageDC);
+                }
+            }
+
+            EndPaint(hWnd, &paint);
+            return 0;
+        }
+    }
+
+    return DefWindowProcW(hWnd, message, wParam, lParam);
+}
+
 // Bring one document of the window to the front and leave the rest behind it.
 static void activateTab(WindowState& window, int tabId)
 {
     DocumentTab* tab = findTab(tabId);
     if (!tab)
         return;
+
+    hideHoverCard();
+
+    // The tab the user leaves sends an image of what it shows, for the card of its tab.
+    DocumentTab* previous = activeTabOf(window);
+    if (previous && previous != tab && previous->webView && previous->hasContent)
+        previous->webView->ExecuteScript(
+            L"if (window.app && window.app.map && window.app.map.requestTabThumbnail)"
+            L"  window.app.map.requestTabThumbnail();",
+            Microsoft::WRL::Callback<ICoreWebView2ExecuteScriptCompletedHandler>(
+                [](HRESULT, LPCWSTR) -> HRESULT { return S_OK; })
+                .Get());
 
     window.activeTabId = tabId;
 
@@ -2949,6 +3532,9 @@ static void closeTab(WindowState& window, int tabId)
     DocumentTab* tab = findTab(tabId);
     if (!tab)
         return;
+
+    if (hoverCard.tabId == tabId)
+        hideHoverCard();
 
     if (tab->isConsole)
     {
@@ -3070,6 +3656,8 @@ static void showTabContextMenu(HWND hWnd, int tabId, POINT point)
 {
     if (!findWindow(hWnd) || !findTab(tabId))
         return;
+
+    hideHoverCard();
 
     enum
     {
@@ -3200,16 +3788,11 @@ static void processStripMessage(WindowState& window, const std::string& message)
     }
     else if (call == "tabContextMenuRequested" && argCount >= 3)
     {
-        // The page gives the click in its own CSS pixels from the top left of the strip, which is
-        // that of the window's client area. The strip does not zoom, so the window's DPI is all
-        // that tells the two units apart.
-        const UINT dpi = GetDpiForWindow(window.hWnd);
-        const int x = MulDiv(static_cast<int>(std::lround(args->getElement<double>(1))), dpi,
-                             USER_DEFAULT_SCREEN_DPI);
-        const int y = MulDiv(static_cast<int>(std::lround(args->getElement<double>(2))), dpi,
-                             USER_DEFAULT_SCREEN_DPI);
+        POINT point = stripPointToScreen(window, args->getElement<double>(1),
+                                         args->getElement<double>(2));
+        ScreenToClient(window.hWnd, &point);
         PostMessageW(window.hWnd, CODA_WM_SHOWTABMENU, (WPARAM)args->getElement<int>(0),
-                     MAKELPARAM(x, y));
+                     MAKELPARAM(point.x, point.y));
     }
     else if (call == "tabReordered" && argCount >= 2)
     {
@@ -3264,10 +3847,25 @@ static void processStripMessage(WindowState& window, const std::string& message)
         PostMessageW(window.hWnd, CODA_WM_MOVETABTOWINDOW, (WPARAM)args->getElement<int>(0),
                      (LPARAM)args->getElement<int>(1));
     }
+    else if (call == "tabHoverStarted" && argCount >= 7)
+    {
+        const POINT point = { static_cast<LONG>(std::lround(args->getElement<double>(1))),
+                              static_cast<LONG>(std::lround(args->getElement<double>(2))) };
+        startHoverCard(window, args->getElement<int>(0), point, args->getElement<std::string>(3),
+                       args->getElement<std::string>(4), args->getElement<std::string>(5),
+                       args->getElement<bool>(6));
+    }
+    else if (call == "tabHoverEnded")
+    {
+        hideHoverCard();
+    }
     else if (call == "tabDragStarted" || call == "targetDragOver")
     {
         // The app learns where a tab drag ended from tabDragEnded, and from the drop calls of the
-        // strip it ended on, so it does not follow the drag as it goes.
+        // strip it ended on, so it does not follow the drag as it goes. The start of a drag only
+        // takes the hover card away.
+        if (call == "tabDragStarted")
+            hideHoverCard();
     }
     else
     {
@@ -3318,6 +3916,12 @@ static void createTabStrip(WindowState& window)
                             = settings.try_query<ICoreWebView2Settings6>();
                         if (settings6)
                             settings6->put_IsSwipeNavigationEnabled(FALSE);
+                        // The page marks the space around the tabs with app-region: drag, and a
+                        // drag there moves the window as a drag on the title bar does.
+                        wil::com_ptr<ICoreWebView2Settings9> settings9
+                            = settings.try_query<ICoreWebView2Settings9>();
+                        if (settings9)
+                            settings9->put_IsNonClientRegionSupportEnabled(TRUE);
 
                         EventRegistrationToken token;
                         webView->add_WebMessageReceived(
@@ -3371,7 +3975,10 @@ static void createTabStrip(WindowState& window)
                         // it is in the right colours from its first paint.
                         const std::string stripURL =
                             app_installation_uri + "../cool/qtapp-tabstrip.html?darkTheme=" +
-                            (currentStripTheme() == "dark" ? "true" : "false");
+                            (currentStripTheme() == "dark" ? "true" : "false") + "&titleBar=true" +
+                            // The tabs run from right to left in a language written that way, as
+                            // the document UI does.
+                            (LangUtil::isRtlLanguage(uiLanguage) ? "&dir=rtl" : "");
                         webView->Navigate(Util::string_to_wide_string(stripURL).c_str());
 
                         return S_OK;
@@ -3768,6 +4375,18 @@ static WindowState& createTabbedWindow(const POINT* titleBarPoint = nullptr)
                                           WS_OVERLAPPEDWINDOW, x, y, width, height);
     window.isTabbed = true;
     tabbedWindow = window.hWnd;
+
+    // In a language written from right to left the window is mirrored, as the tab strip is, so the
+    // strip starts at the right and the caption buttons are at the left. The web views in it are
+    // not mirrored, as their pages lay themselves out from the dir parameter.
+    if (LangUtil::isRtlLanguage(uiLanguage))
+        SetWindowLongW(window.hWnd, GWL_EXSTYLE,
+                       GetWindowLongW(window.hWnd, GWL_EXSTYLE) | WS_EX_LAYOUTRTL |
+                           WS_EX_NOINHERITLAYOUT);
+
+    // The window was created before it was known to be tabbed, so its frame and the colour of its
+    // title bar are computed again.
+    applyTitleBarTheme(window.hWnd);
 
     createTabStrip(window);
 
@@ -4184,6 +4803,8 @@ static std::string MIME_type_for_clipboard_format(UINT format)
 {
     if (format == CF_UNICODETEXT)
         return "text/plain;charset=utf-8";
+    if (format == CF_HDROP)
+        return "text/uri-list";
 
     auto name = get_clipboard_format_name(format);
 
@@ -4205,6 +4826,8 @@ static std::string MIME_type_for_clipboard_format(UINT format)
         return "text/rtf";
     else if (name == L"HTML Format")
         return "text/html";
+    else if (name == L"FileNameW")
+        return "text/uri-list";
 
     return "";
 }
@@ -4325,8 +4948,52 @@ static std::vector<std::string> clipboardProviderGetMimeTypes()
     return mimeTypes;
 }
 
+// When the user copies files in Explorer, the clipboard holds the files as a CF_HDROP file list. It
+// also holds the FileNameW format, which is the pathname of the first file only, in UTF-16 and
+// followed by a null. The text/uri-list made from them holds the file: URI of each file, each
+// followed by CRLF.
+static bool getClipboardFilesAsUriList(std::vector<char>* pOutData)
+{
+    if (!try_open_clipboard(NULL))
+        return false;
+
+    std::vector<std::wstring> paths;
+    if (HANDLE handle = GetClipboardData(CF_HDROP))
+        paths = pathsInFileList(static_cast<HDROP>(handle));
+
+    if (paths.empty())
+    {
+        if (HANDLE handle = GetClipboardData(RegisterClipboardFormatW(L"FileNameW")))
+        {
+            if (const wchar_t* wpath = (const wchar_t*)GlobalLock(handle))
+            {
+                // The block can be larger than the data in it, so the pathname ends at the first
+                // null.
+                std::wstring path(wpath, wcsnlen(wpath, GlobalSize(handle) / sizeof(wchar_t)));
+                GlobalUnlock(handle);
+                if (!path.empty())
+                    paths.push_back(std::move(path));
+            }
+        }
+    }
+    CloseClipboard();
+
+    if (paths.empty())
+        return false;
+
+    std::string uriList;
+    for (const std::wstring& path : paths)
+        uriList += pathToURI(Poco::Path(Util::wide_string_to_string(path))) + "\r\n";
+    pOutData->assign(uriList.begin(), uriList.end());
+
+    return true;
+}
+
 static bool clipboardProviderGetData(const char* pMimeType, std::vector<char>* pOutData)
 {
+    if (std::strcmp(pMimeType, "text/uri-list") == 0)
+        return getClipboardFilesAsUriList(pOutData);
+
     auto formats = clipboard_formats_for_MIME_type(pMimeType);
 
     if (formats.size() == 0)
@@ -4515,6 +5182,28 @@ static void processMessage(DocumentTab& data, wil::unique_cotaskmem_string& mess
                 }
                 CloseClipboard();
             }
+        }
+        else if (s.starts_with(L"TABTHUMBNAIL "))
+        {
+            // An image of what the document shows, as a "data:image/png;base64," URL. Anything
+            // else is ignored.
+            const std::string dataUrl = Util::wide_string_to_string(s.substr(13));
+            constexpr std::string_view prefix = "data:image/png;base64,";
+            if (!dataUrl.starts_with(prefix))
+                return;
+            std::string png = Util::base64Decode(dataUrl.substr(prefix.size()));
+            if (png.empty())
+                return;
+
+            // The strip only needs to know that a tab has an image, so later images skip the
+            // push.
+            const bool isFirstThumbnail = data.thumbnailPng.empty();
+            data.thumbnailPng = std::move(png);
+            WindowState* window = findWindow(data.hWnd);
+            if (isFirstThumbnail && window)
+                pushTabsToStrip(*window);
+            if (hoverCard.tabId == data.tabId && IsWindowVisible(hoverCard.hWnd))
+                showHoverCard();
         }
         else if (s.starts_with(L"HYPERLINK "))
         {
@@ -5234,6 +5923,20 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int showWindowMode)
 
         if (!RegisterClassExW(&wcex))
             fatal("RegisterClassExW() for the drop overlay window failed");
+    }
+
+    {
+        WNDCLASSEXW wcex = { sizeof(WNDCLASSEXW) };
+
+        // A drop shadow, as on the tooltips of the system.
+        wcex.style = CS_DROPSHADOW;
+        wcex.lpfnWndProc = HoverCardWndProc;
+        wcex.hInstance = hInstance;
+        wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+        wcex.lpszClassName = hoverCardWindowClass;
+
+        if (!RegisterClassExW(&wcex))
+            fatal("RegisterClassExW() for the tab hover card failed");
     }
 
     // Open the first document here, then open the rest one by one once the previous has loaded.

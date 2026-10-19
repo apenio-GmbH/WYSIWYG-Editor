@@ -151,11 +151,6 @@ public:
     /// Load unit test hook shared library from this path
     static bool init(UnitType type, const std::string& unitLibPath);
 
-    /// Start the timeout of a kit test loaded by init(). ForKit calls this once the engine
-    /// preinit is done, so the time spent there, which can be long in a sanitizer build, does
-    /// not count against the test.
-    static void startKitTimeout();
-
     /// Uninitialize the unit-test and return the global exit code.
     /// Returns 0 on success.
     static int uninit();
@@ -177,7 +172,7 @@ public:
     /// Returns true if we failed, false otherwise.
     virtual bool onDataLoss(const std::string& reason)
     {
-        TST_LOG("onDataLoss: " << reason);
+        TST_LOG_SAFE("onDataLoss: " << reason);
         failTest(reason);
         return failed();
     }
@@ -298,7 +293,7 @@ public:
         if (isUnitTesting() && !isFinished() &&
             (elapsedTime - _startTimeMilliSeconds) > getTimeoutMilliSeconds())
         {
-            TST_LOG("ERROR Test exceeded its time limit of "
+            TST_LOG_SAFE("ERROR Test exceeded its time limit of "
                     << getTimeoutMilliSeconds() << ". It's been running for " << elapsedTime);
             timeout();
         }
@@ -313,8 +308,18 @@ public:
 
     static std::string getUnitLibPath() { return std::string(UnitLibPath); }
 
-    const std::string& getTestname() const { return testname; }
-    void setTestname(std::string name) { testname = std::move(name); }
+    /// A copy of the test name, safe to take from any thread.
+    std::string getTestname() const
+    {
+        std::lock_guard<std::mutex> guard(_testnameLock);
+        return testname;
+    }
+
+    void setTestname(std::string name)
+    {
+        std::lock_guard<std::mutex> guard(_testnameLock);
+        testname = std::move(name);
+    }
 
     std::shared_ptr<SocketPoll> socketPoll();
 
@@ -331,8 +336,9 @@ private:
     /// Initialize the Test Suite options.
     static void initTestSuiteOptions();
 
-    /// Based on COOL_TEST_OPTIONS envar, filter the tests.
-    static void filter();
+    /// Based on COOL_TEST_OPTIONS envar, filter the tests: returns the index of the first test,
+    /// from @index on, that matches, or that of the dummy instance at the end when none does.
+    static std::size_t filter(std::size_t index);
 
     /// Returns true iff a test after the current one matches the filter. The dummy instance at
     /// the end of GlobalArray is not a test.
@@ -376,12 +382,15 @@ private:
     static TestOptions GlobalTestOptions; ///< The test options for this Test Suite.
     static TestResult GlobalResult; ///< The result of all tests. Latches at first failure.
 
-    mutable std::mutex _lock; ///< Used to protect cleanup functions.
     std::mutex _lockSocketPoll; ///< Used to sync _socketPoll
 
     std::string _reason;
 protected:
-    /// The name of the current test. Accessed from logs in derived classes.
+    mutable std::mutex _lock; ///< Used to protect cleanup functions.
+    mutable std::mutex _testnameLock; ///< Guards testname against setTestname.
+    /// The name of the current test. Accessed from logs in derived classes. Only read it directly
+    /// on the thread that calls setTestname; hooks and handlers on other threads use getTestname()
+    /// or TST_LOG_SAFE.
     std::string testname;
 private:
     std::shared_ptr<SocketPoll> _socketPoll; ///< Poll thread for async http comm.
@@ -602,6 +611,14 @@ public:
     /// Called when a new client session is added to a DocumentBroker.
     virtual void onDocBrokerAddSession(const std::string&, const std::shared_ptr<ClientSession>&) {}
 
+    /// Called when a DocumentBroker starts taking a client session out: saving for
+    /// it, unlocking with it and disconnecting it from the Kit. That happens once
+    /// per session; onDocBrokerRemoveSession follows when it is finally dropped.
+    virtual void onDocBrokerRemovingSession(const std::string&,
+                                            const std::shared_ptr<ClientSession>&)
+    {
+    }
+
     /// Called when a client session is removed to a DocumentBroker.
     virtual void onDocBrokerRemoveSession(const std::string&, const std::shared_ptr<ClientSession>&)
     {
@@ -669,6 +686,10 @@ public:
     static UnitKit& get();
 
     // ---------------- ForKit hooks ----------------
+
+    /// ForKit forks the Kits, and must not have other threads when it does, so the test starts
+    /// none: it runs on the main loop of ForKit, which also checks that it doesn't time out.
+    void initialize() override;
 
     /// main-loop reached, time for testing
     virtual void invokeForKitTest() {}

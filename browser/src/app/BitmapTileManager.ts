@@ -958,7 +958,9 @@ class BitmapTileManager extends RenderManagerBase {
 		}, 100);
 	}
 
-	private initPreFetchAdjacentTiles() {
+	// Shortly after the view moves, request the tiles that a further scroll in the same
+	// direction would show, ahead of the slower pre-fetch that grows around the view.
+	public initPreFetchAdjacentTiles() {
 		if (!this.checkDocLayer()) return;
 
 		this.updateProperties();
@@ -2409,9 +2411,25 @@ class BitmapTileManager extends RenderManagerBase {
 	}
 
 	// -- vector rendering --
-	// Bitmap tiles carry no vector content: there is no part to name, fetch or
-	// draw, and every layer is visible.
+	// Bitmap tiles carry no vector content or text to predict into, and every
+	// layer is visible.
 	public isVectorRendering(): boolean {
+		return false;
+	}
+
+	public predictTextInsert(_text: string): boolean {
+		return false;
+	}
+
+	public predictTextDelete(_before: number, _after: number): boolean {
+		return false;
+	}
+
+	public keepPredictedCaret(_update: cool.CaretUpdate): boolean {
+		return false;
+	}
+
+	public canPredictAtCaret(): boolean {
 		return false;
 	}
 

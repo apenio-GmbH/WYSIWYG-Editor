@@ -1490,7 +1490,7 @@ void SmViewShell::Execute(SfxRequest& rReq)
                 if (pWin->IsAllSelected())
                 {
                     GetViewFrame().GetDispatcher()->ExecuteList(
-                                SID_COPYOBJECT, SfxCallMode::RECORD,
+                                SID_COPYOBJECT, SfxCallMode::SLOT,
                                 { new SfxVoidItem(SID_COPYOBJECT) });
                 }
                 else
@@ -1519,7 +1519,7 @@ void SmViewShell::Execute(SfxRequest& rReq)
                     else
                     {
                         GetViewFrame().GetDispatcher()->ExecuteList(
-                                SID_PASTEOBJECT, SfxCallMode::RECORD,
+                                SID_PASTEOBJECT, SfxCallMode::SLOT,
                                 { new SfxVoidItem(SID_PASTEOBJECT) });
                     }
                 }
@@ -1731,7 +1731,6 @@ void SmViewShell::Execute(SfxRequest& rReq)
                                                 GetViewFrame().GetFrame().GetFrameInterface());
             GetViewFrame().GetBindings().Invalidate( SID_ELEMENTSDOCKINGWINDOW );
 
-            rReq.Ignore ();
         }
         break;
 
@@ -1874,7 +1873,6 @@ void SmViewShell::Execute(SfxRequest& rReq)
                     GetViewFrame().GetBindings().Invalidate( SID_ELEMENTSDOCKINGWINDOW );
                 }
                 Broadcast(SfxHint(SfxHintId::SmNewUserFormula));
-                rReq.Ignore ();
             }
             pDlg.disposeAndClear();
         }

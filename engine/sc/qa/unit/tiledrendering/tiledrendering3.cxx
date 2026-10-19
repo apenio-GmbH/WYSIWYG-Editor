@@ -14,6 +14,15 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/container/XIndexAccess.hpp>
+#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
+#include <com/sun/star/table/XColumnRowRange.hpp>
+#include <com/sun/star/sheet/XSubTotalCalculatable.hpp>
+#include <com/sun/star/sheet/XSubTotalDescriptor.hpp>
+#include <com/sun/star/sheet/SubTotalColumn.hpp>
+#include <com/sun/star/sheet/GeneralFunction.hpp>
+#include <com/sun/star/sheet/XSheetOutline.hpp>
+#include <com/sun/star/table/TableOrientation.hpp>
 #include <com/sun/star/util/URLTransformer.hpp>
 
 #include <comphelper/propertysequence.hxx>
@@ -56,6 +65,7 @@
 
 #include <postit.hxx>
 #include <attrib.hxx>
+#include <chgtrack.hxx>
 #include <patattr.hxx>
 #include <scitems.hxx>
 #include <document.hxx>
@@ -938,11 +948,11 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testCommentCellCopyPaste)
         typeCharsInCell("ABC", 0, 0, pTabViewShell, pModelObj); // Type "ABC" in A1
 
         pTabViewShell->SetCursor(1, 1);
+        pTabViewShell->SetKitAuthor(u"COKit Client"_ustr);
 
         // Add a new comment
         cpo::uno::Sequence<beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
             { u"Text"_ustr, cpo::uno::Any(u"COKit Comment Cell B2"_ustr) },
-            { u"Author"_ustr, cpo::uno::Any(u"COKit Client"_ustr) },
         }));
         dispatchCommand(mxComponent, u".uno:InsertAnnotation"_ustr, aArgs);
 
@@ -2303,6 +2313,556 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testLongFirstColumnMouseClick)
     CPPUNIT_ASSERT_EQUAL(SCROW(0), ScDocShell::GetViewData()->GetCurY());
 }
 
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testClickInFirstColumnWidenedByOtherView)
+{
+    // A click in column A selects A even when the click lands further right than the grid
+    // window of the clicking view, which keeps the width of the document from before
+    // another view widened the column.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    pModelObj->initializeForTiledRendering(cpo::uno::Sequence<beans::PropertyValue>());
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    const double fPPTX = pViewData1->GetPPTX();
+    const int nView1 = KitHelper::getCurrentView();
+    // A small viewport keeps the tiled area, and with it the grid window, narrower than the
+    // widest column the width command accepts.
+    const tools::Rectangle aVisArea(0, 0, 5000, 5000);
+    pModelObj->setClientVisibleArea(aVisArea);
+    Scheduler::ProcessEventsToIdle();
+
+    // The second view joins at the same zoom. Tiles for that zoom are painted through the
+    // first view, so the grid window of this view keeps the width it gets here.
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    pModelObj->setClientVisibleArea(aVisArea);
+    Scheduler::ProcessEventsToIdle();
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    const tools::Long nGridWidthPx = pViewData2->GetActiveWin()->GetSizePixel().Width();
+
+    // The first view makes column A wider than the area the second view was sized for.
+    KitHelper::setView(nView1);
+    const sal_uInt16 nWidthMm100 = 53000;
+    dispatchCommand(mxComponent, u".uno:ColumnWidth"_ustr,
+                    comphelper::InitPropertySequence(
+                        { { u"ColumnWidth"_ustr, cpo::uno::Any(nWidthMm100) },
+                          { u"Column"_ustr, cpo::uno::Any(sal_Int16(1)) } }));
+    Scheduler::ProcessEventsToIdle();
+    const sal_uInt16 nWidthTwips = rDoc.GetColWidth(0, 0);
+    CPPUNIT_ASSERT(nWidthTwips > 20000);
+    CPPUNIT_ASSERT(nGridWidthPx < ScViewData::ToPixel(nWidthTwips, fPPTX));
+
+    // A click near the right edge of A1 from the second view.
+    KitHelper::setView(nView2);
+    const int nClickX = nWidthTwips - 1000;
+    const int nClickY = 100;
+    pModelObj->postMouseEvent(COKitMouseEventType::BUTTONDOWN, nClickX, nClickY, /*count=*/1,
+                              /*buttons=*/1, /*modifier=*/0);
+    pModelObj->postMouseEvent(COKitMouseEventType::BUTTONUP, nClickX, nClickY, /*count=*/1,
+                              /*buttons=*/1, /*modifier=*/0);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(SCCOL(0), pViewData2->GetCurX());
+    CPPUNIT_ASSERT_EQUAL(SCROW(0), pViewData2->GetCurY());
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testColumnsKeepPositionAfterDeleteWithFilteredRows)
+{
+    // Deleting a column on a sheet with filtered rows
+    // Browser have to be told that the column geometry changed, on the delete, its undo and its redo.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    const int nView1 = KitHelper::getCurrentView();
+
+    // A wide column A moves every column to its right by a visible amount once it is gone.
+    const sal_uInt16 nWideTwips = 4000;
+    rDoc.SetColWidth(0, 0, nWideTwips);
+    const sal_uInt16 nDefaultTwips = rDoc.GetColWidth(1, 0);
+    CPPUNIT_ASSERT(nDefaultTwips < nWideTwips);
+    // A filtered row inside the selection is what sends a whole-column delete down the
+    // multi-selection path.
+    rDoc.SetRowFiltered(3, 3, 0, true);
+    rDoc.SetRowHidden(3, 3, 0, true);
+
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    ScTestViewCallback aView2;
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    const tools::Rectangle aVisArea(0, 0, 20000, 5000);
+    pModelObj->setClientVisibleArea(aVisArea);
+    // The header request is how a client viewport makes the view record column position
+    // anchors for this area.
+    {
+        tools::JsonWriter aJsonWriter;
+        pModelObj->getRowColumnHeaders(aVisArea, aJsonWriter);
+        aJsonWriter.finishAndGetAsOString();
+    }
+    Scheduler::ProcessEventsToIdle();
+
+    // The view records a column position anchor at the last visible column; a probe just past
+    // it resolves from that anchor, so a stale anchor shows up as a shifted position.
+    const double fPPTX = pViewData2->GetPPTX();
+    const SCCOL nProbeCol = 14;
+    auto expectedColumnPosition = [&rDoc, fPPTX]() {
+        tools::Long nPixels = 0;
+        for (SCCOL nCol = 0; nCol < nProbeCol; ++nCol)
+            nPixels += ScViewData::ToPixel(rDoc.GetColWidth(nCol, 0), fPPTX);
+        return nPixels;
+    };
+    auto viewColumnPosition = [pViewData2]() {
+        return pViewData2->GetScrPos(nProbeCol, 0, pViewData2->GetActivePart()).X();
+    };
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(), viewColumnPosition());
+
+    // The first view deletes column A.
+    KitHelper::setView(nView1);
+    pViewData1->GetViewShell()->MarkColumns(0, 0);
+    ScRange aMarked;
+    CPPUNIT_ASSERT_EQUAL(SC_MARK_SIMPLE_FILTERED, pViewData1->GetSimpleArea(aMarked));
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:DeleteColumns"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nDefaultTwips, rDoc.GetColWidth(0, 0));
+
+    // The other view places the probe column where the document widths put it, and its
+    // client is told to re-read the column geometry.
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(0, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Redo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nDefaultTwips, rDoc.GetColWidth(0, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    KitHelper::setView(nView2);
+    Scheduler::ProcessEventsToIdle();
+}
+
+namespace
+{
+// Makes the view record column position anchors for the area a client viewport shows.
+void requestColumnAnchors(ScModelObj* pModelObj, const tools::Rectangle& rArea)
+{
+    pModelObj->setClientVisibleArea(rArea);
+    tools::JsonWriter aJsonWriter;
+    pModelObj->getRowColumnHeaders(rArea, aJsonWriter);
+    aJsonWriter.finishAndGetAsOString();
+    Scheduler::ProcessEventsToIdle();
+}
+
+tools::Long expectedColumnPosition(const ScDocument& rDoc, double fPPTX, SCTAB nTab, SCCOL nCol)
+{
+    tools::Long nPixels = 0;
+    for (SCCOL nC = 0; nC < nCol; ++nC)
+        nPixels += ScViewData::ToPixel(rDoc.GetColWidth(nC, nTab), fPPTX);
+    return nPixels;
+}
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testColumnsKeepPositionAfterWidthUndoFromOtherSheet)
+{
+    // Undo of a column width change made on one sheet while the undoing view shows another
+    // sheet has to drop the cached column positions of the changed sheet in every view and
+    // tell the clients on that sheet that the column geometry changed.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    pViewData1->GetDocShell()->GetDocFunc().InsertTable(1, u"Second"_ustr, false, true);
+    const int nView1 = KitHelper::getCurrentView();
+
+    // The second view stays on the first sheet and resolves column positions there.
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    ScTestViewCallback aView2;
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    requestColumnAnchors(pModelObj, tools::Rectangle(0, 0, 20000, 5000));
+    const double fPPTX = pViewData2->GetPPTX();
+    // A probe just past the last visible column resolves from the anchor recorded there.
+    const SCCOL nProbeCol = 18;
+    auto viewColumnPosition = [pViewData2]() {
+        return pViewData2->GetScrPos(nProbeCol, 0, pViewData2->GetActivePart()).X();
+    };
+
+    KitHelper::setView(nView1);
+    const sal_uInt16 nDefaultTwips = rDoc.GetColWidth(0, 0);
+    dispatchCommand(mxComponent, u".uno:ColumnWidth"_ustr,
+                    comphelper::InitPropertySequence(
+                        { { u"ColumnWidth"_ustr, cpo::uno::Any(sal_uInt16(5000)) },
+                          { u"Column"_ustr, cpo::uno::Any(sal_Int16(1)) } }));
+    Scheduler::ProcessEventsToIdle();
+    const sal_uInt16 nWideTwips = rDoc.GetColWidth(0, 0);
+    CPPUNIT_ASSERT(nWideTwips > nDefaultTwips);
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 0, nProbeCol), viewColumnPosition());
+
+    // The first view undoes the change while showing the second sheet.
+    pViewData1->GetViewShell()->SetTabNo(1);
+    Scheduler::ProcessEventsToIdle();
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nDefaultTwips, rDoc.GetColWidth(0, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 0, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns sizes hidden filtered"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    // The same for redo.
+    pViewData1->GetViewShell()->SetTabNo(1);
+    Scheduler::ProcessEventsToIdle();
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Redo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(0, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 0, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns sizes hidden filtered"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    KitHelper::setView(nView2);
+    Scheduler::ProcessEventsToIdle();
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testColumnsKeepPositionAfterWidthChangeOnSelectedSheets)
+{
+    // A column width change with several sheets selected changes the column on every selected
+    // sheet. A view showing one of the other sheets has to drop its cached column positions
+    // there, and its client has to be told that the column geometry changed, on the change,
+    // its undo and its redo.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    pViewData1->GetDocShell()->GetDocFunc().InsertTable(1, u"Second"_ustr, false, true);
+    const int nView1 = KitHelper::getCurrentView();
+
+    // The second view shows the second sheet and resolves column positions there.
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    ScTestViewCallback aView2;
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    pViewData2->GetViewShell()->SetTabNo(1);
+    requestColumnAnchors(pModelObj, tools::Rectangle(0, 0, 20000, 5000));
+    const double fPPTX = pViewData2->GetPPTX();
+    const SCCOL nProbeCol = 18;
+    auto viewColumnPosition = [pViewData2]() {
+        return pViewData2->GetScrPos(nProbeCol, 0, pViewData2->GetActivePart()).X();
+    };
+
+    // The first view selects both sheets and widens column A.
+    KitHelper::setView(nView1);
+    pViewData1->GetMarkData().SelectTable(1, true);
+    const sal_uInt16 nDefaultTwips = rDoc.GetColWidth(0, 1);
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:ColumnWidth"_ustr,
+                    comphelper::InitPropertySequence(
+                        { { u"ColumnWidth"_ustr, cpo::uno::Any(sal_uInt16(5000)) },
+                          { u"Column"_ustr, cpo::uno::Any(sal_Int16(1)) } }));
+    Scheduler::ProcessEventsToIdle();
+    const sal_uInt16 nWideTwips = rDoc.GetColWidth(0, 1);
+    CPPUNIT_ASSERT(nWideTwips > nDefaultTwips);
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(0, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 1, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns sizes hidden filtered"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nDefaultTwips, rDoc.GetColWidth(0, 1));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 1, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns sizes hidden filtered"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Redo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(0, 1));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 1, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("columns sizes hidden filtered"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    KitHelper::setView(nView2);
+    Scheduler::ProcessEventsToIdle();
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testColumnsKeepPositionAfterWholeColumnPasteUndo)
+{
+    // Pasting a whole column carries its width. Undo and redo of that paste put the width
+    // back and forth, so every view has to drop its cached column positions of that sheet
+    // each time and the clients have to be told that the column geometry changed.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    const int nView1 = KitHelper::getCurrentView();
+    const sal_uInt16 nWideTwips = 4000;
+    rDoc.SetColWidth(0, 0, nWideTwips);
+    const sal_uInt16 nDefaultTwips = rDoc.GetColWidth(2, 0);
+    CPPUNIT_ASSERT(nDefaultTwips < nWideTwips);
+
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    ScTestViewCallback aView2;
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    requestColumnAnchors(pModelObj, tools::Rectangle(0, 0, 20000, 5000));
+    const double fPPTX = pViewData2->GetPPTX();
+    const SCCOL nProbeCol = 18;
+    auto viewColumnPosition = [pViewData2]() {
+        return pViewData2->GetScrPos(nProbeCol, 0, pViewData2->GetActivePart()).X();
+    };
+    auto columnsWereInvalidated = [&aView2]() {
+        for (const OString& rPayload : aView2.m_aSheetGeometryInvalidations)
+            if (rPayload.startsWith("all") || rPayload.startsWith("columns"))
+                return true;
+        return false;
+    };
+
+    // The first view copies the wide column A onto column C.
+    KitHelper::setView(nView1);
+    ScTabViewShell* pView1 = pViewData1->GetViewShell();
+    pView1->MarkColumns(0, 0);
+    dispatchCommand(mxComponent, u".uno:Copy"_ustr, {});
+    pView1->MarkColumns(2, 0);
+    aView2.m_aSheetGeometryInvalidations.clear();
+    dispatchCommand(mxComponent, u".uno:Paste"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(2, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 0, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT(columnsWereInvalidated());
+
+    aView2.m_aSheetGeometryInvalidations.clear();
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nDefaultTwips, rDoc.GetColWidth(2, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 0, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT(columnsWereInvalidated());
+
+    aView2.m_aSheetGeometryInvalidations.clear();
+    dispatchCommand(mxComponent, u".uno:Redo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(2, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 0, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT(columnsWereInvalidated());
+
+    KitHelper::setView(nView2);
+    Scheduler::ProcessEventsToIdle();
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testRowsKeepPositionAfterClearOutlineUndo)
+{
+    // Removing all outlines shows the rows the groups had hidden, and the undo hides them
+    // again. Every view has to drop its cached row positions of that sheet each time and the
+    // clients have to be told that the row geometry changed.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    const int nView1 = KitHelper::getCurrentView();
+
+    // A hidden row group above the probe row, made through the API before any view caches
+    // positions.
+    uno::Reference<sheet::XSpreadsheetDocument> xDoc(mxComponent, uno::UNO_QUERY_THROW);
+    uno::Reference<container::XIndexAccess> xSheets(xDoc->getSheets(), uno::UNO_QUERY_THROW);
+    uno::Reference<sheet::XSheetOutline> xOutline(xSheets->getByIndex(0), uno::UNO_QUERY_THROW);
+    const table::CellRangeAddress aGroup(0, 0, 1, 0, 4);
+    xOutline->group(aGroup, table::TableOrientation_ROWS);
+    xOutline->hideDetail(aGroup);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(rDoc.RowHidden(1, 0));
+    CPPUNIT_ASSERT(rDoc.RowHidden(4, 0));
+
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    ScTestViewCallback aView2;
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    requestColumnAnchors(pModelObj, tools::Rectangle(0, 0, 10000, 5000));
+    const double fPPTY = pViewData2->GetPPTY();
+    const SCROW nProbeRow = 25;
+    auto expectedRowPosition = [&rDoc, fPPTY]() {
+        tools::Long nPixels = 0;
+        for (SCROW nRow = 0; nRow < nProbeRow; ++nRow)
+            if (sal_uInt16 nHeight = rDoc.GetRowHeight(nRow, 0))
+                nPixels += ScViewData::ToPixel(nHeight, fPPTY);
+        return nPixels;
+    };
+    auto viewRowPosition = [pViewData2]() {
+        return pViewData2->GetScrPos(0, nProbeRow, pViewData2->GetActivePart()).Y();
+    };
+    auto rowsWereInvalidated = [&aView2]() {
+        for (const OString& rPayload : aView2.m_aSheetGeometryInvalidations)
+            if (rPayload.startsWith("all") || rPayload.startsWith("rows"))
+                return true;
+        return false;
+    };
+    CPPUNIT_ASSERT_EQUAL(expectedRowPosition(), viewRowPosition());
+
+    // The first view removes all outlines, which shows the hidden rows.
+    KitHelper::setView(nView1);
+    aView2.m_aSheetGeometryInvalidations.clear();
+    dispatchCommand(mxComponent, u".uno:ClearOutline"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(!rDoc.RowHidden(1, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedRowPosition(), viewRowPosition());
+    CPPUNIT_ASSERT(rowsWereInvalidated());
+
+    aView2.m_aSheetGeometryInvalidations.clear();
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(rDoc.RowHidden(1, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedRowPosition(), viewRowPosition());
+    CPPUNIT_ASSERT(rowsWereInvalidated());
+
+    aView2.m_aSheetGeometryInvalidations.clear();
+    dispatchCommand(mxComponent, u".uno:Redo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(!rDoc.RowHidden(1, 0));
+    CPPUNIT_ASSERT_EQUAL(expectedRowPosition(), viewRowPosition());
+    CPPUNIT_ASSERT(rowsWereInvalidated());
+
+    KitHelper::setView(nView2);
+    Scheduler::ProcessEventsToIdle();
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testColumnsFollowSheetAfterWatchedSheetDeleted)
+{
+    // Deleting the sheet a view shows moves that view to the sheet that takes its index.
+    // The client of that view keeps a geometry per sheet index, so it has to be told that
+    // the geometry of its sheet changed, on the delete and on its undo.
+    comphelper::COKit::setCompatFlag(comphelper::COKit::Compat::scPrintTwipsMsgs);
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData1 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData1);
+    ScDocShell* pDocSh = pViewData1->GetDocShell();
+    CPPUNIT_ASSERT(pDocSh);
+    ScDocument& rDoc = pViewData1->GetDocument();
+    const int nView1 = KitHelper::getCurrentView();
+    pDocSh->GetDocFunc().InsertTable(1, u"Second"_ustr, false, true);
+    pDocSh->GetDocFunc().InsertTable(2, u"Third"_ustr, false, true);
+    // The watched sheet has a wide column A, the sheet after it keeps the default widths.
+    const sal_uInt16 nWideTwips = 4000;
+    rDoc.SetColWidth(0, 1, nWideTwips);
+    const sal_uInt16 nDefaultTwips = rDoc.GetColWidth(0, 2);
+    CPPUNIT_ASSERT(nDefaultTwips < nWideTwips);
+
+    // The second view shows the second sheet and resolves column positions there.
+    KitHelper::createView();
+    const int nView2 = KitHelper::getCurrentView();
+    ScTestViewCallback aView2;
+    ScViewData* pViewData2 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData2);
+    pViewData2->GetViewShell()->SetTabNo(1);
+    requestColumnAnchors(pModelObj, tools::Rectangle(0, 0, 20000, 5000));
+    const double fPPTX = pViewData2->GetPPTX();
+    const SCCOL nProbeCol = 18;
+    auto viewColumnPosition = [pViewData2]() {
+        return pViewData2->GetScrPos(nProbeCol, 0, pViewData2->GetActivePart()).X();
+    };
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 1, nProbeCol), viewColumnPosition());
+
+    // A third view shows the third sheet, which only moves to the index of the deleted one.
+    KitHelper::createView();
+    ScTestViewCallback aView3;
+    ScViewData* pViewData3 = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData3);
+    pViewData3->GetViewShell()->SetTabNo(2);
+    Scheduler::ProcessEventsToIdle();
+
+    // The first view deletes the second sheet; the second view lands on the former third
+    // sheet, which now has the index of the deleted one.
+    KitHelper::setView(nView1);
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    aView3.m_sInvalidateSheetGeometry = ""_ostr;
+    CPPUNIT_ASSERT(pDocSh->GetDocFunc().DeleteTable(1, true));
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(SCTAB(2), rDoc.GetTableCount());
+    CPPUNIT_ASSERT_EQUAL(SCTAB(1), pViewData2->GetTabNumber());
+    CPPUNIT_ASSERT_EQUAL(nDefaultTwips, rDoc.GetColWidth(0, 1));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, 1, nProbeCol), viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("all"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    // The third view kept its sheet, so its client has nothing to fetch.
+    CPPUNIT_ASSERT_EQUAL(SCTAB(1), pViewData3->GetTabNumber());
+    CPPUNIT_ASSERT_EQUAL(""_ostr, aView3.m_sInvalidateSheetGeometry);
+
+    // Undo brings the wide sheet back at the same index.
+    aView2.m_sInvalidateSheetGeometry = ""_ostr;
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(SCTAB(3), rDoc.GetTableCount());
+    CPPUNIT_ASSERT_EQUAL(nWideTwips, rDoc.GetColWidth(0, 1));
+    CPPUNIT_ASSERT_EQUAL(expectedColumnPosition(rDoc, fPPTX, pViewData2->GetTabNumber(), nProbeCol),
+                         viewColumnPosition());
+    CPPUNIT_ASSERT_EQUAL("all"_ostr, aView2.m_sInvalidateSheetGeometry);
+
+    KitHelper::setView(nView2);
+    Scheduler::ProcessEventsToIdle();
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testSheetGeometryDataNamesItsSheet)
+{
+    // The geometry reply names the sheet it describes by index and by the hash the status
+    // lists for that sheet, so a client can tell a reply for another sheet from one for the
+    // sheet it shows.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    CPPUNIT_ASSERT(pModelObj);
+    ScViewData* pViewData = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData);
+    ScDocument& rDoc = pViewData->GetDocument();
+    pViewData->GetDocShell()->GetDocFunc().InsertTable(1, u"Second"_ustr, false, true);
+
+    auto readSheetOfReply = [pModelObj](SCTAB& rPart, OString& rHash) {
+        const std::string aReply = pModelObj->getSheetGeometryData(
+            /*bColumns=*/true, /*bRows=*/true, /*bSizes=*/true, /*bHidden=*/true,
+            /*bFiltered=*/true, /*bGroups=*/true);
+        std::stringstream aStream(aReply);
+        boost::property_tree::ptree aTree;
+        boost::property_tree::read_json(aStream, aTree);
+        rPart = aTree.get<SCTAB>("part");
+        rHash = OString(aTree.get<std::string>("hash").c_str());
+    };
+    auto expectedHash = [&rDoc](SCTAB nTab) -> OString {
+        sal_Int64 nHashCode = 0;
+        CPPUNIT_ASSERT(rDoc.GetHashCode(nTab, nHashCode));
+        return OString::number(nHashCode);
+    };
+
+    SCTAB nPart = -1;
+    OString aHash;
+    readSheetOfReply(nPart, aHash);
+    CPPUNIT_ASSERT_EQUAL(SCTAB(0), nPart);
+    CPPUNIT_ASSERT_EQUAL(expectedHash(0), aHash);
+
+    // The reply follows the sheet the view shows.
+    pViewData->GetViewShell()->SetTabNo(1);
+    readSheetOfReply(nPart, aHash);
+    CPPUNIT_ASSERT_EQUAL(SCTAB(1), nPart);
+    CPPUNIT_ASSERT_EQUAL(expectedHash(1), aHash);
+    CPPUNIT_ASSERT(expectedHash(1) != expectedHash(0));
+}
+
 // if we extend the tiled area to the right and bottom we want two resulting area
 // that don't overlap. If they overlap that typically creates an unnecessary full
 // screen invalidation.
@@ -2791,11 +3351,11 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testThreadedCommentInsertAndResolve)
         ScTabViewShell* pTabViewShell = aView1.getTabViewShell();
         CPPUNIT_ASSERT(pTabViewShell);
         pTabViewShell->SetCursor(2, 3);
+        pTabViewShell->SetKitAuthor(u"Kit Author"_ustr);
 
         // 1) Insert a threaded comment via .uno:InsertThreadedComment
         cpo::uno::Sequence<beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
             { u"Text"_ustr, cpo::uno::Any(u"Threaded comment text"_ustr) },
-            { u"Author"_ustr, cpo::uno::Any(u"Kit Author"_ustr) },
         }));
         dispatchCommand(mxComponent, u".uno:InsertThreadedComment"_ustr, aArgs);
 
@@ -3439,6 +3999,43 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testClickOnStackedCheckBoxesTicksTheT
     // check box underneath, so the one the user sees stayed cleared.
     CPPUNIT_ASSERT_EQUAL(sal_Int16(0), lcl_getCheckBoxState(pPage, 0));
     CPPUNIT_ASSERT_EQUAL(sal_Int16(1), lcl_getCheckBoxState(pPage, 1));
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testTrackChangesAuthorFromView)
+{
+    // Each recorded change carries the name of the user who edited in that view.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    pModelObj->initializeForTiledRendering(
+        { comphelper::makePropertyValue(u".uno:Author"_ustr, u"Kit User1"_ustr) });
+    ScTabViewShell* pView1 = dynamic_cast<ScTabViewShell*>(SfxViewShell::Current());
+    CPPUNIT_ASSERT(pView1);
+    int nView1 = KitHelper::getCurrentView();
+    dispatchCommand(mxComponent, u".uno:TraceChangeMode"_ustr,
+                    { comphelper::makePropertyValue(u"TraceChangeMode"_ustr, true) });
+    ScDocument* pDoc = pModelObj->GetDocument();
+    ScChangeTrack* pChangeTrack = pDoc->GetChangeTrack();
+    CPPUNIT_ASSERT(pChangeTrack);
+
+    typeCharsInCell("a", 0, 0, pView1, pModelObj);
+
+    KitHelper::createView();
+    pModelObj->initializeForTiledRendering(
+        { comphelper::makePropertyValue(u".uno:Author"_ustr, u"Kit User2"_ustr) });
+    ScTabViewShell* pView2 = dynamic_cast<ScTabViewShell*>(SfxViewShell::Current());
+    CPPUNIT_ASSERT(pView2);
+    typeCharsInCell("b", 0, 1, pView2, pModelObj);
+
+    KitHelper::setView(nView1);
+    typeCharsInCell("c", 0, 2, pView1, pModelObj);
+
+    OUString aUsers;
+    for (const ScChangeAction* pAction = pChangeTrack->GetFirst(); pAction;
+         pAction = pAction->GetNext())
+        aUsers += pAction->GetUser() + ";";
+
+    // Without the accompanying fix in place, this test would have failed: every change was
+    // recorded as Unknown Author, because only the empty user options were asked.
+    CPPUNIT_ASSERT_EQUAL(u"Kit User1;Kit User2;Kit User1;"_ustr, aUsers);
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

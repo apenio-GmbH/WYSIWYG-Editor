@@ -127,6 +127,7 @@ interface ExtensionCommand {
 	// cool.onCommand. For extensions whose logic lives in the panel.
 	panel?: boolean;
 	gasFunctionName?: string;
+	gasArguments?: unknown[];
 }
 
 // One notebookbar button, referencing a command declared in
@@ -266,7 +267,6 @@ interface ExtensionManifest {
 		sources: string[];
 		names: string[];
 		libraries: GasLibrary[];
-		runnerExpr: string;
 	};
 	// On disk this is a string naming a separate JSON file (resolved the same way
 	// entry/icon are) holding the ExtensionContributes object - keeping UI wiring
@@ -753,7 +753,12 @@ window.L.Control.Extension = window.L.Control.extend({
 			delete this._pendingCommandCalls[callId];
 			pending.onError(new Error('timed out waiting for a response'));
 		}, 30000);
-		this._sendGasRunner(callId, proxyId, command.gasFunctionName, []);
+		this._sendGasRunner(
+			callId,
+			proxyId,
+			command.gasFunctionName,
+			command.gasArguments || [],
+		);
 	},
 
 	// Open the sidebar and the dialog that the add-on asked for in a GAS runner result:
@@ -803,11 +808,13 @@ window.L.Control.Extension = window.L.Control.extend({
 			return;
 		}
 		// As in GAS, google.script.run cannot call a private function, whose name ends in
-		// "_", and the reserved name __coolGasMenu names none of the add-on's functions:
+		// "_", and the reserved names __coolGasMenu and __coolGasCommand name none of the
+		// add-on's functions:
 		if (
 			typeof msg.functionName !== 'string' ||
 			msg.functionName.endsWith('_') ||
-			msg.functionName === '__coolGasMenu'
+			msg.functionName === '__coolGasMenu' ||
+			msg.functionName === '__coolGasCommand'
 		) {
 			this._postToCaller(msg.callId, {
 				msgId: 'Extension_CallResult',
@@ -1509,11 +1516,9 @@ function responseSucceeded(resp: Response): boolean {
 	return resp.ok || (resp.status === 0 && window.location.protocol === 'file:');
 }
 
-// The kit-side text behind every command of an Apps Script add-on: the runner, followed by a
-// `commands` entry per menu function that hands the add-on's own sources to it.  The sources
-// travel as string literals rather than being pasted in, because the runner evaluates each one
-// under its own file name so an exception's frames name the add-on's file.  The runner comes
-// first and nothing is prepended to it, so its line 1 stays line 1.
+// Every command of an Apps Script add-on runs as a call to the runner in the kit's prelude, which
+// gets the add-on's own sources as string literals and evaluates each one under its own file
+// name, so an exception's frames name the add-on's file.
 // If the directory carries appsscript.json, synthesize a manifest for its Apps Script
 // add-on from what a __coolGasMenu invocation of the runner brings back at extension-load
 // time; the _cool-gas.json sidecar lists .gs sources:
@@ -1605,28 +1610,76 @@ async function tryLoadAppsScriptExtension(
 		placement.pop();
 	}
 
-	// Cache the runner source and the .gs sources so a menu click doesn't refetch them:
+	// An add-on can have the same contributions as a native extension, in a
+	// _cool-gas-contributes.json whose commands each name one of the add-on's own server files
+	// as their script, where the add-on's __coolGasCommands object has the command's function:
+	let contributes: ExtensionContributes = {};
+	let contributesResp: Response | null = null;
+	try {
+		contributesResp = await fetch(
+			app.LOUtil.getURL(baseRel + '_cool-gas-contributes.json'),
+		);
+	} catch {
+		// A file: URL of a missing file fails the fetch rather than answering 404.
+	}
+	if (contributesResp && responseSucceeded(contributesResp)) {
+		try {
+			contributes = await contributesResp.json();
+		} catch (e) {
+			console.warn(
+				'extension ' + id + ': malformed _cool-gas-contributes.json: ' + e,
+			);
+		}
+	}
+	for (const command of contributes.commands || []) {
+		if (!command.script || !scriptNames.includes(command.script)) {
+			console.warn(
+				'extension ' +
+					id +
+					': command ' +
+					command.id +
+					" does not name one of the add-on's scripts",
+			);
+			continue;
+		}
+		if (usedIds.has(command.id)) {
+			console.warn(
+				'extension ' + id + ': command ' + command.id + ' is already defined',
+			);
+			continue;
+		}
+		usedIds.add(command.id);
+		commands.push({
+			id: command.id,
+			title: command.title,
+			icon: command.icon,
+			gasFunctionName: '__coolGasCommand',
+			gasArguments: [command.id],
+		});
+	}
+
+	// Cache the .gs sources so a menu click doesn't refetch them:
 	if (commands.length && scriptNames.length) {
 		try {
-			const [runnerExpr, sources] = await Promise.all([
-				loadGasRunnerExpr(baseRel),
-				Promise.all(
-					scriptNames.map(async (name) => {
-						const resp = await fetch(app.LOUtil.getURL(baseRel + name));
-						if (!responseSucceeded(resp)) {
-							throw new Error(baseRel + name + ' HTTP ' + resp.status);
-						}
-						return await resp.text();
-					}),
-				),
-			]);
+			const sources = await Promise.all(
+				scriptNames.map(async (name) => {
+					const resp = await fetch(app.LOUtil.getURL(baseRel + name));
+					if (!responseSucceeded(resp)) {
+						throw new Error(baseRel + name + ' HTTP ' + resp.status);
+					}
+					return await resp.text();
+				}),
+			);
 			manifest.gasContext = {
 				sources: sources,
 				names: scriptNames,
 				libraries: libraries,
-				runnerExpr: runnerExpr,
 			};
-			manifest.contributes = { commands: commands, extensionsMenu: placement };
+			manifest.contributes = {
+				...contributes,
+				commands: commands,
+				extensionsMenu: placement,
+			};
 		} catch (err) {
 			console.warn(
 				'extension ' + id + ': Apps Script sources unreadable:',
@@ -1637,30 +1690,6 @@ async function tryLoadAppsScriptExtension(
 	return manifest;
 }
 
-// Cached runner function expression, shared across all Apps Script extensions:
-let gasRunnerExpr: Promise<string> | null = null;
-function loadGasRunnerExpr(baseRel: string): Promise<string> {
-	if (gasRunnerExpr !== null) return gasRunnerExpr;
-	// The runner file lives one directory above the extension dir, alongside gas-wrapper.html:
-	const url = app.LOUtil.getURL(baseRel + '../gas-kit-runner.js');
-	gasRunnerExpr = (async () => {
-		const resp = await fetch(url);
-		if (!responseSucceeded(resp))
-			throw new Error('gas-kit-runner.js HTTP ' + resp.status);
-		const src = await resp.text();
-		// Strip the `globalThis.__gasKitRunner =` prefix and the trailing semicolon so what
-		// remains is a bare `function(...) { ... }` expression the kit can wrap in an
-		// IIFE call:
-		const m = src.match(
-			/globalThis\.__gasKitRunner\s*=\s*(function[\s\S]*?);\s*$/,
-		);
-		if (!m) {
-			throw new Error('gas-kit-runner.js: __gasKitRunner assignment not found');
-		}
-		return m[1];
-	})();
-	return gasRunnerExpr;
-}
 // Ask the runner for the menu items the add-on's onOpen() puts together, at extension load:
 let nextGasCollectId = 0;
 // The libraries that an appsscript.json declares, loaded from the add-on's _cool-gas-libraries
@@ -2093,17 +2122,14 @@ async function collectGasAddonMenu(
 	libraries: GasLibrary[],
 	map: any,
 ): Promise<{ caption?: string; functionName?: string; separator?: boolean }[]> {
-	const [runnerExpr, sources] = await Promise.all([
-		loadGasRunnerExpr(baseRel),
-		Promise.all(
-			scriptNames.map(async (s) => {
-				const resp = await fetch(app.LOUtil.getURL(baseRel + s));
-				if (!responseSucceeded(resp))
-					throw new Error(baseRel + s + ' HTTP ' + resp.status);
-				return await resp.text();
-			}),
-		),
-	]);
+	const sources = await Promise.all(
+		scriptNames.map(async (s) => {
+			const resp = await fetch(app.LOUtil.getURL(baseRel + s));
+			if (!responseSucceeded(resp))
+				throw new Error(baseRel + s + ' HTTP ' + resp.status);
+			return await resp.text();
+		}),
+	);
 	const seq = nextGasCollectId++;
 	const callId = 'gas-collect-' + id + '-' + seq;
 	const proxyId = 'gas-collect-proxy-' + id + '-' + seq;
@@ -2136,7 +2162,7 @@ async function collectGasAddonMenu(
 				callId,
 				proxyId,
 				id,
-				{ sources, names: scriptNames, libraries, runnerExpr },
+				{ sources, names: scriptNames, libraries },
 				'__coolGasMenu',
 				[],
 			),
@@ -2145,7 +2171,7 @@ async function collectGasAddonMenu(
 }
 
 // The executescript message that runs the add-on's function functionName with functionArgs in
-// the kit, through the GAS runner:
+// the kit, through the GAS runner that the kit has in its prelude:
 function gasRunnerMessage(
 	callId: string,
 	proxyId: string,
@@ -2170,16 +2196,10 @@ function gasRunnerMessage(
 		', ' +
 		JSON.stringify(gc.libraries) +
 		']';
-	// The script's first line is the "(" in front of the runner, which starts at
-	// line 13 of browser/extensions/gas-kit-runner.js:
 	return (
 		'executescript ' +
 		callId +
-		' ' +
-		(13 - 1) +
-		' gas-kit-runner.js\n(\n' +
-		gc.runnerExpr +
-		'\n).apply(null, ' +
+		' 1 <gas-call>\n$internal.runGasAddOn.apply(null, ' +
 		args +
 		');'
 	);
@@ -2423,7 +2443,10 @@ window.L.loadExtensions = async function (map: any, docType: string) {
 						baseRel,
 						map,
 					);
-					if (gasManifest) return { id, baseRel, manifest: gasManifest };
+					if (gasManifest) {
+						await localizeManifest(gasManifest, baseRel);
+						return { id, baseRel, manifest: gasManifest };
+					}
 				} catch (gasErr) {
 					console.warn('extension ' + id + ': failed to load:', gasErr);
 					return null;

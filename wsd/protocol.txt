@@ -207,8 +207,12 @@ insertfile name=<name> type=<type>
 
         type = 'comparedocuments': The file has been previously uploaded using insertfile POST
 
-        type = 'comparedocumentsurl': The file is supposed to be downloaded by the core
-                                      itself; it does so from the URL provided in 'name'
+        type = 'comparedocumentsurl': The file is downloaded from the URL provided in 'name'.
+                                      coolwsd downloads a URL on the WOPI host of the document
+                                      itself, with the WOPI proof headers, and the core gets the
+                                      downloaded file. coolwsd follows a redirect within that
+                                      host the same way. The core downloads a URL on any other
+                                      host itself, including another WOPI host.
 
 selectbackground name=<name>
 
@@ -358,15 +362,37 @@ slidelink update source=<source name> file=<staged name> [time=<source time>] [p
     messages tells the answers of one command of the family from those of
     another. A command too malformed to say what it was for names neither.
 
-key type=<type> char=<charcode> key=<keycode>
+key type=<type> char=<charcode> key=<keycode> [sequence=<sequence>]
 
     <type> is 'input' or 'up', <charcode> and <keycode> are numbers.
+
+    sequence is an optional number that the client increments for every
+    key, mouse, textinput and removetextcontext message. The kit reports
+    the newest one it has applied, so the client can tell which of its
+    inputs a message reflects. The invalidatecursor payload has it as its
+    inputSequence field. The vector primitives frames have it in their
+    header line:
+    zstdvectorprimitives: inputSequence=<sequence>
+    zstdvectorprimitivesdelta: inputSequence=<sequence>
+    and an uncompressed response has it after the command name:
+    commandvalues: inputSequence=<sequence> {...}
+
+textinput id=<windowId> text=<text> [sequence=<sequence>]
+
+    Inserts <text>, which is URI encoded, at the caret of the window
+    <windowId>, 0 for the document itself. sequence is the optional
+    input sequence number, see the key message.
+
+windowkey id=<windowId> type=<type> char=<charcode> key=<keycode> [sequence=<sequence>]
+
+    The key message for the window <windowId>, such as a dialog.
+    sequence is the optional input sequence number, see the key message.
 
 load <pathname>
 
     Deprecated.
 
-load [part=<part>] url=<url> [timestamp=<time>] [lang=<locale>] [deviceFormFactor=<device type>] [timezone=<timezone>] [options=<options>]
+load [part=<part>] url=<url> [timestamp=<time>] [lang=<locale>] [deviceFormFactor=<device type>] [timezone=<timezone>] [reconnect=true] [options=<options>]
 
     part is an optional parameter. <part> is a page identifier, or the
     part's index in document order written in decimal form. The view opens
@@ -382,6 +408,13 @@ load [part=<part>] url=<url> [timestamp=<time>] [lang=<locale>] [deviceFormFacto
     it can be one of the following: 'desktop', 'tablet', 'mobile'
 
     timestamp is in tzfile(5) format. For example: Pacific/Auckland.
+
+    reconnect=true says that the client keeps the token of the
+    'reconnecttoken:' message and presents it as the ReconnectToken URL
+    parameter when it connects again. Only then does the server send that
+    message, and only then does the server keep the view for a while when
+    the connection ends. A close frame with status 4000 says that the client
+    left on purpose, so the server removes the view at once.
 
     options are the whole rest of the line, not URL-encoded, and must be valid JSON.
 
@@ -434,13 +467,21 @@ coolclient <major.minor[-patch]> [ <timestamp> <perfcounter> ]
             The timestamp and perfcounter are used by the server to translate performance
             counter values from the client for Trace Event logging into absolute timestamps.
 
-mouse type=<type> x=<x> y=<y> count=<count>
+mouse type=<type> x=<x> y=<y> count=<count> [buttons=<buttons>] [modifier=<modifier>] [sequence=<sequence>]
 
     <type> is 'buttondown', 'buttonup' or 'move', others are numbers.
+    sequence is the optional input sequence number, see the key message.
 
 ping
 
     requests a 'pong' server message.
+
+debugdropconnection
+
+    Debug builds only. The server closes this connection without a close
+    frame, the way a broken network does, so that a test can watch what the
+    server does with a browser that vanished. A release build answers
+    'error: cmd=debugdropconnection kind=unknown'.
 
 
 resetselection
@@ -599,8 +640,8 @@ setobjecttransform to=<mappings> as=<what>
     mapping takes the object's own square, whose corners are 0 and 0 and 1 and 1, onto the
     page, in twips: the first corner goes to e and f, and the other four numbers say which way
     and how far its own two axes run. A mapping whose two axes are turned over against each
-    other turns the object over. <what> is "move", "scale" or "turn", and names the step it can
-    be undone with.
+    other turns the object over. <what> is "move", "scale", "turn" or "shear", and names the
+    step it can be undone with.
 
     Gives every one of those objects the mapping named: it keeps what it is and only its place,
     its size, its turn and its shear become what the mapping says. The whole of it is one step to
@@ -687,6 +728,15 @@ userinactive
     It should throttle updates until the user is active again.
 
     See 'useractive'.
+
+viewparked value=<0|1>
+
+    Sent by coolwsd for its own view, never by a client. value=1 says that the
+    browser's connection was lost and the session is kept for the browser to
+    reconnect to. value=0 says that the browser is back. Every view then
+    receives a fresh 'viewinfo:' with the 'parked' field of this view changed.
+    On value=0 this view also receives its 'canonicalidchange:' again, since the
+    browser rebuilt its tile layer and fetches no tiles until it has the id.
 
 closedocument
 
@@ -892,13 +942,14 @@ getslidesections
     Returns the slide sections for an Impress presentation as a JSON array.
     Response: slidesections: [{name, id, startIndex, slideCount}, ...]
 
-removetextcontext id=<windowId> before=<before_position> after=<after_position>
+removetextcontext id=<windowId> before=<before_position> after=<after_position> [sequence=<sequence>]
 
     This protocol is used to remove text context from a specified location in a document. It allows the deletion of multiple characters within a range by specifying the positions before and after the deletion.
 
     - id=<windowId> : Specifies the ID of the window where the text removal operation is occurring.
     - before=<before_position> : The position before the deletion starts.
     - after=<after_position> : The position after the deletion ends.
+    - sequence=<sequence> : Optional input sequence number, see the key message.
 
 browsersetting action=update [upload=false] json=<JSON>
 
@@ -952,6 +1003,15 @@ clipboardkey: <token>
     Send access token for web clipboard use, may arrive periodically
     Current and previous hash remain valid for that period, always use
     the latest.
+
+reconnecttoken: <token>
+
+    Sent after a load with reconnect=true, again every few minutes, and
+    again after the client reconnected. <token> is 64 lowercase hex digits. The
+    current and the previous token are both accepted, so keep only the
+    latest. A connection whose URL has the parameter ReconnectToken=<token>
+    takes over the view that the token belongs to, with its view id, cursor
+    and undo stack, instead of loading a new view.
 
 linktoken: <token>
 
@@ -1313,6 +1373,11 @@ invalidatecursor: <payload>
 
     The payload contains a rectangle describing the cursor position
     and the id of the view which triggered the invalidation. JSON payload.
+    When the client numbers its inputs, the payload also carries
+    inputSequence, the newest input applied before the cursor was placed.
+    While a drawing object's text is edited, object is the unique id of
+    the object that holds the caret, as the vector primitives name it.
+    For a shape in a group, it is the group member being edited.
 
     The communication between the parent process (the one keeping open the
     Websocket connections to the clients) and a child process (handling
@@ -1353,6 +1418,10 @@ viewinfo: <payload>
     Message is sent everytime there is any change in view information.
     <payload> consists of an array of JSON objects. Structure of JSON
     objects is like : {"id": <viewid>, "username": <Full Name of the user>}
+
+    Each object also carries "parked": "true" or "false" (literal strings).
+    "true" means the view's browser lost its connection and the server is
+    holding the view for that browser to come back to.
 
 redlinetablechanged:
 

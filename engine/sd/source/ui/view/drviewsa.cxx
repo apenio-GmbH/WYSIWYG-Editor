@@ -413,7 +413,7 @@ bool DrawViewShell::RelocateToParentWindow (vcl::Window* pParentWindow)
     polyline from the gathered points.
 */
 
-void DrawViewShell::CheckLineTo(SfxRequest& rReq)
+void DrawViewShell::CheckLineTo([[maybe_unused]] SfxRequest& rReq)
 {
 #ifdef DBG_UTIL
     if(rReq.IsAPI())
@@ -425,7 +425,6 @@ void DrawViewShell::CheckLineTo(SfxRequest& rReq)
     }
 #endif
 
-    rReq.Ignore ();
 }
 
 /**
@@ -539,7 +538,7 @@ void DrawViewShell::SetupPage (Size const &rSize,
 
     // zoom onto (new) page size
     GetViewFrame()->GetDispatcher()->Execute(SID_SIZE_PAGE,
-                        SfxCallMode::ASYNCHRON | SfxCallMode::RECORD);
+                        SfxCallMode::ASYNCHRON);
 }
 
 void DrawViewShell::GetStatusBarState(SfxItemSet& rSet)
@@ -767,7 +766,7 @@ void DrawViewShell::Notify (SfxBroadcaster&, const SfxHint& rHint)
 
         SfxBoolItem aItem( SID_FM_DESIGN_MODE, !mbReadOnly );
         GetViewFrame()->GetDispatcher()->ExecuteList(SID_FM_DESIGN_MODE,
-            SfxCallMode::ASYNCHRON | SfxCallMode::RECORD, { &aItem });
+            SfxCallMode::ASYNCHRON, { &aItem });
     }
 
 }

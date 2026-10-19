@@ -1049,7 +1049,10 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 						obj.afterLinks,
 						obj.images,
 						obj.beforeImages,
-						obj.afterImages);
+						obj.afterImages,
+						obj.comments,
+						obj.beforeComments,
+						obj.afterComments);
 				}
 			}
 			else if (textMsg.startsWith('a11ycaretchanged:')) {
@@ -1088,7 +1091,8 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 					obj.content, parseInt(obj.position), parseInt(obj.start), parseInt(obj.end),
 					obj.before, obj.after, obj.beforeRects, obj.afterRects, obj.headingLevel,
 					obj.beforeLevels, obj.afterLevels, obj.links, obj.beforeLinks, obj.afterLinks,
-					obj.images, obj.beforeImages, obj.afterImages);
+					obj.images, obj.beforeImages, obj.afterImages, obj.comments,
+					obj.beforeComments, obj.afterComments);
 			}
 			else if (textMsg.startsWith('a11ycaretposition:')) {
 				var pos = textMsg.substring('a11ycaretposition:'.length + 1);
@@ -1331,12 +1335,22 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		this._map.fire('tabstoplistupdate', json);
 	},
 
+	// Vector primitives can name the newest input they reflect before the JSON. Copy it into
+	// the parsed values.
+	_readInputSequence: function (textMsg, values) {
+		const header = textMsg.substring(0, textMsg.indexOf('{'));
+		const sequence = parseInt(header.split('inputSequence=')[1]);
+		if (!isNaN(sequence))
+			values.inputSequence = sequence;
+	},
+
 	_onCommandValuesMsg: function (textMsg) {
 		var jsonIdx = textMsg.indexOf('{');
 		if (jsonIdx === -1) {
 			return;
 		}
 		var obj = JSON.parse(textMsg.substring(jsonIdx));
+		this._readInputSequence(textMsg, obj);
 		if (obj.commandName === '.uno:DocumentRepair') {
 			this._onDocumentRepair(obj);
 		}
@@ -1439,11 +1453,14 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 			if (window.mode.isSmallScreenDevice()) {
 				this._closeMobileWizard();
 
+				// The formula bar stays on screen with the list, so the typed formula is
+				// visible while the user picks a function.
 				var data = {
 					id: 'funclist',
 					type: '',
 					text: _('Functions'),
 					enabled: true,
+					keepFormulabarVisible: true,
 					children: []
 				};
 
@@ -1691,6 +1708,11 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 
 		this._onUpdateCellCursor(scrollToCursor, notJump);
 
+		// A tap that moves the cursor into view turns the following on again, so the
+		// keyboard relayout keeps the cell in view. Only a scroll by the user turns it off.
+		if (!sameAddress && app.isFollowingOff() && app.isOwnCursorInView())
+			app.setFollowingUser(this._viewId);
+
 		// Remove the validity input help only when the cursor really moved away
 		// from the cell it belongs to, that is a different address or a hidden
 		// cursor. The kit resends the cellcursor for the unchanged cell on view
@@ -1761,8 +1783,10 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 	},
 
 	_onInvalidateCursorMsg: function (textMsg) {
+		// The local caret stays while predicted edits are ahead of this update.
 		textMsg = textMsg.substring('invalidatecursor:'.length + 1);
 		var obj = JSON.parse(textMsg);
+		const keepPredictedCaret = RenderManager.keepPredictedCaret(obj);
 		var recCursor = this._getEditCursorRectangle(obj);
 		if (recCursor === undefined || this.persistCursorPositionInWriter) {
 			this.persistCursorPositionInWriter = false;
@@ -1783,7 +1807,17 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		// Remember the last position of the caret (in core pixels).
 		this._cursorPreviousPositionCorePixels = app.file.textCursor.rectangle.clone();
 
-		app.file.textCursor.rectangle = new cool.SimpleRectangle(recCursor.getTopLeft().x, recCursor.getTopLeft().y, recCursor.getSize().x, recCursor.getSize().y);
+		if (!keepPredictedCaret) {
+			app.file.textCursor.rectangle = new cool.SimpleRectangle(recCursor.getTopLeft().x, recCursor.getTopLeft().y, recCursor.getSize().x, recCursor.getSize().y);
+
+			// The logical caret, parsed from strings, or null when missing.
+			const cursorParagraph = obj.paragraph !== undefined ? parseInt(obj.paragraph) : NaN;
+			const cursorIndex = obj.index !== undefined ? parseInt(obj.index) : NaN;
+			if (!isNaN(cursorParagraph) && !isNaN(cursorIndex))
+				app.file.textCursor.logical = { paragraph: cursorParagraph, index: cursorIndex };
+			else
+				app.file.textCursor.logical = null;
+		}
 
 		if (this.isWriter()) {
 			app.sectionContainer.onCursorPositionChanged();
@@ -1811,7 +1845,8 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		if (URLPopUpSection.isOpen() && !(obj.hyperlink && obj.hyperlink.link))
 			URLPopUpSection.closeURLPopUp();
 
-		if (obj.hyperlink && obj.hyperlink.link &&
+		// a small screen opens the link from the tap, not from the cursor
+		if (obj.hyperlink && obj.hyperlink.link && !window.mode.isSmallScreenDevice() &&
 			( !URLPopUpSection.isOpen() || updateCursor || isHyperlinkChanged))
 			URLPopUpSection.showURLPopUP(obj.hyperlink.link, new cool.SimplePoint(app.file.textCursor.rectangle.x1, app.file.textCursor.rectangle.y1));
 
@@ -2405,9 +2440,9 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		}
 	},
 
-	// Build the list of {mark, part} references from the marks array of a referencemarks
-	// payload. Each mark becomes a CPolygon that fills the cell range with a translucent
-	// highlight.
+	// Build the list of {mark, part, rectangle, active} references from the marks array of a
+	// referencemarks payload. Each mark becomes a CPolygon that fills the cell range with a
+	// translucent highlight. Active is set on the reference selected in the edited formula.
 	_marksToReferences: function (marks) {
 		var references = [];
 
@@ -2418,6 +2453,7 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 
 			if (strTwips != null) {
 				var rectangles = [];
+				var rectangle = null;
 				for (var i = 0; i < strTwips.length; i += 4) {
 					var topLeftTwips = new cool.Point(parseInt(strTwips[i]), parseInt(strTwips[i + 1]));
 					var offset = new cool.Point(parseInt(strTwips[i + 2]), parseInt(strTwips[i + 3]));
@@ -2425,6 +2461,9 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 						new cool.Bounds(topLeftTwips, topLeftTwips.add(offset)));
 					rectangles.push([boundsTwips.getBottomLeft(), boundsTwips.getBottomRight(),
 						boundsTwips.getTopLeft(), boundsTwips.getTopRight()]);
+					if (!rectangle)
+						rectangle = new cool.SimpleRectangle(boundsTwips.min.x, boundsTwips.min.y,
+							boundsTwips.max.x - boundsTwips.min.x, boundsTwips.max.y - boundsTwips.min.y);
 				}
 
 				var docLayer = this;
@@ -2440,11 +2479,33 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 					weight: 2 * app.dpiScale,
 					opacity: 0.25});
 
-				references.push({mark: reference, part: part});
+				references.push({mark: reference, part: part, rectangle: rectangle,
+					active: marks[mark].active === 'true'});
 			}
 		}
 
 		return references;
+	},
+
+	_activeReference: function () {
+		if (!this._referencesAll)
+			return null;
+
+		for (var i = 0; i < this._referencesAll.length; i++) {
+			if (this._referencesAll[i].active)
+				return this._referencesAll[i];
+		}
+
+		return null;
+	},
+
+	getActiveReferenceRectangle: function () {
+		var reference = this._activeReference();
+		return reference && reference.part === this._selectedPart ? reference.rectangle : null;
+	},
+
+	isPickingFormulaReference: function () {
+		return this._activeReference() !== null;
 	},
 
 	_onReferencesMsg: function (textMsg) {
@@ -2452,6 +2513,8 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		var marks = JSON.parse(textMsg);
 		this._referencesAll = this._marksToReferences(marks.marks);
 		this._updateReferenceMarks();
+		CellSelectionMarkers.update();
+		TextSelections.refreshHandles();
 	},
 
 	_getStringPart: function (string) {
@@ -2768,6 +2831,8 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
             this._referencesAll = this._referencesAll.filter(function(e) { return e.type !== 'focuscell' });
 
 		this._updateReferenceMarks();
+		CellSelectionMarkers.update();
+		TextSelections.refreshHandles();
 	},
 
 	_postMouseEvent: function(type, x, y, count, buttons, modifier) {
@@ -2794,9 +2859,12 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		if (this._map.contextToolbar)
 			this._map.contextToolbar.setLastInputEventType({input: "mouse", type: type});
 
+		// A click moves the caret, so it is numbered like a keystroke. The caret update
+		// after it then reports the click, not an earlier keystroke.
 		app.socket.sendMessage('mouse type=' + type +
 				' x=' + x + ' y=' + y + ' count=' + count +
-				' buttons=' + buttons + ' modifier=' + modifier);
+				' buttons=' + buttons + ' modifier=' + modifier +
+				' sequence=' + app.nextInputSequence());
 
 
 		const tempPageLinks = this._map['stateChangeHandler'].getItemValue('PageLinks');
@@ -3008,6 +3076,12 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		return (!this._map._clip || this._map._clip._selectionType !== 'complex');
 	},
 
+	// The followed view id may arrive as a string from the integrator, so compare numbers.
+	_viewFollowsOwnCursor: function() {
+		return app.isFollowingUser() &&
+			parseInt(app.getFollowedViewId()) === parseInt(this._viewId);
+	},
+
 	// Scrolls the view to selected position
 	scrollToPos: function(pos) {
 		// The multipage layout arranges pages in a grid and its scrollTo() takes a
@@ -3118,7 +3192,8 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 
 			if (!app.isPointVisibleInTheDisplayedArea(new cool.SimplePoint(correctedCursor.x1, correctedCursor.y1).toArray()) ||
 				!app.isPointVisibleInTheDisplayedArea(new cool.SimplePoint(correctedCursor.x2, correctedCursor.y2).toArray())) {
-				if (app.isFollowingUser() && app.getFollowedViewId() === this._viewId && !this._map.calcInputBarHasFocus()) {
+				if (this._viewFollowsOwnCursor() &&
+					!this._map.calcInputBarHasFocus()) {
 					this.scrollToPos(new cool.SimplePoint(correctedCursor.x1, correctedCursor.y1));
 				}
 			}
@@ -3874,6 +3949,10 @@ window.L.CanvasTileLayer = window.L.Layer.extend({
 		// We want to keep cursor visible when we show the keyboard on mobile device or tablet
 		if (!window.mode.isSmallScreenDevice() && !window.mode.isTablet()) return;
 		if (heightIncreased || !this._map._docLoaded) return;
+
+		if (this.isCalc() &&
+			(!this._viewFollowsOwnCursor() || this.isPickingFormulaReference()))
+			return;
 
 		const hasVisibleCursor = app.file.textCursor.visible
 			&& this._map._docLayer._cursorMarker && this._map._docLayer._cursorMarker.isDomAttached();

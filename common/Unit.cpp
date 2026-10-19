@@ -29,14 +29,12 @@
 
 #include <atomic>
 #include <cassert>
-#include <condition_variable>
 #include <csignal>
 #include <iostream>
 #include <mutex>
 #ifndef _WIN32
 #include <sysexits.h>
 #endif
-#include <thread>
 
 UnitBase** UnitBase::GlobalArray = nullptr;
 std::atomic_int_fast64_t UnitBase::GlobalIndex = -1;
@@ -44,18 +42,6 @@ char* UnitBase::UnitLibPath = nullptr;
 void* UnitBase::DlHandle = nullptr;
 UnitBase::TestOptions UnitBase::GlobalTestOptions;
 UnitBase::TestResult UnitBase::GlobalResult = UnitBase::TestResult::Ok;
-
-namespace
-{
-std::thread TimeoutThread;
-// Only locked inside the ENABLE_DEBUG block that starts TimeoutThread.
-[[maybe_unused]] std::mutex TimeoutThreadMutex;
-std::condition_variable TimeoutConditionVariable;
-bool KitWorkFinished = false;
-// The kit test whose timeout is started by startKitTimeout().
-[[maybe_unused]] UnitBase* PendingKitTimeoutInstance = nullptr;
-
-} // namespace
 
 /// Controls whether experimental features/behavior is enabled or not.
 bool EnableExperimental = false;
@@ -91,21 +77,23 @@ void UnitBase::initTestSuiteOptions()
 
 bool UnitBase::matchesFilter(std::size_t index)
 {
-    const std::string& name = GlobalArray[index]->getTestname();
+    const std::string name = GlobalArray[index]->getTestname();
     return strstr(Util::toLower(name).c_str(), GlobalTestOptions.getFilter().c_str()) != nullptr;
 }
 
-void UnitBase::filter()
+std::size_t UnitBase::filter(std::size_t index)
 {
     // Stop at the first test that matches, or at the dummy instance, which is the last entry.
-    for (; GlobalArray[GlobalIndex + 1] != nullptr; ++GlobalIndex)
+    for (; GlobalArray[index + 1] != nullptr; ++index)
     {
-        if (matchesFilter(GlobalIndex))
+        if (matchesFilter(index))
             break;
 
-        LOG_INF("Skipping test [" << GlobalArray[GlobalIndex]->getTestname() << "] per filter ["
+        LOG_INF("Skipping test [" << GlobalArray[index]->getTestname() << "] per filter ["
                                   << GlobalTestOptions.getFilter() << ']');
     }
+
+    return index;
 }
 
 bool UnitBase::haveMoreTests()
@@ -218,8 +206,7 @@ bool UnitBase::init([[maybe_unused]] UnitType type, [[maybe_unused]] const std::
 
         // Filter tests. GlobalIndex stays at the first test that matches, or at the dummy
         // when none does, which is not started.
-        GlobalIndex = 0;
-        filter();
+        GlobalIndex = filter(0);
         if (GlobalIndex == testCount && testCount > 0)
             LOG_WRN("No test matches the filter [" << GlobalTestOptions.getFilter() << ']');
 
@@ -229,9 +216,6 @@ bool UnitBase::init([[maybe_unused]] UnitType type, [[maybe_unused]] const std::
             TST_LOG_NAME("UnitBase",
                          "Starting test #1: " << GlobalArray[GlobalIndex]->getTestname());
             instance->initialize();
-
-            if (type == UnitType::Kit)
-                PendingKitTimeoutInstance = instance;
         }
     }
     else
@@ -243,36 +227,6 @@ bool UnitBase::init([[maybe_unused]] UnitType type, [[maybe_unused]] const std::
     }
 
     return GlobalArray[GlobalIndex] != nullptr;
-}
-
-void UnitBase::startKitTimeout()
-{
-#if ENABLE_DEBUG
-    UnitBase* const instance = PendingKitTimeoutInstance;
-    PendingKitTimeoutInstance = nullptr;
-    if (!instance)
-        return;
-
-    std::unique_lock<std::mutex> lock(TimeoutThreadMutex);
-    TimeoutThread = std::thread(
-        [instance]
-        {
-            ProcUtil::setThreadName("unit timeout");
-
-            std::unique_lock<std::mutex> lock2(TimeoutThreadMutex);
-            if (TimeoutConditionVariable.wait_for(lock2, instance->_timeoutMilliSeconds,
-                                                  [] { return KitWorkFinished; }))
-            {
-                LOG_DBG(instance->getTestname() << ": Unit test finished in time");
-            }
-            else
-            {
-                LOG_ERR(instance->getTestname() << ": Unit test timeout after "
-                                                << instance->_timeoutMilliSeconds);
-                instance->timeout();
-            }
-        });
-#endif // ENABLE_DEBUG
 }
 
 int UnitBase::uninit()
@@ -340,9 +294,14 @@ void UnitBase::initialize()
     socketPoll()->startThread();
 }
 
+void UnitKit::initialize()
+{
+    assert(isUnitTesting() && "Invalid handle to set");
+    TST_LOG("==================== Starting [" << getTestname() << "] ====================");
+}
+
 void UnitBase::setTimeout(std::chrono::milliseconds timeoutMilliSeconds)
 {
-    assert(!TimeoutThread.joinable() && "setTimeout must be called before starting a test");
     _timeoutMilliSeconds = timeoutMilliSeconds;
     TST_LOG(getTestname() << ": setTimeout: " << _timeoutMilliSeconds);
 }
@@ -448,8 +407,8 @@ void UnitBase::exitTest(TestResult result, const std::string& reason, LOG_CAPTUR
     {
         if (result != _result)
         {
-            TST_LOG("exitTest got " << name(result) << " but is already finished with "
-                                    << name(_result));
+            TST_LOG_SAFE("exitTest got " << name(result) << " but is already finished with "
+                                         << name(_result));
         }
 
         return;
@@ -457,12 +416,13 @@ void UnitBase::exitTest(TestResult result, const std::string& reason, LOG_CAPTUR
 
     if (result == TestResult::Ok)
     {
-        TST_LOG("SUCCESS: exitTest: " << name(result) << (reason.empty() ? "" : ": " + reason));
+        TST_LOG_SAFE("SUCCESS: exitTest: " << name(result)
+                                           << (reason.empty() ? "" : ": " + reason));
     }
     else
     {
-        TST_LOG("ERROR: FAILURE: exitTest: " << name(result)
-                                             << (reason.empty() ? "" : ": " + reason));
+        TST_LOG_SAFE("ERROR: FAILURE: exitTest: " << name(result)
+                                                  << (reason.empty() ? "" : ": " + reason));
 
         if (GlobalResult == TestResult::Ok)
             GlobalResult = result;
@@ -510,7 +470,7 @@ std::string UnitKit::getResultMessage() const
 void UnitWSD::processUnitResult(const StringVector &tokens)
 {
     UnitBase::TestResult result = UnitBase::TestResult::TimedOut;
-    TST_LOG("Received " << tokens[0] << " from kit:" << tokens[1] << " " << tokens[2]);
+    TST_LOG_SAFE("Received " << tokens[0] << " from kit:" << tokens[1] << " " << tokens[2]);
     assert (tokens[0] == "unitresult:");
     if (tokens[1] == "Ok")
         result = UnitBase::TestResult::Ok;
@@ -524,7 +484,7 @@ void UnitBase::timeout()
     // Don't timeout if we had already finished.
     if (isUnitTesting() && !isFinished())
     {
-        TST_LOG("ERROR: Timed out waiting for unit test to complete within "
+        TST_LOG_SAFE("ERROR: Timed out waiting for unit test to complete within "
                 << _timeoutMilliSeconds);
         exitTest(TestResult::TimedOut);
     }
@@ -538,22 +498,13 @@ void UnitBase::returnValue(int& retValue)
 
 void UnitBase::endTest([[maybe_unused]] const std::string& reason)
 {
-    TST_LOG("Ending test by stopping SocketPoll [" << getTestname() << "]: " << reason);
+    TST_LOG_SAFE("Ending test by stopping SocketPoll [" << getTestname() << "]: " << reason);
     std::shared_ptr<SocketPoll> socketPoll = getSocketPoll();
     if (socketPoll)
         socketPoll->joinThread();
 
-    // tell the timeout thread that the work has finished
-    {
-        std::lock_guard<std::mutex> lock(TimeoutThreadMutex);
-        KitWorkFinished = true;
-    }
-    TimeoutConditionVariable.notify_all();
-    if (TimeoutThread.joinable())
-        TimeoutThread.join();
-
-    TST_LOG("==================== Finished [" << getTestname() << "] " << name(_result) << " - "
-                                              << reason << " ====================");
+    TST_LOG_SAFE("==================== Finished [" << getTestname() << "] " << name(_result)
+                                                   << " - " << reason << " ====================");
 }
 
 UnitWSD::UnitWSD(const std::string& name)
@@ -638,9 +589,9 @@ void UnitWSD::startNextTest()
     UnitWSD* currentWSD = getMaybeNull();
     UnitWSDInterface* unitWsdInterface = currentWSD ? currentWSD->_wsd : nullptr;
 
-    // We have more tests.
-    ++GlobalIndex;
-    filter();
+    // We have more tests. Move to the next in one step: other threads, such as that of DNS,
+    // ask for the test that is running, which must never be one skipped.
+    GlobalIndex = filter(GlobalIndex + 1);
 
     if (GlobalArray[GlobalIndex] != nullptr && !SigUtil::getShutdownRequestFlag() &&
         (_result == TestResult::Ok || GlobalTestOptions.getKeepgoing()))

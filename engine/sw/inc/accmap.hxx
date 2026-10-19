@@ -50,7 +50,12 @@ class SwAccPreviewData;
 class SwFEShell;
 struct PreviewPage;
 namespace vcl { class Window; }
-namespace com::sun::star::accessibility { class XAccessible; }
+namespace com::sun::star::accessibility
+{
+class XAccessible;
+class XAccessibleText;
+}
+struct SfxParagraphComment;
 
 enum class AccessibleStates
 {
@@ -109,6 +114,9 @@ class SwAccessibleMap final : public ::accessibility::IAccessibleViewForwarder,
     std::unique_ptr<SwAccPreviewData> mpPreview;
 
     unotools::WeakReference< SwAccessibleContext > mxCursorContext;
+    /// The accessible contexts of the selected fly frames beyond the first one, which the cursor
+    /// context stands for. Each of them is told when it joins or leaves the selection.
+    std::vector< unotools::WeakReference< SwAccessibleContext > > maOtherSelectedFlyContexts;
 
     bool mbShapeSelected;
 
@@ -173,6 +181,9 @@ public:
         return m_rViewShell;
     }
     static bool IsInSameLevel(const SdrObject* pObj, const SwFEShell* pFESh);
+    /// The comments on an accessible paragraph, see SfxViewShell::getKitParagraphComments()
+    static std::vector<SfxParagraphComment>
+    GetParagraphComments(const cpo::uno::Reference<css::accessibility::XAccessibleText>& xText);
     void AddShapeContext(const SdrObject *pObj,
                              rtl::Reference < ::accessibility::AccessibleShape > const & xAccShape);
 

@@ -338,7 +338,7 @@ void ScDrawTextObjectBar::Execute( SfxRequest &rReq )
             pView->ScEndTextEdit(); // end text edit before switching direction
             ExecuteGlobal( rReq );
             // restore consistent state between shells and functions:
-            mrViewData.GetDispatcher().Execute(SID_OBJECT_SELECT, SfxCallMode::SLOT | SfxCallMode::RECORD);
+            mrViewData.GetDispatcher().Execute(SID_OBJECT_SELECT, SfxCallMode::SLOT);
             break;
 
         case SID_THES:
@@ -910,7 +910,6 @@ void ScDrawTextObjectBar::ExecuteAttr( SfxRequest &rReq )
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                     VclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateTextTabDialog(mrViewData.GetDialogParent(), &aEditAttr, pView));
                     auto xRequest = std::make_shared<SfxRequest>(rReq);
-                    rReq.Ignore(); // the 'old' request is not relevant any more
                     pDlg->StartExecuteAsync(
                         [this, pDlg, pArgs, aNewAttr, bSet, xRequest=std::move(xRequest), pView] (sal_Int32 nResult) mutable -> void
                         {

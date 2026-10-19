@@ -33,6 +33,7 @@ util_platform_cpp = ../common/Util-linux.cpp
 endif
 
 AM_CXXFLAGS = $(CPPUNIT_CFLAGS) -DTDOC=\"$(abs_top_srcdir)/test/data\" -DTDIST=\"$(DIST_FOLDER)\" \
+	-DCOOLWSD_XML_PATH=\"$(abs_top_builddir)/coolwsd.xml\" \
 	-I${top_srcdir}/common -I${top_srcdir}/net -I${top_srcdir}/wsd -I${top_srcdir}/kit \
 	-I${top_srcdir} -I${top_srcdir}/test \
 	${include_paths}
@@ -64,11 +65,15 @@ all_la_unit_tests = \
 	unit-crash.la \
 	unit-integration.la \
 	unit-timeout.la \
+	unit-reconnect.la \
+	unit-reconnect-wopi.la \
 	unit-wopi-save-on-exit.la \
 	unit-initial-load-fail.la \
 	unit-insert-delete.la \
 	unit-slidelink.la \
 	unit-compare-documents-url.la \
+	unit-wopi-compare-documents.la \
+	unit-wopi-compare-documents-engine.la \
 	unit-uno-command.la \
 	unit-collab.la \
 	unit-collab-protocol.la \
@@ -164,6 +169,7 @@ AM_CPPFLAGS = -pthread -I$(top_srcdir) -DBUILDING_TESTS -DLOK_ABORT_ON_ASSERTION
 test_base_sources = \
 	AIUtilTests.cpp \
 	BgSaveWhiteBoxTests.cpp \
+	ConfigUtilTests.cpp \
 	DeckSpecTests.cpp \
 	DeltaTests.cpp \
 	FileServeWhiteBoxTests.cpp \
@@ -296,6 +302,10 @@ unit_join_disconnect_la_SOURCES = UnitJoinDisconnect.cpp
 unit_join_disconnect_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
 unit_timeout_la_SOURCES = UnitTimeout.cpp
 unit_timeout_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
+unit_reconnect_la_SOURCES = UnitReconnect.cpp
+unit_reconnect_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
+unit_reconnect_wopi_la_SOURCES = UnitReconnectWopi.cpp
+unit_reconnect_wopi_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
 unit_socket_failure_la_SOURCES = UnitSocketFailure.cpp
 unit_socket_failure_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
 unit_prefork_la_SOURCES = UnitPrefork.cpp
@@ -400,6 +410,10 @@ unit_slidelink_la_SOURCES = UnitSlideLink.cpp
 unit_slidelink_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
 unit_compare_documents_url_la_SOURCES = UnitCompareDocumentsUrl.cpp
 unit_compare_documents_url_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
+unit_wopi_compare_documents_la_SOURCES = UnitWOPICompareDocuments.cpp
+unit_wopi_compare_documents_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
+unit_wopi_compare_documents_engine_la_SOURCES = UnitWOPICompareDocumentsEngine.cpp
+unit_wopi_compare_documents_engine_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
 unit_close_la_SOURCES = UnitClose.cpp
 unit_close_la_LIBADD = libtesthelpers.la $(CPPUNIT_LIBS)
 unit_bad_doc_load_la_SOURCES = UnitBadDocLoad.cpp

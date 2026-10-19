@@ -54,6 +54,7 @@ RuntimeConstant<bool> SslTermination;
 // 2) in the 'default' attribute in coolwsd.xml, which is for documentation
 // 3) the default parameter of getConfigValue() call. That is used when the
 //    setting is present in coolwsd.xml, but empty (i.e. use the default).
+// ConfigUtilTests checks 1) against 2).
 // NOTE: Poco doesn't index the first entry in an array, so omit '[0]'.
 // NOTE: This is sorted, please keep it sorted as it's friendlier to readers,
 //       except for properties, which are sorted before the value, e.g.
@@ -70,6 +71,7 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "ai.allow_user_settings", "true" },
     { "ai.api_key", "" },
     { "ai.api_url", "" },
+    { "ai.deck_budgets.max_slides", "30" },
     { "ai.enabled", "false" },
     { "ai.ethical_rating_message", "true" },
     { "ai.image_api_key", "" },
@@ -81,18 +83,29 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "ai.show_ai_sidebar", "false" },
     { "allowed_languages", "de_DE en_GB en_US es_ES fr_FR it nl pt_BR pt_PT ru" },
     { "allow_update_popup", "true" },
-    { "browser_logging", "false" },
+    { "browser_logging", ENABLE_DEBUG ? "true" : "false" },
     { "cache_files.path", "cache" },
     { "cache_files.expiry_min", "3000" },
     { "canvas_slideshow_enabled", "true" },
     { "certificates.database_path", "" },
+    { "child_root_path[@relative]", "true" },
     { "child_root_path", "jails" },
+    { "comment_avatar", "" },
     { "deepl.api_url", "" },
     { "deepl.auth_key", "" },
     { "deepl.enabled", "false" },
     { "document_signing.enable", "true" },
+    { "duden.allow_user_settings", "false" },
+    { "duden.api_key", "" },
+    { "duden.base_url", "" },
+    { "duden.dictionaries", "" },
+    { "duden.enabled", "false" },
+    { "duden.orthography_standard", "duden" },
+    { "duden.property_sets", "" },
+    { "duden.spellchecking_level", "3" },
+    { "duden.ssl_verification", "true" },
     { "enable_websocket_urp", "false" },
-    { "experimental_features", "false" },
+    { "experimental_features", ENABLE_EXPERIMENTAL_DEFAULT },
     { "extra_export_formats.impress_bmp", "false" },
     { "extra_export_formats.impress_gif", "false" },
     { "extra_export_formats.impress_png", "false" },
@@ -118,7 +131,12 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
 #endif
     { "fetch_update_check", "10" },
     { "fonts_missing.handling", "log" },
-    { "file_server_root_path", "browser/.." },
+    { "file_server_root_path[@relative]", "true" },
+    { "file_server_root_path", "browser/../" },
+    { "grammalecte.allow_user_settings", "false" },
+    { "grammalecte.base_url", "" },
+    { "grammalecte.enabled", "false" },
+    { "grammalecte.ssl_verification", "true" },
     { "hexify_embedded_urls", "false" },
     { "hide_legacy_script_warning", "false" },
     { "home_mode.enable", "false" },
@@ -128,6 +146,7 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "indirection_endpoint.migration_timeout_secs", "180" },
     { "indirection_endpoint.server_name", "" },
     { "indirection_endpoint.url", "" },
+    { "languagetool.allow_user_settings", "false" },
     { "languagetool.api_key", "" },
     { "languagetool.base_url", "" },
     { "languagetool.enabled", "false" },
@@ -137,6 +156,7 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "memproportion", "80.0" },
     { "mount_jail_tree", "true" },
     { "net.client_pong_timeout_secs", "60" },
+    { "net.session_park_timeout_secs", "5" },
     { "net.connection_timeout_secs", "30" },
     { "net.content_security_policy", "" },
     { "net.frame_ancestors", "" },
@@ -200,6 +220,13 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "remote_asset_config.url", "" },
     { "remote_config.remote_url", "" },
     { "remote_font_config.url", "" },
+    // { "remote_links.chain_secret", "" }, // Not set: these defaults go to every kit.
+    { "remote_links.enable", "false" },
+    { "remote_links.max_chain_depth", "3" },
+    { "remote_links.max_links_per_document", "0" },
+    { "remote_links.max_remote_docs", "0" },
+    { "remote_links.reconnect_attempts", "5" },
+    { "remote_links.server_url", "" },
 #if ENABLE_FEATURE_RESTRICTION
     { "restricted_commands", "" },
 #endif
@@ -211,14 +238,14 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "security.jwt_expiry_secs", "1800" },
     { "security.macro_security_level", "1" },
     { "security.seccomp", "true" },
-    { "security.server_signature", "false" },
+    { "security.server_signature", ENABLE_DEBUG ? "true" : "false" },
     { "server_name", "" },
     { "serverside_config.idle_timeout_secs", "3600" },
     { "serverside_config.max_idle_subforkits", "5" },
     { "ssl.ca_file_path", COOLWSD_CONFIGDIR "/ca-chain.cert.pem" },
     { "ssl.cert_file_path", COOLWSD_CONFIGDIR "/cert.pem" },
     { "ssl.cipher_list", "" },
-    { "ssl.enable", "true" },
+    { "ssl.enable", ENABLE_SSL ? "true" : "false" },
     { "ssl.hpkp.max_age", "1000" },
     { "ssl.hpkp.max_age[@enable]", "true" },
     { "ssl.hpkp.pins.pin", "" },
@@ -247,6 +274,7 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "storage.wopi.locking.refresh", "900" },
     { "storage.wopi.max_file_size", "0" },
     { "storage.wopi[@allow]", "true" },
+    { "sys_template_path[@relative]", "true" },
     { "sys_template_path", "systemplate" },
     { "trace.filter.message", "" },
     { "trace.outgoing.record", "false" },
@@ -262,6 +290,7 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
     { "user_interface.brandProductName", "" },
     { "user_interface.brandProductURL", "" },
     { "user_interface.logoURL", "" },
+    { "ver_suffix", "" },
     { "wasm.enable", "false" },
     { "watermark.opacity", "0.2" },
     { "watermark.text", "" },
@@ -271,6 +300,7 @@ const Util::UnorderedStringMap<std::string> DefAppConfig = {
 
 // The defaults the server adds to the set above.
 const Util::UnorderedStringMap<std::string> DefServerConfig = {
+    { "accessibility_statement_url", ACCESSIBILITY_STATEMENT_URL },
     { "help_url", HELP_URL },
     // { "logging.anonymize.anonymize_user_data", "false" }, // Do not set to fallback on filename/username.
     { "logging.anonymize.anonymization_salt", "82589933" },
@@ -295,7 +325,7 @@ const Util::UnorderedStringMap<std::string> DefServerConfig = {
     { "logging.file.property[6]", "true" },
     { "logging.file.property[7][@name]", "flush" },
     { "logging.file.property[7]", "false" },
-    { "logging.file[@enable]", "false" },
+    { "logging.file[@enable]", ENABLE_DEBUG ? "true" : "false" },
     { "logging.least_verbose_level_settable_from_client", "fatal" },
     { "logging.level", COOLWSD_LOGLEVEL },
     { "logging.level_startup", "trace" },
@@ -311,7 +341,7 @@ const Util::UnorderedStringMap<std::string> DefServerConfig = {
     { "logging_ui_cmd.file.property[2]", "true" },
     { "logging_ui_cmd.file.property[3][@name]", "flush" },
     { "logging_ui_cmd.file.property[3]", "false" },
-    { "logging_ui_cmd.file[@enable]", "false" },
+    { "logging_ui_cmd.file[@enable]", ENABLE_DEBUG ? "true" : "false" },
     { "logging_ui_cmd.merge", "true" },
     { "logging_ui_cmd.merge_display_end_time", "false" },
     { "ssl.ssl_verification", SSL_VERIFY },
@@ -471,7 +501,8 @@ std::string getLoggableConfig(const Poco::Util::AbstractConfiguration& config)
         {
             if (pair.first == "admin_console.username" || pair.first == "admin_console.password" ||
                 pair.first == "admin_console.secure_password" ||
-                pair.first == "languagetool.api_key" || pair.first == "deepl.auth_key" ||
+                pair.first == "languagetool.api_key" || pair.first == "duden.api_key" ||
+                pair.first == "deepl.auth_key" || pair.first == "remote_links.chain_secret" ||
                 pair.first == "ai.api_key" || pair.first == "ai.image_api_key" ||
                 pair.first == "logging.anonymize.anonymization_salt" || pair.first == "support_key")
             {

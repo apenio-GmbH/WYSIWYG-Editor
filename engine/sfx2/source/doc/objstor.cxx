@@ -43,7 +43,6 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/form/XLoadable.hpp>
-#include <com/sun/star/sdb/DatabaseContext.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
@@ -505,11 +504,19 @@ bool SfxObjectShell::DoInitNew()
 
     if ( InitNew( nullptr ) )
     {
-        // empty documents always get their macros from the user, so there is no reason to restrict access
-        pImpl->aMacroMode.allowMacroExecution();
-        pImpl->m_bMacroCallsAllowed = true;
         if ( SfxObjectCreateMode::EMBEDDED == eCreateMode )
+        {
+            // An embedded object starts with macros disallowed, the same as one loaded from its own
+            // storage.
+            pImpl->aMacroMode.disallowMacroExecution();
             SetTitle(SfxResId(STR_NONAME));
+        }
+        else
+        {
+            // empty documents always get their macros from the user, so there is no reason to restrict access
+            pImpl->aMacroMode.allowMacroExecution();
+            pImpl->m_bMacroCallsAllowed = true;
+        }
 
         uno::Reference< frame::XModel >  xModel = GetModel();
         if ( xModel.is() )
@@ -4108,14 +4115,11 @@ bool SfxObjectShell::IsExternalDatabaseForm(const uno::Reference<beans::XPropert
         if (!sURL.isEmpty())
             return true;
 
+        // The command the form runs on its data source is the document's, so a registered data
+        // source counts as external too.
         OUString sDataSourceName;
         rxForm->getPropertyValue(u"DataSourceName"_ustr) >>= sDataSourceName;
-        if (sDataSourceName.isEmpty())
-            return false;
-
-        uno::Reference<sdb::XDatabaseContext> xDatabaseContext
-            = sdb::DatabaseContext::create(comphelper::getProcessComponentContext());
-        return !xDatabaseContext->hasRegisteredDatabase(sDataSourceName);
+        return !sDataSourceName.isEmpty();
     }
     catch (const uno::Exception&)
     {

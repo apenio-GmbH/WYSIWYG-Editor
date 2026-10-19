@@ -105,20 +105,8 @@ void FuScale::DoExecute( SfxRequest& rReq )
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         ScopedVclPtr<AbstractSvxZoomDialog> pDlg(pFact->CreateSvxZoomDialog(rReq.GetFrameWeld(), aNewAttr));
         pDlg->SetLimits( static_cast<sal_uInt16>(mpWindow->GetMinZoom()), static_cast<sal_uInt16>(mpWindow->GetMaxZoom()) );
-        sal_uInt16 nResult = pDlg->Execute();
-        switch( nResult )
-        {
-            case RET_CANCEL:
-            {
-                rReq.Ignore ();
-                return; // Cancel
-            }
-            default:
-            {
-                rReq.Ignore ();
-            }
-            break;
-        }
+        if (pDlg->Execute() == RET_CANCEL)
+            return;
 
         const SfxItemSet aArgs (*(pDlg->GetOutputItemSet ()));
 
@@ -142,17 +130,17 @@ void FuScale::DoExecute( SfxRequest& rReq )
                 {
                     // name confusion: SID_SIZE_ALL -> zoom onto all objects
                     // --> the program offers it as optimal
-                    mrViewShell.GetViewFrame()->GetDispatcher()->Execute( SID_SIZE_ALL, SfxCallMode::ASYNCHRON | SfxCallMode::RECORD);
+                    mrViewShell.GetViewFrame()->GetDispatcher()->Execute( SID_SIZE_ALL, SfxCallMode::ASYNCHRON);
                 }
             }
             break;
 
             case SvxZoomType::PAGEWIDTH:
-                mrViewShell.GetViewFrame()->GetDispatcher()->Execute( SID_SIZE_PAGE_WIDTH, SfxCallMode::ASYNCHRON | SfxCallMode::RECORD);
+                mrViewShell.GetViewFrame()->GetDispatcher()->Execute( SID_SIZE_PAGE_WIDTH, SfxCallMode::ASYNCHRON);
                 break;
 
             case SvxZoomType::WHOLEPAGE:
-                mrViewShell.GetViewFrame()->GetDispatcher()->Execute(SID_SIZE_PAGE, SfxCallMode::ASYNCHRON | SfxCallMode::RECORD);
+                mrViewShell.GetViewFrame()->GetDispatcher()->Execute(SID_SIZE_PAGE, SfxCallMode::ASYNCHRON);
                 break;
             default:
                 break;

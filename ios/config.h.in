@@ -92,6 +92,9 @@
 /* Default value of help root URL */
 #define HELP_URL ""
 
+/* Accessibility statement URL. */
+#define ACCESSIBILITY_STATEMENT_URL ""
+
 /* Path to LibreOffice installation */
 #define LO_PATH "."
 
@@ -133,6 +136,9 @@
 
 /* Whether to default to using SSL_VERIFY_PEER */
 #define SSL_VERIFY "true"
+
+/* Default of experimental_features */
+#define ENABLE_EXPERIMENTAL_DEFAULT "false"
 
 /* Makes config variables conditionally static, only in non-debug builds, to allow for overriding them in unit-tests. */
 #ifdef ENABLE_DEBUG

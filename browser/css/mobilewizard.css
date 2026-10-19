@@ -274,6 +274,9 @@ p.mobile-wizard.ui-combobox-text.selected {
 	background-position-y: center;
 	height: 20px;
 }
+[data-theme='dark'] .mobile-wizard-back {
+	background-image: url('images/dark/lc_closedocmobile.svg');
+}
 
 #mobile-wizard {
 	width: 100%;
@@ -415,6 +418,9 @@ p.mobile-wizard.ui-combobox-text.selected {
 	vertical-align: middle;
 	margin-right: 4%;
 }
+[data-theme='dark'] .sub-menu-arrow {
+	background-image: url('images/dark/lc_closedocmobile.svg');
+}
 
 .func-info-icon {
 	display: block;
@@ -451,6 +457,12 @@ p.mobile-wizard.ui-combobox-text.selected {
 }
 .flex-fullwidth {
 	flex-grow: 100;
+}
+/* the first entry of the link wizard is the url, cut it with an ellipsis */
+#mobile-wizard .ui-header-openlink span.menu-entry-with-icon {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .ui-tabs.mobile-wizard {
@@ -715,6 +727,20 @@ a.leaflet-control-zoom-in {
 #mobile-wizard.snackbar .mobile-wizard.ui-text {
 	border: none;
 	line-height: inherit;
+}
+
+/* modal texts are lines of their own, the info modal title is a heading */
+#mobile-wizard [id^='mobile-wizard-content-modal-dialog-'] .mobile-wizard.ui-text {
+	display: block;
+	border: none;
+	line-height: 1.4;
+	padding: var(--spacing-s) 0;
+}
+
+#mobile-wizard #info-modal-tile-m.mobile-wizard.ui-text {
+	font-size: var(--header-font-size);
+	font-weight: 600;
+	padding-bottom: var(--spacing-m);
 }
 
 #mobile-wizard [id^='info-modal-label'].mobile-wizard.ui-text {

@@ -135,7 +135,6 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
 #if HAVE_FEATURE_SCRIPTING
                 StarBASIC::FatalError (ERRCODE_BASIC_BAD_PROP_VALUE);
 #endif
-                rRequest.Ignore ();
                 break;
             }
             if (ePageKind == PageKind::Handout)
@@ -149,7 +148,6 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
 #if HAVE_FEATURE_SCRIPTING
             StarBASIC::FatalError (ERRCODE_BASIC_WRONG_ARGS);
 #endif
-            rRequest.Ignore ();
             break;
         }
 
@@ -200,7 +198,7 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
             }
 
             mrViewShell.GetViewFrame()->GetDispatcher()->Execute(SID_SWITCHPAGE,
-                SfxCallMode::ASYNCHRON | SfxCallMode::RECORD);
+                SfxCallMode::ASYNCHRON);
 
             bool bSetModified = true;
 

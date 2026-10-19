@@ -1222,7 +1222,7 @@ void ScGridWindow::UpdateAutoFilterFromMenu(AutoFilterMode eMode)
         {
             mrViewData.GetViewShell()->MarkDBDataArea(*pDBData);
             mrViewData.GetView()->SetCursor(rPos.Col(), rPos.Row());
-            mrViewData.GetDispatcher().Execute(SID_FILTER, SfxCallMode::SLOT | SfxCallMode::RECORD);
+            mrViewData.GetDispatcher().Execute(SID_FILTER, SfxCallMode::SLOT);
             return;
         }
         default:
@@ -1974,7 +1974,7 @@ void ScGridWindow::HandleMouseButtonDown( const MouseEvent& rMEvt, MouseEventSta
             SfxInt16Item aPosXItem( SID_RANGE_COL, nPosX );
             SfxInt32Item aPosYItem( SID_RANGE_ROW, nPosY );
             mrViewData.GetDispatcher().ExecuteList(SID_FILL_SELECT,
-                    SfxCallMode::SLOT | SfxCallMode::RECORD,
+                    SfxCallMode::SLOT,
                     { &aPosXItem, &aPosYItem });
 
         }
@@ -2239,8 +2239,12 @@ void ScGridWindow::HandleMouseButtonDown( const MouseEvent& rMEvt, MouseEventSta
 
             //      links in the edit cell
 
+    ScTabViewShell* pLinkViewShell = mrViewData.GetViewShell();
+    const bool bLinkTapOnPhone = comphelper::COKit::isActive() && pLinkViewShell
+                                 && pLinkViewShell->isKitMobilePhone();
+
     bool bAlt = rMEvt.IsMod2();
-    if ( !bAlt && rMEvt.IsLeft() && ScGlobal::ShouldOpenURL() &&
+    if ( !bAlt && rMEvt.IsLeft() && (ScGlobal::ShouldOpenURL() || bLinkTapOnPhone) &&
             GetEditUrl(rMEvt.GetPosPixel()) )           // click on link: do not move cursor
     {
         SetPointer( PointerStyle::RefHand );
@@ -2482,7 +2486,7 @@ void ScGridWindow::MouseButtonUp( const MouseEvent& rMEvt )
         }
         else
         {
-            mrViewData.GetDispatcher().Execute( FID_FILL_AUTO, SfxCallMode::SLOT | SfxCallMode::RECORD );
+            mrViewData.GetDispatcher().Execute( FID_FILL_AUTO, SfxCallMode::SLOT );
 
             // prepare AutoFill menu items for "Copy Cells" and "Fill Series"
             ScTabViewShell* pViewShell = mrViewData.GetViewShell();
@@ -2662,7 +2666,7 @@ void ScGridWindow::MouseButtonUp( const MouseEvent& rMEvt )
                 if ( pView->HasSelectionForDrillDown( nDummy ) )
                 {
                     // execute slot to show dialog
-                    mrViewData.GetDispatcher().Execute( SID_OUTLINE_SHOW, SfxCallMode::SLOT | SfxCallMode::RECORD );
+                    mrViewData.GetDispatcher().Execute( SID_OUTLINE_SHOW, SfxCallMode::SLOT );
                 }
                 else
                 {
@@ -2869,7 +2873,7 @@ void ScGridWindow::MouseButtonUp( const MouseEvent& rMEvt )
         // back to the origin of the selection where the cell cursor is.
         SfxBoolItem aAlignCursorItem( FN_PARAM_2, false );
         pDisp->ExecuteList(SID_CURRENTCELL,
-                SfxCallMode::SLOT | SfxCallMode::RECORD,
+                SfxCallMode::SLOT,
                 { &aPosItem, &aAlignCursorItem });
 
         mrViewData.GetView()->InvalidateAttribs();
@@ -4746,7 +4750,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
                 SfxStringItem aRangeItem( SID_CHART_SOURCE, aRangeName );
                 sal_uInt16 nId = bIsMove ? SID_CHART_SOURCE : SID_CHART_ADDSOURCE;
                 mrViewData.GetDispatcher().ExecuteList(nId,
-                        SfxCallMode::ASYNCHRON | SfxCallMode::RECORD,
+                        SfxCallMode::ASYNCHRON,
                         { &aRangeItem, &aNameItem });
                 bDone = true;
             }

@@ -604,7 +604,6 @@ bool SwView::InsertGraphicDlg( SfxRequest& rReq )
                     GetFrameWeld(), VclMessageType::Info, VclButtonsType::Ok, SwResId(pResId)));
                 xInfoBox->runAsync(xInfoBox, [](sal_uInt32) {});
             }
-            rReq.Ignore();
         }
         else
         {
@@ -826,7 +825,6 @@ void SwView::Execute(SfxRequest &rReq)
                     OSL_ENSURE( !oOn.value(), "SwView::Execute(): password set and redlining off doesn't match!" );
 
                     std::shared_ptr<SfxRequest> xRequest = std::make_shared<SfxRequest>(rReq);
-                    rReq.Ignore();
                     bIgnore = true;
 
                     // xmlsec05:    new password dialog
@@ -854,7 +852,6 @@ void SwView::Execute(SfxRequest &rReq)
                                     GetFrameWeld(), VclMessageType::Info, VclButtonsType::Ok,
                                     SfxResId(RID_SVXSTR_INCORRECT_PASSWORD)));
                             xInfoBox->runAsync(xInfoBox, [xInfoBox](sal_uInt32) {});
-                            xRequest->Ignore();
                             return;
                         }
 
@@ -878,7 +875,6 @@ void SwView::Execute(SfxRequest &rReq)
                 break;
 
             std::shared_ptr<SfxRequest> xRequest = std::make_shared<SfxRequest>(rReq);
-            rReq.Ignore();
             bIgnore = true;
 
             // xmlsec05:    new password dialog
@@ -896,7 +892,6 @@ void SwView::Execute(SfxRequest &rReq)
             {
                 if (!nResult)
                 {
-                    xRequest->Ignore();
                     return;
                 }
 
@@ -1330,7 +1325,7 @@ void SwView::Execute(SfxRequest &rReq)
             {
                 SfxBoolItem aItem( SID_WIN_FULLSCREEN, false );
                 GetViewFrame().GetDispatcher()->ExecuteList(SID_WIN_FULLSCREEN,
-                        SfxCallMode::RECORD, { &aItem });
+                        SfxCallMode::SLOT, { &aItem });
                 bIgnore = true;
             }
         }
@@ -1366,7 +1361,6 @@ void SwView::Execute(SfxRequest &rReq)
             GetWrtShell().GetPageNum(nPhyPage, nVirPage);
 
             std::shared_ptr<SfxRequest> xRequest = std::make_shared<SfxRequest>(rReq);
-            rReq.Ignore();
 
             auto xDialog = std::make_shared<svx::GotoPageDlg>(
                 GetViewFrame().GetFrameWeld(), SwResId(STR_GOTO_PAGE_DLG_TITLE),
@@ -1680,7 +1674,6 @@ void SwView::Execute(SfxRequest &rReq)
                 rViewFrame.ToggleChildWindow(FN_SPELL_GRAMMAR_DIALOG);
 
             rViewFrame.GetBindings().Invalidate(FN_SPELL_GRAMMAR_DIALOG);
-            rReq.Ignore ();
         }
         break;
         case SID_ALIGN_ANY_LEFT :
@@ -1775,7 +1768,7 @@ void SwView::Execute(SfxRequest &rReq)
                 if (handle->GetKind() == SdrHdlKind::Anchor || handle->GetKind() == SdrHdlKind::Anchor_TR)
                     m_pWrtShell->FindAnchorPos(mPoint, /*bMoveIt=*/true);
                 else
-                    pSdrView->MoveShapeHandle(handleNum, mPoint, OrdNum ? OrdNum->GetValue() : -1);
+                    m_pWrtShell->MoveShapeHandle(handleNum, mPoint, OrdNum ? OrdNum->GetValue() : -1);
             }
             break;
         }
@@ -2310,21 +2303,21 @@ void SwView::ExecuteStatusLine(SfxRequest &rReq)
         case FN_STAT_PAGE:
         {
             GetViewFrame().GetDispatcher()->Execute( SID_GO_TO_PAGE,
-                                      SfxCallMode::SYNCHRON|SfxCallMode::RECORD );
+                                      SfxCallMode::SYNCHRON );
         }
         break;
 
         case FN_STAT_WORDCOUNT:
         {
             GetViewFrame().GetDispatcher()->Execute(FN_WORDCOUNT_DIALOG,
-                                      SfxCallMode::SYNCHRON|SfxCallMode::RECORD );
+                                      SfxCallMode::SYNCHRON );
         }
         break;
 
         case FN_STAT_ACCESSIBILITY_CHECK:
         {
             const SfxStringItem sDeckName(SID_SIDEBAR_DECK, u"A11yCheckDeck"_ustr);
-            GetViewFrame().GetDispatcher()->ExecuteList(SID_SIDEBAR_DECK, SfxCallMode::RECORD,
+            GetViewFrame().GetDispatcher()->ExecuteList(SID_SIDEBAR_DECK, SfxCallMode::SLOT,
                 { &sDeckName });
         }
         break;
@@ -2358,7 +2351,7 @@ void SwView::ExecuteStatusLine(SfxRequest &rReq)
             pInternalItems[ 0 ] = &aDialogParent;
             pInternalItems[ 1 ] = nullptr;
             GetViewFrame().GetDispatcher()->Execute(FN_FORMAT_PAGE_DLG,
-                                        SfxCallMode::SYNCHRON|SfxCallMode::RECORD,
+                                        SfxCallMode::SYNCHRON,
                                         nullptr, 0, pInternalItems);
         }
         break;
@@ -2489,7 +2482,7 @@ void SwView::ExecuteStatusLine(SfxRequest &rReq)
             }
             if( nId )
                 GetViewFrame().GetDispatcher()->Execute(nId,
-                    SfxCallMode::SYNCHRON | SfxCallMode::RECORD );
+                    SfxCallMode::SYNCHRON );
         }
         break;
 
@@ -2961,17 +2954,6 @@ tools::Long SwView::InsertMedium( sal_uInt16 nSlotId, std::unique_ptr<SfxMedium>
 
     if( bInsert )
     {
-        uno::Reference< frame::XDispatchRecorder > xRecorder =
-                GetViewFrame().GetBindings().GetRecorder();
-        if ( xRecorder.is() )
-        {
-            SfxRequest aRequest(GetViewFrame(), SID_INSERTDOC);
-            aRequest.AppendItem(SfxStringItem(SID_INSERTDOC, pMedium->GetOrigURL()));
-            if(pMedium->GetFilter())
-                aRequest.AppendItem(SfxStringItem(FN_PARAM_1, pMedium->GetFilter()->GetName()));
-            aRequest.Done();
-        }
-
         SfxObjectShellRef aRef( pDocSh );
 
         ErrCode nError = SfxObjectShell::HandleFilter( pMedium.get(), pDocSh );
@@ -3259,7 +3241,6 @@ IMPL_LINK( SwView, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
         if ( m_pViewImpl->GetParam() == 0 )
         {
             m_pViewImpl->GetRequest()->SetReturnValue( SfxBoolItem( nSlot, nFound != -1 ) );
-            m_pViewImpl->GetRequest()->Ignore();
         }
         else
         {

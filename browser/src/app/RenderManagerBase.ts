@@ -21,6 +21,17 @@
 
 type AfterVisualsReadyTask = () => void;
 
+namespace cool {
+	/// A caret update's JSON, each value optional: the newest input it reflects as a number,
+	/// and the logical caret and the edited object's id as strings.
+	export interface CaretUpdate {
+		inputSequence?: number;
+		paragraph?: string;
+		index?: string;
+		object?: string;
+	}
+}
+
 abstract class RenderManagerBase {
 	// Whether some of the document's content has arrived and can be painted.
 	private visualsReady: boolean = false;
@@ -71,6 +82,8 @@ abstract class RenderManagerBase {
 	resetPreFetching(_resetBorder: boolean): void {}
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	clearPreFetch(): void {}
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	initPreFetchAdjacentTiles(): void {}
 
 	// -- memory / cache --
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -179,6 +192,16 @@ abstract class RenderManagerBase {
 
 	// -- vector rendering --
 	abstract isVectorRendering(): boolean;
+
+	abstract predictTextInsert(text: string): boolean;
+
+	abstract predictTextDelete(before: number, after: number): boolean;
+
+	// True when the local caret is ahead of the update's input.
+	abstract keepPredictedCaret(update: cool.CaretUpdate): boolean;
+
+	// Returns true when a keystroke at the caret would be predicted.
+	abstract canPredictAtCaret(): boolean;
 
 	abstract requestThumbnail(
 		id: cool.PreviewId,

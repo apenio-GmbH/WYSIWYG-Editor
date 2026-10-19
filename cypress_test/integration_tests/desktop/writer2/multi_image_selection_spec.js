@@ -45,6 +45,7 @@ describe(['tagdesktop'], 'Writer multi image selection', function() {
 		const first = {};
 		const second = {};
 		const both = {};
+		const bothAgain = {};
 
 		// The first image is selected right after it is inserted.
 		desktopHelper.insertImage();
@@ -84,15 +85,34 @@ describe(['tagdesktop'], 'Writer multi image selection', function() {
 			expect(both.right).to.be.closeTo(Math.max(first.right, second.right), 5);
 		});
 
-		// Delete removes both images.
+		// Delete removes both images: the handles go, and a click where each image was selects
+		// nothing.
 		helper.typeIntoDocument('{del}');
-		cy.cGet('#document-container svg g').should('not.exist');
+		cy.cGet('#test-div-shapeHandlesSection').should('not.exist');
 		cy.then(function() {
 			return helper.waitForTimers(win, 'clicktimer');
 		});
 		clickAt(win, first);
-		cy.cGet('#document-container svg g').should('not.exist');
+		cy.cGet('#test-div-shapeHandlesSection').should('not.exist');
 		clickAt(win, second);
-		cy.cGet('#document-container svg g').should('not.exist');
+		cy.cGet('#test-div-shapeHandlesSection').should('not.exist');
+
+		// Undo brings both images back, and they can be selected together again.
+		helper.typeIntoDocument('{ctrl}z');
+		cy.then(function() {
+			return helper.processToIdle(win);
+		});
+		cy.cGet('#test-div-shapeHandlesSection').should('exist');
+		clickAt(win, first);
+		cy.cGet('#test-div-shapeHandlesSection').should('exist');
+		cy.then(function() {
+			return helper.waitForTimers(win, 'clicktimer');
+		});
+		clickAt(win, second, { shiftKey: true });
+		readSelectionRect(bothAgain);
+		cy.then(function() {
+			expect(bothAgain.top).to.be.closeTo(both.top, 5);
+			expect(bothAgain.bottom).to.be.closeTo(both.bottom, 5);
+		});
 	});
 });

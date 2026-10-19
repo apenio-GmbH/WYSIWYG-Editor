@@ -1649,13 +1649,15 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testCommentCallback)
 
         ScTabViewShell* pTabViewShell = dynamic_cast<ScTabViewShell*>(SfxViewShell::Current());
         if (pTabViewShell)
+        {
             pTabViewShell->SetCursor(4, 4);
+            pTabViewShell->SetKitAuthor(u"Kit User1"_ustr);
+        }
 
         // Add a new comment
         cpo::uno::Sequence<beans::PropertyValue> aArgs(comphelper::InitPropertySequence(
         {
             {u"Text"_ustr, cpo::uno::Any(u"Comment"_ustr)},
-            {u"Author"_ustr, cpo::uno::Any(u"Kit User1"_ustr)},
         }));
         dispatchCommand(mxComponent, u".uno:InsertAnnotation"_ustr, aArgs);
 
@@ -1698,11 +1700,13 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testCommentCallback)
         // selecting the cell
         if (pTabViewShell)
             pTabViewShell->SetCursor(3, 100);
+        ScTabViewShell* pEditingView = dynamic_cast<ScTabViewShell*>(SfxViewShell::Current());
+        CPPUNIT_ASSERT(pEditingView);
+        pEditingView->SetKitAuthor(u"Kit User2"_ustr);
         aArgs = comphelper::InitPropertySequence(
         {
             {u"Id"_ustr, cpo::uno::Any(OUString::createFromAscii(aCommentId))},
             {u"Text"_ustr, cpo::uno::Any(u"Edited comment"_ustr)},
-            {u"Author"_ustr, cpo::uno::Any(u"Kit User2"_ustr)},
         });
         dispatchCommand(mxComponent, u".uno:EditAnnotation"_ustr, aArgs);
 
@@ -2586,7 +2590,7 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testFilterDlg)
     CPPUNIT_ASSERT(pView1 != pView2);
     {
         pView2->GetViewFrame().GetDispatcher()->Execute(SID_FILTER,
-            SfxCallMode::SLOT|SfxCallMode::RECORD);
+            SfxCallMode::SLOT);
     }
 
     Scheduler::ProcessEventsToIdle();
@@ -2617,7 +2621,7 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testFunctionDlg)
     int nView1 = KitHelper::getCurrentView();
     {
         pView1->GetViewFrame().GetDispatcher()->Execute(SID_OPENDLG_FUNCTION,
-            SfxCallMode::SLOT|SfxCallMode::RECORD);
+            SfxCallMode::SLOT);
     }
     Scheduler::ProcessEventsToIdle();
     SfxChildWindow* pRefWindow = pView1->GetViewFrame().GetChildWindow(SID_OPENDLG_FUNCTION);
@@ -2959,6 +2963,98 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testReferenceMarksClearedAfterEdit)
 
     // Without the fix, the highlight from above was never cleared.
     CPPUNIT_ASSERT_EQUAL(sal_Int32(-1), aView1.m_sReferenceMarks.indexOf("rectangle"));
+}
+
+namespace
+{
+/// Starts a formula in A2 and picks A1 with the Up key.
+void startFormulaWithReferenceToA1(ScModelObj* pModelObj, ScTabViewShell* pViewShell)
+{
+    pViewShell->SetCursor(0, 1);
+    pModelObj->postKeyEvent(COKitKeyEventType::DOWN, '=', 0);
+    pModelObj->postKeyEvent(COKitKeyEventType::UP, '=', 0);
+    Scheduler::ProcessEventsToIdle();
+    pModelObj->postKeyEvent(COKitKeyEventType::DOWN, 0, awt::Key::UP);
+    pModelObj->postKeyEvent(COKitKeyEventType::UP, 0, awt::Key::UP);
+    Scheduler::ProcessEventsToIdle();
+}
+
+void typeText(ScModelObj* pModelObj, std::u16string_view aText)
+{
+    for (sal_Unicode c : aText)
+    {
+        pModelObj->postKeyEvent(COKitKeyEventType::DOWN, c, 0);
+        pModelObj->postKeyEvent(COKitKeyEventType::UP, c, 0);
+    }
+    Scheduler::ProcessEventsToIdle();
+}
+
+Point cellMiddleTwips(ScViewData& rViewData, SCCOL nColumn, SCROW nRow)
+{
+    const Point aStart = rViewData.GetScrPos(nColumn, nRow, SC_SPLIT_TOPLEFT, true);
+    const Point aEnd = rViewData.GetScrPos(nColumn + 1, nRow + 1, SC_SPLIT_TOPLEFT, true);
+    return Point((aStart.X() + aEnd.X()) / 2 / rViewData.GetPPTX(),
+                 (aStart.Y() + aEnd.Y()) / 2 / rViewData.GetPPTY());
+}
+
+constexpr OString aActiveMark = "\"active\": \"true\""_ostr;
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testActiveReferenceMark)
+{
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
+    CPPUNIT_ASSERT(pViewShell);
+    ScTestViewCallback aView1;
+
+    startFormulaWithReferenceToA1(pModelObj, pViewShell);
+    CPPUNIT_ASSERT_EQUAL("=A1"_ostr, aView1.m_sCellFormula);
+    CPPUNIT_ASSERT(aView1.m_sReferenceMarks.indexOf(aActiveMark) >= 0);
+
+    typeText(pModelObj, u"+");
+    CPPUNIT_ASSERT_EQUAL("=A1+"_ostr, aView1.m_sCellFormula);
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(-1), aView1.m_sReferenceMarks.indexOf("\"active\""));
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testDragActiveReferenceCorner)
+{
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
+    CPPUNIT_ASSERT(pViewShell);
+    ScViewData* pViewData = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData);
+    ScTestViewCallback aView1;
+
+    startFormulaWithReferenceToA1(pModelObj, pViewShell);
+
+    const Point aB3 = cellMiddleTwips(*pViewData, 1, 2);
+    pModelObj->setTextSelection(COKitSetTextSelectionType::END, aB3.X(), aB3.Y());
+    Scheduler::ProcessEventsToIdle();
+
+    CPPUNIT_ASSERT_EQUAL("=A1:B3"_ostr, aView1.m_sCellFormula);
+    CPPUNIT_ASSERT(aView1.m_sReferenceMarks.indexOf(aActiveMark) >= 0);
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testToggledReferenceIsNotActive)
+{
+    // The toggle selects a typed reference, not a picked one, so a handle drag leaves it alone.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
+    CPPUNIT_ASSERT(pViewShell);
+    ScViewData* pViewData = ScDocShell::GetViewData();
+    CPPUNIT_ASSERT(pViewData);
+    ScTestViewCallback aView1;
+
+    startFormulaWithReferenceToA1(pModelObj, pViewShell);
+    typeText(pModelObj, u"+C3");
+    dispatchCommand(mxComponent, u".uno:ToggleRelative"_ustr, {});
+    CPPUNIT_ASSERT_EQUAL("=A1+$C$3"_ostr, aView1.m_sCellFormula);
+
+    const Point aB3 = cellMiddleTwips(*pViewData, 1, 2);
+    pModelObj->setTextSelection(COKitSetTextSelectionType::END, aB3.X(), aB3.Y());
+    Scheduler::ProcessEventsToIdle();
+
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(-1), aView1.m_sCellFormula.indexOf("B3"));
 }
 
 CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testSelectColumnCursorStaysInView)

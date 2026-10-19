@@ -492,7 +492,6 @@ void SwDocShell::ExecStyleSheet( SfxRequest& rReq )
                         SfxStyleSheetBasePool& rPool = *GetStyleSheetPool();
                         auto xDlg = std::make_shared<SfxNewStyleDlg>(GetView()->GetFrameWeld(), rPool, SfxStyleFamily::Para);
                         auto xRequest = std::make_shared<SfxRequest>(rReq);
-                        rReq.Ignore();
                         weld::GenericDialogController::runAsync(xDlg, [xDlg, xRequest=std::move(xRequest), this](sal_Int32 nResult){
                             if (nResult == RET_OK) {
                                 OUString sName = xDlg->GetName();
@@ -1039,7 +1038,6 @@ void SwDocShell::Edit(
         if (pReq)
         {
             pRequest = std::make_shared<SfxRequest>(*pReq);
-            pReq->Ignore(); // the 'old' request is not relevant any more
         }
 
         bool bIsDefaultPage = nFamily == SfxStyleFamily::Page
@@ -1243,7 +1241,7 @@ bool SwDocShell::MakeInlineHeading(SwWrtShell *pSh, SwTextFormatColl* pColl, con
         SfxUInt16Item aAnchor(FN_INSERT_FRAME, static_cast<sal_uInt16>(1));
         SvxSizeItem aSizeItem(FN_PARAM_2, Size(1, 1));
         GetView()->GetViewFrame().GetDispatcher()->ExecuteList(FN_INSERT_FRAME,
-                SfxCallMode::SYNCHRON|SfxCallMode::RECORD, { &aAnchor, &aSizeItem });
+                SfxCallMode::SYNCHRON, { &aAnchor, &aSizeItem });
         if ( pSh->IsFrameSelected() )
         {
             // use the associated borderless frame style "Inline Heading"

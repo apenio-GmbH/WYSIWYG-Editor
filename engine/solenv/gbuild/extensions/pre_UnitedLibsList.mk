@@ -31,12 +31,13 @@ gb_UNITED_LIBRARY_LIST := \
 	bib \
 	binaryurp \
 	bootstrap \
-	calc \
+	$(call gb_Helper_optional,DBCONNECTIVITY,calc) \
 	cached1 \
 	$(if $(ENABLE_CAIRO_CANVAS),cairocanvas) \
 	canvastools \
 	chart2 \
 	chart2api \
+	$(if $(filter $(OS),WNT),,cmdmail) \
     comphelper \
     $(if $(ENABLE_CUSTOMTARGET_COMPONENTS),components) \
 	configmgr \
@@ -58,11 +59,11 @@ gb_UNITED_LIBRARY_LIST := \
 	docmodel \
 	drawinglayercore \
 	drawinglayer \
+	$(if $(ENABLE_CURL),Duden) \
 	editeng \
 	embobj \
 	emboleobj \
 	emfio \
-	$(if $(filter WNT,$(OS)),emser) \
 	$(if $(ENABLE_EVOAB2),evoab) \
 	evtatt \
 	filterconfig \
@@ -77,9 +78,9 @@ gb_UNITED_LIBRARY_LIST := \
 	$(call gb_Helper_optional,DBCONNECTIVITY,frm) \
 	fsstorage \
 	fwk \
-	$(if $(filter WNT,$(OS)),gdipluscanvas) \
 	guesslang \
 	graphicfilter \
+	$(if $(ENABLE_CURL),Grammalecte) \
 	$(call gb_Helper_optionals_and,DESKTOP XMLHELP,helplinker) \
 	hwp \
 	hyphen \
@@ -88,7 +89,6 @@ gb_UNITED_LIBRARY_LIST := \
 	i18nsearch \
 	i18nutil \
 	icg \
-	$(if $(filter WNT,$(OS)),inprocserv) \
 	introspection \
 	invocadapt \
 	invocation \
@@ -130,12 +130,11 @@ gb_UNITED_LIBRARY_LIST := \
 	$(if $(ENABLE_JAVA), \
 		$(if $(filter $(OS),MACOSX),,officebean) \
 	) \
-	$(if $(filter $(OS),WNT), oleautobridge) \
 	oox \
 	$(if $(filter OPENCL,$(BUILD_TYPE)),opencl) \
 	package2 \
 	passwordcontainer \
-	pcr \
+	$(call gb_Helper_optional,DBCONNECTIVITY,pcr) \
 	pdffilter \
     $(if $(ENABLE_PDFIMPORT),pdfimport) \
 	pricing \
@@ -193,7 +192,6 @@ gb_UNITED_LIBRARY_LIST := \
 	textfd \
 	tk \
 	tl \
-	$(if $(filter WNT,$(OS)),UAccCOM) \
     ucbhelper \
 	ucb1 \
 	$(call gb_Helper_optional,XMLHELP,ucpchelp1) \
@@ -225,7 +223,6 @@ gb_UNITED_LIBRARY_LIST := \
     $(if $(filter $(OS)-$(USE_HEADLESS_CODE),WNT-),vclplug_win) \
     $(if $(filter $(OS)-$(USE_HEADLESS_CODE),MACOSX-),vclplug_osx) \
 	$(if $(ENABLE_GTK3),vclplug_gtk3) \
-	$(if $(filter WNT,$(OS)),winaccessibility) \
 	$(if $(filter WNT,$(OS)),WinUserInfoBe) \
 	wpftcalc \
 	wpftdraw \

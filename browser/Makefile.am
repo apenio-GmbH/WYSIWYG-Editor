@@ -173,7 +173,6 @@ endif
 
 COOL_EXTENSIONS_SRC = \
 	$(srcdir)/extensions/cool.js \
-	$(srcdir)/extensions/gas-kit-runner.js \
 	$(srcdir)/extensions/gas-shim.js \
 	$(srcdir)/extensions/gas-wrapper.html
 COOL_EXTENSIONS_DST = $(patsubst $(srcdir)/extensions/%,$(DIST_FOLDER)/extensions/%,$(COOL_EXTENSIONS_SRC))
@@ -548,6 +547,10 @@ COOL_JS_LST =\
 	src/canvas/vector/VectorModifiedImages.ts \
 	src/canvas/vector/VectorScratchCanvases.ts \
 	src/canvas/vector/VectorResourceWalker.ts \
+	src/canvas/vector/prediction/TextRuns.ts \
+	src/canvas/vector/prediction/CaretLookup.ts \
+	src/canvas/vector/prediction/ParagraphWrap.ts \
+	src/canvas/vector/prediction/TextEdit.ts \
 	src/canvas/vector/VectorPrimitiveRenderer.ts \
 	src/canvas/vector/VectorHitTest.ts \
 	src/canvas/vector/VectorLineGeometryExtractor.ts \
@@ -573,6 +576,7 @@ COOL_JS_LST =\
 	src/canvas/sections/CropInteraction.ts \
 	src/canvas/sections/CropPanInteraction.ts \
 	src/canvas/sections/TurningInteraction.ts \
+	src/canvas/sections/ShearingInteraction.ts \
 	src/canvas/sections/MovingInteraction.ts \
 	src/canvas/sections/ShapingInteraction.ts \
 	src/canvas/sections/SelectionSection.ts \
@@ -625,6 +629,7 @@ COOL_JS_LST =\
 	src/canvas/sections/GenericButtonSection.ts \
 	src/canvas/sections/ChartContextButtonSection.ts \
 	src/canvas/sections/DiagramButtonSection.ts \
+	src/canvas/sections/GroupButtonSection.ts \
 	src/canvas/sections/MediaPlayerSection.tsx \
 	src/canvas/sections/ContentControlDropdownSubSection.ts \
 	src/canvas/sections/ContentControlSection.ts \
@@ -821,6 +826,7 @@ COOL_JS_LST =\
 	src/control/onboarding/OnboardingSteps.ts \
 	src/control/onboarding/Control.OnboardingTour.ts \
 	src/control/Control.ContextToolbar.ts \
+	src/control/Control.HyperlinkWizard.ts \
 	src/control/Control.SidebarBase.ts \
 	src/control/Control.Sidebar.ts \
 	src/control/Notebookbar.CalcTableTab.ts \
@@ -1395,9 +1401,7 @@ $(DIST_FOLDER)/qtapp-tabstrip.html: $(srcdir)/html/qtapp-tabstrip.html.m4
 		$< > $@.tmp
 	@mv $@.tmp $@
 
-$(DIST_FOLDER)/qtapp-tabstrip.css: $(srcdir)/css/qtapp-tabstrip.css
-	@mkdir -p $(DIST_FOLDER)
-	@cp $< $@
+$(eval $(call css_file_target,$(DIST_FOLDER)/qtapp-tabstrip.css,$(srcdir)/css/qtapp-tabstrip.css))
 
 $(DIST_FOLDER)/qtapp-tabstrip.js: $(srcdir)/src/qtapp/tabstrip.js
 	@mkdir -p $(DIST_FOLDER)
@@ -1660,6 +1664,7 @@ pot:
 		src/canvas/sections/GenericButtonSection.ts \
 		src/canvas/sections/ChartContextButtonSection.ts \
 		src/canvas/sections/DiagramButtonSection.ts \
+		src/canvas/sections/GroupButtonSection.ts \
 		src/canvas/sections/MediaPlayerSection.tsx \
 		src/canvas/sections/FormFieldButton.ts \
 		src/canvas/sections/FormulaErrorHelpSection.ts \
@@ -1723,6 +1728,7 @@ pot:
 		src/control/Control.NotebookbarImpress.js \
 		src/control/Control.NotebookbarWriter.js \
 		src/control/Control.ContextToolbar.ts \
+		src/control/Control.HyperlinkWizard.ts \
 		src/control/Control.PartsPreview.js \
 		src/control/Control.PresentationBar.js \
 		src/control/Control.SaveState.tsx \

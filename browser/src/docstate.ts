@@ -16,6 +16,11 @@
 		* var cellFillSection = new app.definitions.CellFillMarkerSection();
 */
 (window.app as any) = {
+	// The sequence number for the next input message, see app.file.inputSequence.
+	nextInputSequence(): number {
+		this.file.inputSequence += 1;
+		return this.file.inputSequence;
+	},
 	/*
 	 * These are from <vcl/keycodes.h>. Correspond to the published
 	 * com::sun::star::awt::KeyModifier constants, left-shifted by 12.
@@ -54,7 +59,7 @@
 		decimalSeparator: null, // Current cell's decimal separator.
 		otherCellCursors: {},
 		splitCoordinate: null, // SimplePoint.
-		partHashes: null, // hashes used to distinguish parts (we use sheet name)
+		partHashes: null, // the engine's hash of each sheet, from the status message
 		filterPopupCell: null, // The cell a filter popup belongs to: { popupId, column, row }.
 		partWithActiveSheetView: -1, // Default part index with an active sheet view, or -1 if none.
 	},
@@ -101,7 +106,6 @@
 	file: {
 		editComment: false,
 		allowManageRedlines: false,
-		reviewMode: false, // Review mode: editing with change recording on.
 		readOnly: true,
 		permission: 'readonly',
 		modified: false, // Whether the document currently has unsaved changes.
@@ -116,7 +120,11 @@
 				This gives the coordinate relative to the document, not relative to the UI.
 			*/
 			rectangle: null, // SimpleRectangle.
+			logical: null, // { paragraph, index } once a cursor message carries it.
 		},
+		// The sequence number of the newest key, mouse, textinput or removetextcontext message sent
+		// to the server, 0 before any was sent.
+		inputSequence: 0,
 		fileBasedView: false, // (draw-impress only) Default is false. For read-only documents, user can view all parts at once. In that case, this variable is set to "true".
 		writer: {
 			pageRectangleList: [], // Array of arrays: [x, y, w, h] (as usual) // twips only. Pixels will be calculated on the fly. Corresponding pixels may change too often.

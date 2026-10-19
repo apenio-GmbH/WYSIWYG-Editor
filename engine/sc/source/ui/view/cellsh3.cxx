@@ -481,7 +481,6 @@ void ScCellShell::Execute( SfxRequest& rReq )
                     bool bVis = comphelper::COKit::isActive() || pWnd == nullptr;
                     pScMod->SetRefDialog( nId, bVis );
                 }
-                rReq.Ignore();
             }
             break;
 
@@ -1176,7 +1175,7 @@ void ScCellShell::Execute( SfxRequest& rReq )
         case SID_STATUS_DOCPOS:
             // Launch navigator.
             GetViewData().GetDispatcher().Execute(
-                SID_NAVIGATOR, SfxCallMode::SYNCHRON|SfxCallMode::RECORD );
+                SID_NAVIGATOR, SfxCallMode::SYNCHRON );
             break;
 
         case SID_MARKAREA:

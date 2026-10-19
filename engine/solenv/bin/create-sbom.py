@@ -85,7 +85,7 @@ def parse_filelist(filelist, filelistdirs):
     for listdir in filelistdirs:
         path = os.path.join(listdir, filelist)
         if os.path.exists(path):
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 result = []
                 for line in f.readlines():
                     line = line.strip()
@@ -101,7 +101,7 @@ SCP2TYPES = {"Directory", "File", "Profile", "Module", "MergeModule"}
 
 def parse_install_script(filename):
     """Parse the install script that is produced in scp2."""
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         lines = f.read().splitlines()
 
     result = {t: {} for t in SCP2TYPES}
@@ -192,7 +192,7 @@ def parse_install_script(filename):
 
 def parse_packinfo(filename):
     """Parse a packinfo file from setup_native."""
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         lines = f.read().splitlines()
     result = []
     i = 0
@@ -223,7 +223,7 @@ def parse_packinfo(filename):
 def parse_ziplist(filename):
     """Parse a ziplist file from instsetoo_native."""
 
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         lines = f.read().splitlines()
 
     # substitute everything outside of "include"
@@ -297,7 +297,7 @@ def resolve_ziplist_inheritance(ziplist):
                 product[key] = global_[key]
 
     def parse_include(variables, filename):
-        with open(filename) as f:
+        with open(filename, encoding="utf-8") as f:
             INC = re.compile(r"^\s*(\S+)\s*=\s*(.*?)\s*$")
             for line in f.read().splitlines():
                 match = INC.match(line)
@@ -379,7 +379,7 @@ def get_fetch_url(variable):
     directory."""
     global fetch_url_cache
     if fetch_url_cache is None:
-        with open(os.environ.get('SRC_ROOT') + '/Makefile.fetch') as f:
+        with open(os.environ.get('SRC_ROOT') + '/Makefile.fetch', encoding="utf-8") as f:
             content = f.read()
         buckets = {}
         for bucket, body in re.findall(
@@ -408,7 +408,7 @@ def init_tarball_dir_cache():
     for makefile in glob.glob(SRCDIR + "/external/*/UnpackedTarball_*.mk"):
         makefile = makefile.replace("\\", "/")
         subdir = makefile.split("/external/")[1].split("/")[0]
-        with open(makefile) as f:
+        with open(makefile, encoding="utf-8") as f:
             variables = set(pattern.findall(f.read()))
         for found in variables:
             if found in tarball_dir_cache:
@@ -836,7 +836,7 @@ def process_install_script(install_script, root_gids):
 def read_externals_file(path):
     """Read a temp file."""
     entries = []
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         for line in f.readlines():
             if line != "\n":
                 entries += line.strip().split(" ")
@@ -1053,8 +1053,9 @@ def add_dependencies(files_by_package, files_by_package_extra_deps):
             if found is None:
                 found = file
             else:
-                # special case for Python `_ssl` on Windows...
-                if dep.lower() in ("libcrypto-3.dll", "libssl-3.dll"):
+                # special case for Python `_ssl` and `_sqlite3` on Windows: Python ships
+                # its own copies next to its modules, NSS has its sqlite3.dll in program/
+                if dep.lower() in ("libcrypto-3.dll", "libssl-3.dll", "sqlite3.dll"):
                     if instpath and os.path.dirname(instpath).lower() == os.path.dirname(found["instpath"]).lower():
                         continue
                     elif instpath and os.path.dirname(instpath).lower() == os.path.dirname(file["instpath"]).lower():
@@ -1462,7 +1463,7 @@ def sbom_add_files(files_by_package, externals_by_package):
             add_external(external)
 
         for file in files_by_package[package]:
-            file_spdx_id = make_spdx_id(f"File-{file["instpath"]}")
+            file_spdx_id = make_spdx_id(f'File-{file["instpath"]}')
             parent = add_external(file["external"])
 
             def get_flags(flags):
