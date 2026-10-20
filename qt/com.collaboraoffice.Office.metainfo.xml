@@ -3,10 +3,10 @@
   <id>com.collaboraoffice.Office</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MPL-2.0</project_license>
-  <name>Collabora Office</name>
-  <summary>The Collabora Office productivity suite</summary>
+  <name>WYSIWYG-Editor</name>
+  <summary>The WYSIWYG-Editor productivity suite</summary>
   <description>
-    <p>Collabora Office brings the familiar Collabora Online experience to your computer - so you can create, edit, and present with a beautiful, modern UI. It delivers excellent interoperability with ODF and Microsoft Office formats (DOCX/XLSX/PPTX), and exports to PDF with ease. Your documents stay on your device unless you choose to share them - privacy by design.</p>
+    <p>WYSIWYG-Editor brings a familiar online editing experience to your computer - so you can create, edit, and present with a beautiful, modern UI. It delivers excellent interoperability with ODF and Microsoft Office formats (DOCX/XLSX/PPTX), and exports to PDF with ease. Your documents stay on your device unless you choose to share them - privacy by design.</p>
   </description>
   <launchable type="desktop-id">com.collaboraoffice.Office.desktop</launchable>
   <url type="homepage">https://collaboraoffice.com</url>
@@ -51,7 +51,7 @@
           <li>Funnel charts, and a new Statistical chart group with histogram bin settings</li>
           <li>Impress: a slide notes panel below the slide, a Table Design tab, and pausing an automatic slideshow with P</li>
           <li>Track Changes in the Calc menu and notebookbar, and comments shown in your own time zone</li>
-          <li>All fixes and improvements from the shared codebase with Collabora Online 26.04.4, including many document compatibility fixes for Microsoft Word, Excel and PowerPoint files</li>
+          <li>All fixes and improvements from the shared WYSIWYG-Editor 26.04.4 codebase, including many document compatibility fixes for Microsoft Word, Excel and PowerPoint files</li>
         </ul>
       </description>
     </release>
@@ -68,7 +68,7 @@
           <li>Maximize the Impress slide panel into a grid of large thumbnails, reorder slides by dragging, and rename sections in place</li>
           <li>Settings that persist, sharper cursors on HiDPI screens, and automatic dark mode following your desktop</li>
           <li>A broad set of accessibility improvements: keyboard navigation, screen-reader labels, and focus and contrast fixes throughout</li>
-          <li>All fixes and improvements from the shared codebase with Collabora Online 26.04.3.3, including many document compatibility fixes for Microsoft Word, Excel and PowerPoint files</li>
+          <li>All fixes and improvements from the shared WYSIWYG-Editor 26.04.3.3 codebase, including many document compatibility fixes for Microsoft Word, Excel and PowerPoint files</li>
         </ul>
       </description>
     </release>
@@ -76,7 +76,7 @@
       <description>
         <p>New features and fixes in this release:</p>
         <ul>
-          <li>All fixes and improvements that come from the shared codebase with Collabora Online 26.04.2.4</li>
+          <li>All fixes and improvements that come from the shared WYSIWYG-Editor 26.04.2.4 codebase</li>
           <li>Various small bugfixes related to the desktop application</li>
         </ul>
       </description>
@@ -89,7 +89,7 @@
           <li>Smarter editing – document comparison and multi-page view in Writer, calculated pivot fields and per-user views in Calc</li>
           <li>Ever improving document compatibility – improved handling of Microsoft Word, Excel and PowerPoint formats</li>
           <li>More accessible – a broad set of accessibility improvements throughout</li>
-          <li>More reliable clipboard – copy and paste in and out of Collabora Office</li>
+          <li>More reliable clipboard – copy and paste in and out of WYSIWYG-Editor</li>
         </ul>
       </description>
     </release>

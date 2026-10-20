@@ -62,7 +62,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes" context="remoteclipboardprogress|description">The clipboard was copied in Collabora Online. Its full content is being downloaded from that server. Cancelling the download pastes the reduced copy that is already on the clipboard.</property>
+                <property name="label" translatable="yes" context="remoteclipboardprogress|description">The clipboard was copied in WYSIWYG-Editor. Its full content is being downloaded from that server. Cancelling the download pastes the reduced copy that is already on the clipboard.</property>
                 <property name="wrap">True</property>
                 <property name="max-width-chars">60</property>
               </object>

@@ -3390,7 +3390,7 @@ msgid "Dismiss"
 msgstr "關閉"
 
 #: src/control/onboarding/OnboardingSteps.ts:25
-msgid "Welcome to Collabora Online"
+msgid "Welcome to WYSIWYG-Editor"
 msgstr ""
 
 #: src/control/onboarding/OnboardingSteps.ts:27

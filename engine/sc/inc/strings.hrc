@@ -477,6 +477,6 @@
 
 /* Expand References Infobar */
 #define STR_REF_EXPAND_TITLE                        NC_("STR_REF_EXPAND_TITLE", "Formula Range Not Updated")
-#define STR_REF_EXPAND_MSG                          NC_("STR_REF_EXPAND_MSG", "You may automate formula extension in Collabora Office Calc / General settings")
+#define STR_REF_EXPAND_MSG                          NC_("STR_REF_EXPAND_MSG", "You may automate formula extension in WYSIWYG-Editor Calc / General settings")
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

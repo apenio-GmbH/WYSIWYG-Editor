@@ -3579,8 +3579,8 @@ msgid "Dismiss"
 msgstr "Rejeter"
 
 #: src/control/onboarding/OnboardingSteps.ts:25
-msgid "Welcome to Collabora Online"
-msgstr "Bienvenue sur Collabora Online"
+msgid "Welcome to WYSIWYG-Editor"
+msgstr "Bienvenue sur WYSIWYG-Editor"
 
 #: src/control/onboarding/OnboardingSteps.ts:27
 msgid "This short tour points out the parts of the screen you will use most."

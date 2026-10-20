@@ -20,8 +20,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice etc"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice etc"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -35,12 +35,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"O Collabora Office é um editor de texto, planilha e programa de apresentação "
+"O WYSIWYG-Editor é um editor de texto, planilha e programa de apresentação "
 "baseado no LibreOffice, o mais popular pacote de escritório de código aberto "
 "do mundo. Agora está no Android, ampliando suas possibilidades de trabalhar "
 "no celular e em colaboração."
@@ -99,13 +99,13 @@ msgstr "Sobre o aplicativo:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"O Collabora Office para Android utiliza o mesmo motor do LibreOffice para "
+"O WYSIWYG-Editor para Android utiliza o mesmo motor do LibreOffice para "
 "Windows, Mac e Linux. Isso, combinado com uma nova interface baseada no "
-"Collabora Online, permite ler e salvar documentos de forma semelhante ao "
+"WYSIWYG-Editor, permite ler e salvar documentos de forma semelhante ao "
 "LibreOffice para desktop."
 
 #. Long description

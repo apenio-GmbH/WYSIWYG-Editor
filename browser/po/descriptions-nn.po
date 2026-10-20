@@ -17,8 +17,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice og meir"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice og meir"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -30,14 +30,14 @@ msgstr "Redigering av dokument frå Microsoft Office, LibreOffice og OpenOffice.
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office er eit teksthandsamingsprogram, rekneark og "
+"WYSIWYG-Editor er eit teksthandsamingsprogram, rekneark og "
 "presentasjonsprogram bygd på LibreOffice, den mest populære kontorpakken med "
-"open kjeldekode i verda – og no finst Collabora Office på Android, slik at "
+"open kjeldekode i verda – og no finst WYSIWYG-Editor på Android, slik at "
 "du får fleire moglegheiter til å arbeida på mobil og til å samarbeida."
 
 #. Long description
@@ -93,12 +93,12 @@ msgstr "Om appen:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office for Android brukar same motor som LibreOffice for Windows, "
-"Mac og Linux. Saman med eit nytt grensesnitt bygd på Collabora Online les og "
+"WYSIWYG-Editor for Android brukar same motor som LibreOffice for Windows, "
+"Mac og Linux. Saman med eit nytt grensesnitt bygd på WYSIWYG-Editor les og "
 "lagrar appen dokument på same måte som LibreOffice for skrivebordet."
 
 #. Long description

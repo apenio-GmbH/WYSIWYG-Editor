@@ -350,7 +350,7 @@
 		BEA264AC2CBE99340007435A /* TileCache.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = TileCache.cpp; path = TileCache.cpp; sourceTree = "<group>"; };
 		BEA264B52CBE9BEF0007435A /* Storage.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Storage.hpp; path = Storage.hpp; sourceTree = "<group>"; };
 		BEB7CC172F332BF8006FCAE9 /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
-		BECC4BAB2CBD3FA300A120B3 /* Collabora Office.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Collabora Office.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BECC4BAB2CBD3FA300A120B3 /* WYSIWYG-Editor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WYSIWYG-Editor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BECC4BBC2CBD3FA400A120B3 /* codaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = codaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BECC4BC62CBD3FA400A120B3 /* codaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = codaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEDAD8692F5EF7BA00E82F00 /* WSDGlobals.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = WSDGlobals.hpp; path = WSDGlobals.hpp; sourceTree = "<group>"; };
@@ -664,7 +664,7 @@
 		BECC4BAC2CBD3FA300A120B3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BECC4BAB2CBD3FA300A120B3 /* Collabora Office.app */,
+				BECC4BAB2CBD3FA300A120B3 /* WYSIWYG-Editor.app */,
 				BECC4BBC2CBD3FA400A120B3 /* codaTests.xctest */,
 				BECC4BC62CBD3FA400A120B3 /* codaUITests.xctest */,
 			);
@@ -693,7 +693,7 @@
 			packageProductDependencies = (
 			);
 			productName = coda;
-			productReference = BECC4BAB2CBD3FA300A120B3 /* Collabora Office.app */;
+			productReference = BECC4BAB2CBD3FA300A120B3 /* WYSIWYG-Editor.app */;
 			productType = "com.apple.product-type.application";
 		};
 		BECC4BBB2CBD3FA400A120B3 /* codaTests */ = {
