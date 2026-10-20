@@ -1125,7 +1125,7 @@ QVariant Bridge::cool(const QString& messageStr)
         auto const title = QObject::tr("Cannot open remote document");
         auto const server = _document._remoteInfo ? _document._remoteInfo->coolServer : QString();
         auto const serverDisplay = server.isEmpty()
-            ? QObject::tr("the Collabora Online server") : server.toHtmlEscaped();
+            ? QObject::tr("the WYSIWYG-Editor server") : server.toHtmlEscaped();
         auto const err = QString::fromStdString(tokens.substrFromToken(1));
         auto const style = QStringLiteral(
             "body{font-family:sans-serif;padding:2em;color:#333;"
@@ -1138,8 +1138,9 @@ QVariant Bridge::cool(const QString& messageStr)
             "<p>Could not open the document from %2.</p>"
             "<p>The server did not respond to the collaborative-"
             "editing connection (%3).</p>"
-            "<p>It may be running a version of Collabora Online that "
-            "does not support remote editing from this app.</p>")
+            "<p>It may be running a version of WYSIWYG-Editor that "
+            "does not support remote editing from this app.</p>"
+            "</body></html>")
             .arg(title, serverDisplay, err.toHtmlEscaped());
 
         auto const html = QStringLiteral(

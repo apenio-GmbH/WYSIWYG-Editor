@@ -80,11 +80,11 @@ msgstr "👋Algemene informatie"
 
 #. content.xml (sheet '👋 Introduction')
 msgid ""
-"Collabora Office spreadsheet can be used to calculate, analyse, and manage "
+"WYSIWYG-Editor spreadsheet can be used to calculate, analyse, and manage "
 "your data. This introduction template will help you get started and explore "
 "some of the main features of the product."
 msgstr ""
-"Collabora Office-spreadsheet kan worden gebruikt om uw gegevens te "
+"WYSIWYG-Editor-spreadsheet kan worden gebruikt om uw gegevens te "
 "berekenen, analyseren en beheren. Deze introductiesjabloon helpt u op weg "
 "met de verkenning van de belangrijkste kenmerken van het product."
 
@@ -312,10 +312,10 @@ msgstr "Functiebilbliotheek"
 
 #. content.xml (sheet '✚ Formulas & Functions')
 msgid ""
-"Collabora Office Calc provides a large library of built-in functions that "
+"WYSIWYG-Editor Calc provides a large library of built-in functions that "
 "help you perform different types of calculations and data analysis."
 msgstr ""
-"Collabora Office Calc biedt een grote bibliotheek met ingebouwde functies "
+"WYSIWYG-Editor Calc biedt een grote bibliotheek met ingebouwde functies "
 "waarmee u verschillende soorten berekeningen en gegevensanalyse kunt "
 "uitvoeren."
 
@@ -665,11 +665,11 @@ msgstr "📊Diagram aanmaken"
 
 #. content.xml (sheet '📊 Charts')
 msgid ""
-"Collabora Office lets you present data graphically in a chart so that you "
+"WYSIWYG-Editor lets you present data graphically in a chart so that you "
 "can visually compare data series and view trends in the data. You can insert "
 "charts into spreadsheets, text documents, drawings and presentations."
 msgstr ""
-"Met Collabora Office kunt u gegevens grafisch presenteren in een diagram, "
+"Met WYSIWYG-Editor kunt u gegevens grafisch presenteren in een diagram, "
 "zodat u gegevensreeksen visueel kunt vergelijken en trends in de gegevens "
 "kunt bestuderen. U kunt diagrammen invoegen in spreadsheets, "
 "tekstdocumenten, tekeningen en presentaties."

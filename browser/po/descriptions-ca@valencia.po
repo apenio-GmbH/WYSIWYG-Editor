@@ -18,8 +18,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice i més"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice i més"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -33,12 +33,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"El Collabora Office és un programa d'edició de text, full de càlcul i "
+"El WYSIWYG-Editor és un programa d'edició de text, full de càlcul i "
 "presentacions basat en el LibreOffice, el paquet ofimàtic de codi obert més "
 "popular del món. I ara és a l'Android, millorant les vostres possibilitats "
 "de treballar als dispositius mòbils i de manera col·laborativa."
@@ -97,13 +97,13 @@ msgstr "Sobre l'aplicació:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office per a l'Android usa el mateix motor que el LibreOffice per "
+"WYSIWYG-Editor per a l'Android usa el mateix motor que el LibreOffice per "
 "al Windows, Mac i Linux. Això, combinat amb la nova interfície basada en el "
-"Collabora Online, llig i guarda documents de manera similar al LibreOffice "
+"WYSIWYG-Editor, llig i guarda documents de manera similar al LibreOffice "
 "d'escriptori."
 
 #. Long description

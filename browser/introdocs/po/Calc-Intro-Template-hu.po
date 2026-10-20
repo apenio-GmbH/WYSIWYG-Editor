@@ -81,11 +81,11 @@ msgstr "👋Általános információk"
 
 #. content.xml (sheet '👋 Introduction')
 msgid ""
-"Collabora Office spreadsheet can be used to calculate, analyse, and manage "
+"WYSIWYG-Editor spreadsheet can be used to calculate, analyse, and manage "
 "your data. This introduction template will help you get started and explore "
 "some of the main features of the product."
 msgstr ""
-"A Collabora Office táblázatkezelőjével számításokat végezhet, elemezheti és "
+"A WYSIWYG-Editor táblázatkezelőjével számításokat végezhet, elemezheti és "
 "kezelheti adatait. Ez a bevezető sablon segít az első lépésekben, és "
 "bemutatja a termék néhány fő funkcióját."
 
@@ -313,10 +313,10 @@ msgstr "Függvénykönyvtár"
 
 #. content.xml (sheet '✚ Formulas & Functions')
 msgid ""
-"Collabora Office Calc provides a large library of built-in functions that "
+"WYSIWYG-Editor Calc provides a large library of built-in functions that "
 "help you perform different types of calculations and data analysis."
 msgstr ""
-"A Collabora Office Calc beépített függvények nagy könyvtárát kínálja, "
+"A WYSIWYG-Editor Calc beépített függvények nagy könyvtárát kínálja, "
 "amelyek különféle számításokban és adatelemzésekben segítenek."
 
 #. content.xml (sheet '✚ Formulas & Functions')
@@ -665,11 +665,11 @@ msgstr "📊Diagram létrehozása"
 
 #. content.xml (sheet '📊 Charts')
 msgid ""
-"Collabora Office lets you present data graphically in a chart so that you "
+"WYSIWYG-Editor lets you present data graphically in a chart so that you "
 "can visually compare data series and view trends in the data. You can insert"
 " charts into spreadsheets, text documents, drawings and presentations."
 msgstr ""
-"A Collabora Office lehetővé teszi az adatok grafikus megjelenítését "
+"A WYSIWYG-Editor lehetővé teszi az adatok grafikus megjelenítését "
 "diagramon, így vizuálisan összehasonlíthatja az adatsorokat, és láthatja az "
 "adatok trendjeit. Diagramokat munkafüzetekbe, szöveges dokumentumokba, "
 "rajzokba és bemutatókba is beszúrhat."

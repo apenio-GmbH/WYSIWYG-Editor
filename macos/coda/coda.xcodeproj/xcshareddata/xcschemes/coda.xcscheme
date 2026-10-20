@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "BECC4BAA2CBD3FA300A120B3"
-               BuildableName = "Collabora Office.app"
+               BuildableName = "WYSIWYG-Editor.app"
                BlueprintName = "coda"
                ReferencedContainer = "container:coda.xcodeproj">
             </BuildableReference>
@@ -74,7 +74,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BECC4BAA2CBD3FA300A120B3"
-            BuildableName = "Collabora Office.app"
+            BuildableName = "WYSIWYG-Editor.app"
             BlueprintName = "coda"
             ReferencedContainer = "container:coda.xcodeproj">
          </BuildableReference>
@@ -91,7 +91,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BECC4BAA2CBD3FA300A120B3"
-            BuildableName = "Collabora Office.app"
+            BuildableName = "WYSIWYG-Editor.app"
             BlueprintName = "coda"
             ReferencedContainer = "container:coda.xcodeproj">
          </BuildableReference>

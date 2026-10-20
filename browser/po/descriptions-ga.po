@@ -18,8 +18,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice & eile"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice & eile"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -33,12 +33,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Is eagarthóir téacs, scarbhileog agus clár cur i láthair é Collabora Office "
+"Is eagarthóir téacs, scarbhileog agus clár cur i láthair é WYSIWYG-Editor "
 "atá bunaithe ar LibreOffice, an tsraith oifige Foinse Oscailte is mó tóir ar "
 "domhan - agus anois tá sé ar Android, ag cur le do chuid féidearthachtaí "
 "oibriú ar fhóin phóca agus le haghaidh comhoibrithe."
@@ -97,13 +97,13 @@ msgstr "Maidir leis an aip:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Úsáideann Collabora Office for Android an t-inneall céanna le LibreOffice do "
+"Úsáideann WYSIWYG-Editor for Android an t-inneall céanna le LibreOffice do "
 "Windows, Mac agus Linux. Léann sé seo, in éineacht le ceann tosaigh nua "
-"bunaithe ar Collabora Online, agus sábhálann sé doiciméid mar a chéile le "
+"bunaithe ar WYSIWYG-Editor, agus sábhálann sé doiciméid mar a chéile le "
 "LibreOffice desktop."
 
 #. Long description

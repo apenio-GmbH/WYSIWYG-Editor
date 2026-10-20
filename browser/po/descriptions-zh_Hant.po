@@ -17,8 +17,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office：LibreOffice、OpenOffice 以及更多"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor：LibreOffice、OpenOffice 以及更多"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -32,12 +32,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office 是以 LibreOffice 為基礎開發的文字編輯器、試算表與簡報程式，"
+"WYSIWYG-Editor 是以 LibreOffice 為基礎開發的文字編輯器、試算表與簡報程式，"
 "LibreOffice 是全球最受歡迎的開放原始碼辦公室套裝軟體，現在可在 Android 上使用"
 "了，提升您在行動裝置上工作與協作的可能性。"
 
@@ -92,12 +92,12 @@ msgstr "關於應用程式："
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Android 版 Collabora Office 使用與 Windows、Mac 與 Linux 版 LibreOffice 相同"
-"的引擎。結合以 Collabora Online 為基礎的全新前端，讀取與儲存文件的方式與 "
+"Android 版 WYSIWYG-Editor 使用與 Windows、Mac 與 Linux 版 LibreOffice 相同"
+"的引擎。結合以 WYSIWYG-Editor 為基礎的全新前端，讀取與儲存文件的方式與 "
 "LibreOffice 桌面版類似。"
 
 #. Long description
