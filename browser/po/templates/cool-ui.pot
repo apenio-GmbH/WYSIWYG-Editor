@@ -3700,7 +3700,7 @@ msgid "Dismiss"
 msgstr ""
 
 #: src/control/onboarding/OnboardingSteps.ts:25
-msgid "Welcome to Collabora Online"
+msgid "Welcome to WYSIWYG-Editor"
 msgstr ""
 
 #: src/control/onboarding/OnboardingSteps.ts:27
@@ -7092,7 +7092,7 @@ msgstr ""
 
 #: src/control/Control.Zotero.js:1543
 msgid ""
-"Unlinking citations will prevent Collabora Online from updating citations "
+"Unlinking citations will prevent WYSIWYG-Editor from updating citations "
 "and bibliography in this document."
 msgstr ""
 
@@ -8859,7 +8859,7 @@ msgid "Editing slide %1 - click outside or press Esc to finish"
 msgstr ""
 
 #: src/map/handler/Map.VersionBar.js:50
-msgid "Your Collabora Online server needs updating. Version {0} is available."
+msgid "Your WYSIWYG-Editor server needs updating. Version {0} is available."
 msgstr ""
 
 #: src/map/handler/Map.WOPI.js:234
@@ -9188,7 +9188,7 @@ msgid "Welcome to Presentation"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.head.title:9-3
-msgid "Collabora Online Welcome"
+msgid "WYSIWYG-Editor Welcome"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:26-7
@@ -9196,7 +9196,8 @@ msgid "Explore The New {coolversion}"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:27-7
-msgid "Collabora Online Development Edition"
+#: welcome/welcome.html%2Bhtml.body.div.div.div.div.h2:38-7
+msgid "WYSIWYG-Editor Development Edition"
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:28-7
@@ -9214,10 +9215,10 @@ msgstr ""
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.p:39-7
 msgid ""
-"Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraonline.com/code-26-04-release-notes/\">release notes</a> and "
-"learn all about: The latest Collabora Online Development Edition, aimed at "
-"home users and small teams."
+"Check the <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
+"collaboraonline.com/code-26-04-release-notes/\">release notes</a> and learn "
+"all about: The latest WYSIWYG-Editor Development Edition, aimed at home "
+"users and small teams."
 msgstr ""
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7

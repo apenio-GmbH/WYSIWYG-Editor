@@ -18,7 +18,7 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
 msgstr "كولابورا أوفيس: ليبر أوفيس، أوبن أوفيس و غيرها"
 
 #. Short description - 80 chars limit
@@ -32,7 +32,7 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
@@ -95,9 +95,9 @@ msgstr "حول التطبيق:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
 "يستعمل كولابورا أوفيس لنظام أندرويد نفس المحرك الذي يستعمله ليبر أوفيس لأنظمة "
 "التشغيل وندوز و ماك و لينكس. يقوم هذا، بالإضافة إلى واجهة أمامية جديدة تعتمد "

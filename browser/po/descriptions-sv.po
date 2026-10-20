@@ -19,8 +19,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice & mer"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice & mer"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -32,12 +32,12 @@ msgstr "Ordbehandlare baserad på LibreOfffice-teknologi."
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office är ett textredigerar, kalkylblad och presentationsprogram "
+"WYSIWYG-Editor är ett textredigerar, kalkylblad och presentationsprogram "
 "baserat på LibreOffice, världens mest populära kontorssvit med öppen källkod "
 "– och nu finns den på Android, vilket förbättrar dina möjligheter att arbeta "
 "på mobilen och för samarbete."
@@ -95,13 +95,13 @@ msgstr "Om denna app:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office för Android använder samma motor som LibreOffice för "
+"WYSIWYG-Editor för Android använder samma motor som LibreOffice för "
 "Windows, Mac och Linux. Detta, i kombination med ett nytt gränssnitt baserat "
-"på Collabora Online, läser och sparar dokument på samma sätt som LibreOffice "
+"på WYSIWYG-Editor, läser och sparar dokument på samma sätt som LibreOffice "
 "för skrivbordet."
 
 #. Long description

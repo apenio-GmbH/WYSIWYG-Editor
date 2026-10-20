@@ -17,7 +17,7 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
 msgstr "ஒத்துழைப்பு அலுவலகம்: விடுதலைஅலுவலகம், திறந்தஅலுவலகம் & மேலும்"
 
 #. Short description - 80 chars limit
@@ -32,7 +32,7 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
@@ -96,9 +96,9 @@ msgstr "பயன்பாட்டைப் பற்றி:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
 "அண்ட்ராய்டுக்கான ஒத்துழைப்பு அலுவலகம் சாளரங்கள், மேக் மற்றும் லினக்சிற்கான லிப்ரேஃபிச் போன்ற "
 "இயந்திரத்தைப் பயன்படுத்துகிறது. இது, ஒத்துழைப்பு நிகழ்நிலை அடிப்படையில் ஒரு புதிய முன்-"

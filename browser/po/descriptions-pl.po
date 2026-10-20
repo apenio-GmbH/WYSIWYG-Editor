@@ -19,8 +19,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice i inne"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice i inne"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -34,12 +34,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office to edytor tekstu, arkusz kalkulacyjny i program do "
+"WYSIWYG-Editor to edytor tekstu, arkusz kalkulacyjny i program do "
 "prezentacji oparty na LibreOffice, najpopularniejszym na świecie pakiecie "
 "biurowym typu open source. Teraz jest on dostępny w systemie Android, co "
 "zwiększa możliwości działania na urządzeniach mobilnych oraz współpracy."
@@ -98,13 +98,13 @@ msgstr "O aplikacji:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office dla systemu Android korzysta z tego samego silnika co "
+"WYSIWYG-Editor dla systemu Android korzysta z tego samego silnika co "
 "LibreOffice dla systemów Windows, Mac i Linux. W połączeniu z nowym "
-"frontendem opartym na Collabora Online, odczytuje i zapisuje dokumenty "
+"frontendem opartym na WYSIWYG-Editor, odczytuje i zapisuje dokumenty "
 "podobnie jak stacjonarna wersja LibreOffice."
 
 #. Long description

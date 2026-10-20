@@ -779,7 +779,7 @@
                 <key>UTTypeIdentifier</key>
                 <string>org.openoffice.extension</string>
                 <key>UTTypeDescription</key>
-                <string>Collabora Office Extension</string>
+                <string>WYSIWYG-Editor Extension</string>
                 <key>UTTypeConformsTo</key>
                 <array>
                     <string>public.data</string>
@@ -1602,7 +1602,7 @@
         <array>
             <dict>
                 <key>CFBundleURLName</key>
-                <string>Collabora Office CMIS</string>
+                <string>WYSIWYG-Editor CMIS</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
                     <string>vnd.libreoffice.cmis</string>
@@ -1610,7 +1610,7 @@
             </dict>
             <dict>
                 <key>CFBundleURLName</key>
-                <string>Collabora Office</string>
+                <string>WYSIWYG-Editor</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
                     <string>vnd.libreoffice.command</string>
@@ -1623,7 +1623,7 @@
             </dict>
             <dict>
                 <key>CFBundleURLName</key>
-                <string>Collabora Office WebDav</string>
+                <string>WYSIWYG-Editor WebDav</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
                     <string>vnd.sun.star.webdav</string>
@@ -1957,7 +1957,7 @@
             </dict>
             <dict>
                 <key>CFBundleTypeName</key>
-                <string>Collabora Office Extension</string>
+                <string>WYSIWYG-Editor Extension</string>
                 <key>CFBundleTypeRole</key>
                 <string>Editor</string>
                 <key>LSHandlerRank</key>

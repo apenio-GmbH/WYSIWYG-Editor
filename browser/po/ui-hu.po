@@ -3837,8 +3837,8 @@ msgid "Dismiss"
 msgstr "Bezárás"
 
 #: src/control/onboarding/OnboardingSteps.ts:25
-msgid "Welcome to Collabora Online"
-msgstr "Üdvözli a Collabora Online"
+msgid "Welcome to WYSIWYG-Editor"
+msgstr "Üdvözli a WYSIWYG-Editor"
 
 #: src/control/onboarding/OnboardingSteps.ts:27
 msgid "This short tour points out the parts of the screen you will use most."

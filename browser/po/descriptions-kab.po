@@ -17,7 +17,7 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
 msgstr ""
 
 #. Short description - 80 chars limit
@@ -32,12 +32,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office d amaẓrag n uḍris, Tafelwit taliktṛunant, akked wahil n "
+"WYSIWYG-Editor d amaẓrag n uḍris, Tafelwit taliktṛunant, akked wahil n "
 "tihawt yebnan ɣef LibreOffice, Awurmahil n waɣbalu yeldin yettwasnen akk deg "
 "umaḍal - arnu tura atan ɣef Android, ad yesnerni iẓubaẓ-ik·im n uxeddim deg "
 "uziraz akked umahil n tdukli."
@@ -95,9 +95,9 @@ msgstr "Ɣef usnas:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
 "Collabora i Android iseqdac yiwen n umsedday n LibreOffice i Windows, Mac, "
 "akked Linux. s ugrudem n useqdac amaynut i yebnan ɣef Collabora uẓeṭṭa, "

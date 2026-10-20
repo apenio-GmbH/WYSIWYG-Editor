@@ -71,11 +71,11 @@ msgstr "👋基本信息"
 
 #. content.xml (sheet '👋 Introduction')
 msgid ""
-"Collabora Office spreadsheet can be used to calculate, analyse, and manage "
+"WYSIWYG-Editor spreadsheet can be used to calculate, analyse, and manage "
 "your data. This introduction template will help you get started and explore "
 "some of the main features of the product."
 msgstr ""
-"Collabora Office 电子表格可用于计算、分析和管理您的数据。此简介模板将帮助您快"
+"WYSIWYG-Editor 电子表格可用于计算、分析和管理您的数据。此简介模板将帮助您快"
 "速上手并了解产品的一些主要功能。"
 
 #. content.xml (sheet '👋 Introduction')
@@ -288,10 +288,10 @@ msgstr "函数库"
 
 #. content.xml (sheet '✚ Formulas & Functions')
 msgid ""
-"Collabora Office Calc provides a large library of built-in functions that "
+"WYSIWYG-Editor Calc provides a large library of built-in functions that "
 "help you perform different types of calculations and data analysis."
 msgstr ""
-"Collabora Office Calc 提供了丰富且庞大的内置函数库，帮助您执行各种类型的计算"
+"WYSIWYG-Editor Calc 提供了丰富且庞大的内置函数库，帮助您执行各种类型的计算"
 "和数据分析。"
 
 #. content.xml (sheet '✚ Formulas & Functions')
@@ -604,11 +604,11 @@ msgstr "📊创建图表"
 
 #. content.xml (sheet '📊 Charts')
 msgid ""
-"Collabora Office lets you present data graphically in a chart so that you "
+"WYSIWYG-Editor lets you present data graphically in a chart so that you "
 "can visually compare data series and view trends in the data. You can insert "
 "charts into spreadsheets, text documents, drawings and presentations."
 msgstr ""
-"Collabora Office 支持将数据转化为直观的图表，便于进行数据系列对比与趋势分析。"
+"WYSIWYG-Editor 支持将数据转化为直观的图表，便于进行数据系列对比与趋势分析。"
 "您可以将图表无缝插入电子表格、文本文档、绘图及演示文稿中。"
 
 #. content.xml (sheet '📊 Charts')

@@ -19,8 +19,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice, dahası"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice, dahası"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -34,12 +34,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office, dünyanın en yaygın açık kaynak ofis paketi olan "
+"WYSIWYG-Editor, dünyanın en yaygın açık kaynak ofis paketi olan "
 "LibreOffice'i temel alan bir metin düzenleyici, hesap tablosu ve sunum "
 "programıdır - ve şimdi Android'de, mobil çalışma ve işbirliği olanaklarınızı "
 "geliştiriyor."
@@ -97,12 +97,12 @@ msgstr "Uygulama hakkında:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Android için Collabora Office, Windows, Mac ve Linux için LibreOffice ile "
-"aynı motoru kullanır. Bu, Collabora Online tabanlı yeni bir ön uçla "
+"Android için WYSIWYG-Editor, Windows, Mac ve Linux için LibreOffice ile "
+"aynı motoru kullanır. Bu, WYSIWYG-Editor tabanlı yeni bir ön uçla "
 "birleştiğinde, belgeleri LibreOffice masaüstüne benzer şekilde okur ve "
 "kaydeder."
 

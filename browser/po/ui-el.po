@@ -3874,8 +3874,8 @@ msgid "Dismiss"
 msgstr "Απόλυση"
 
 #: src/control/onboarding/OnboardingSteps.ts:25
-msgid "Welcome to Collabora Online"
-msgstr "Καλώς ήρθατε στο Collabora Online"
+msgid "Welcome to WYSIWYG-Editor"
+msgstr ""
 
 #: src/control/onboarding/OnboardingSteps.ts:27
 msgid "This short tour points out the parts of the screen you will use most."
@@ -9606,7 +9606,7 @@ msgstr ""
 "σε οικιακούς χρήστες και μικρές ομάδες."
 "Ελέγξτε τις <a target=\"_blank\" rel=\"noopener\" href=\"https://www."
 "collaboraonline.com/code-26-04-release-notes/\">release notes</a> και μάθετε "
-"τα πάντα για: Την τελευταία έκδοση Collabora Online Development Edition, που "
+"τα πάντα για: Την τελευταία έκδοση WYSIWYG-Editor Development Edition, που "
 "απευθύνεται σε οικιακούς χρήστες και μικρές ομάδες."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7

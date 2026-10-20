@@ -3062,7 +3062,7 @@ void COOLWSD::displayHelp()
     Poco::Util::HelpFormatter helpFormatter(options());
     helpFormatter.setCommand(commandName());
     helpFormatter.setUsage("OPTIONS");
-    helpFormatter.setHeader("Collabora Online WebSocket server.");
+    helpFormatter.setHeader("WYSIWYG-Editor WebSocket server.");
     helpFormatter.format(std::cout);
 }
 

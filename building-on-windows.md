@@ -215,3 +215,48 @@ docker build --no-cache -t apenio/wysiwyg-editor:1.0 -f Ubuntu .
 
 The resulting image is available locally under the tag
 `apenio/wysiwyg-editor:1.0`.
+
+## Font availability
+
+The editor now warns when a document requests a font family that is not
+installed on the server. A metric-compatible substitute does not suppress the
+warning because it is still a different font.
+
+The engine includes Liberation Sans as an Arial-compatible substitute and
+Carlito as a Calibri-compatible substitute. The CJK packages installed by the
+Ubuntu Dockerfile do not provide Arial. Prefer Liberation Sans in document
+templates when exact Arial rendering is not required.
+
+Arial is proprietary. Do not copy it from a Windows installation into the
+image unless the applicable license explicitly permits server use and
+redistribution. Microsoft's current
+[font redistribution FAQ](https://learn.microsoft.com/en-us/typography/fonts/font-faq)
+states that the standard Windows font license does not permit copying the
+fonts to other computers or servers. Ubuntu's `ttf-mscorefonts-installer`
+downloads an older font release governed by the
+[TrueType core fonts for the Web EULA](https://corefonts.sourceforge.net/eula.htm),
+which does not permit distributing the fonts for profit, either separately or
+as part of another product. Obtain appropriate extended rights before adding
+Arial to a distributed commercial image.
+
+To see which system font would be used for Arial in an existing image, run:
+
+```bash
+docker run --rm --entrypoint fc-match apenio/wysiwyg-editor:1.0 Arial
+```
+
+If the output names DejaVu Sans or another substitute, Arial itself is not
+installed.
+
+## Automated from-source build
+
+The manual steps above are useful when diagnosing a build. The repository also
+contains `docker/from-source/build.sh`, which is the maintained automated
+equivalent and should be checked when the build process changes. Run it from
+the repository root:
+
+```bash
+DOCKER_HUB_REPO=apenio/wysiwyg-editor \
+DOCKER_HUB_TAG=1.0 \
+docker/from-source/build.sh
+```

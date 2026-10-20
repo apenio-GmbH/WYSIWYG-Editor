@@ -1,7 +1,7 @@
 {
   "name": "cool",
   "version": "0.8.0-dev",
-  "description": "Collabora Online front-end",
+  "description": "WYSIWYG-Editor front-end",
   "browser": {
     "d3": "d3/dist/d3.min.js"
   },

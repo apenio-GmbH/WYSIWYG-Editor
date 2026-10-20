@@ -19,8 +19,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice & άλλες"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice & άλλες"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -34,12 +34,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Το Collabora Office είναι ένα πρόγραμμα επεξεργασίας κειμένου, υπολογιστικών "
+"Το WYSIWYG-Editor είναι ένα πρόγραμμα επεξεργασίας κειμένου, υπολογιστικών "
 "φύλλων και παρουσιάσεων που βασίζεται στο LibreOffice, την πιο δημοφιλή "
 "σουίτα γραφείου ανοιχτού κώδικα στον κόσμο - και τώρα είναι στο Android, "
 "ενισχύοντας τις δυνατότητές σας να εργάζεστε στο κινητό και για συνεργασία."
@@ -97,13 +97,13 @@ msgstr "Σχετικά με την εφαρμογή:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Το Collabora Office για Android χρησιμοποιεί την ίδια μηχανή με το "
+"Το WYSIWYG-Editor για Android χρησιμοποιεί την ίδια μηχανή με το "
 "LibreOffice για Windows, Mac και Linux. Αυτό, σε συνδυασμό με ένα νέο front-"
-"end που βασίζεται στο Collabora Online, διαβάζει και αποθηκεύει έγγραφα "
+"end που βασίζεται στο WYSIWYG-Editor, διαβάζει και αποθηκεύει έγγραφα "
 "παρόμοια με το LibreOffice desktop."
 
 #. Long description

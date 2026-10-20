@@ -3814,8 +3814,8 @@ msgid "Dismiss"
 msgstr "Lukk"
 
 #: src/control/onboarding/OnboardingSteps.ts:25
-msgid "Welcome to Collabora Online"
-msgstr "Velkomen til Collabora Online"
+msgid "Welcome to WYSIWYG-Editor"
+msgstr "Velkomen til WYSIWYG-Editor"
 
 #: src/control/onboarding/OnboardingSteps.ts:27
 msgid "This short tour points out the parts of the screen you will use most."
@@ -7263,7 +7263,7 @@ msgid ""
 "Unlinking citations will prevent WYSIWYG-Editor from updating citations "
 "and bibliography in this document."
 msgstr ""
-"Når lenkjene til siteringane er fjerna, kan ikkje Collabora Online lenger "
+"Når lenkjene til siteringane er fjerna, kan ikkje WYSIWYG-Editor lenger "
 "oppdatera siteringar og litteraturliste i dette dokumentet."
 
 #: src/control/HRuler.ts:326
@@ -9095,7 +9095,7 @@ msgstr "Redigerer lysbilete %1 – klikk utanfor eller trykk Esc for å fullfør
 #: src/map/handler/Map.VersionBar.js:50
 msgid "Your WYSIWYG-Editor server needs updating. Version {0} is available."
 msgstr ""
-"Collabora Online-tenaren din må oppdaterast. Versjon {0} er tilgjengeleg."
+"WYSIWYG-Editor-tenaren din må oppdaterast. Versjon {0} er tilgjengeleg."
 
 #: src/map/handler/Map.WOPI.js:234
 msgid "Creating new file from template..."
@@ -9460,10 +9460,10 @@ msgid ""
 "all about: The latest WYSIWYG-Editor, aimed at home "
 "users and small teams."
 msgstr ""
-"Les <a target=\"_blank\" rel=\"noopener\" href=\"https://"
-"www.collaboraonline.com/code-26-04-release-notes/\">utgivingsnotata</a> og "
-"lær alt om den nyaste Collabora Online Development Edition, som er meint for "
-"heimebrukarar og små team."
+"Les <a target=\"_blank\" rel=\"noopener\" href=\"https://www.collaboraonline."
+"com/code-26-04-release-notes/\">utgivingsnotata</a> og lær alt om den nyaste "
+"WYSIWYG-Editor Development Edition, som er meint for heimebrukarar og små "
+"team."
 
 #: welcome/welcome.html%2Bhtml.body.div.div.div.div.h1:48-7
 msgid "Get Involved"
