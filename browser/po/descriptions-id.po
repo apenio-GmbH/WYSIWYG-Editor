@@ -19,8 +19,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice dll"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice dll"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -34,12 +34,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office adalah editor teks, spreadsheet, dan program presentasi "
+"WYSIWYG-Editor adalah editor teks, spreadsheet, dan program presentasi "
 "yang berbasis LibreOffice, keluarga aplikasi perkantoran Open Source paling "
 "populer di dunia - dan sekarang di Android, meningkatkan kemungkinan Anda "
 "untuk bekerja di ponsel dan untuk kolaborasi."
@@ -98,13 +98,13 @@ msgstr "Tentang aplikasi:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office untuk Android menggunakan mesin yang sama seperti "
+"WYSIWYG-Editor untuk Android menggunakan mesin yang sama seperti "
 "LibreOffice untuk Windows, Mac, dan Linux. Ini, dikombinasikan dengan front-"
-"end baru berdasarkan Collabora Online, membaca dan menyimpan dokumen mirip "
+"end baru berdasarkan WYSIWYG-Editor, membaca dan menyimpan dokumen mirip "
 "dengan LibreOffice desktop."
 
 #. Long description

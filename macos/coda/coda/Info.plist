@@ -1576,7 +1576,7 @@
         <array>
             <dict>
                 <key>CFBundleURLName</key>
-                <string>Collabora Office CMIS</string>
+                <string>WYSIWYG-Editor CMIS</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
                     <string>vnd.libreoffice.cmis</string>
@@ -1584,7 +1584,7 @@
             </dict>
             <dict>
                 <key>CFBundleURLName</key>
-                <string>Collabora Office</string>
+                <string>WYSIWYG-Editor</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
                     <string>vnd.libreoffice.command</string>
@@ -1597,7 +1597,7 @@
             </dict>
             <dict>
                 <key>CFBundleURLName</key>
-                <string>Collabora Office WebDav</string>
+                <string>WYSIWYG-Editor WebDav</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
                     <string>vnd.sun.star.webdav</string>

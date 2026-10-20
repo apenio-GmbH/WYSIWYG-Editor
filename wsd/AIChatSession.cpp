@@ -110,7 +110,7 @@ bool isInsufficientQuotaError(const std::string& body)
 }
 
 const std::string AI_SYSTEM_PROMPT =
-    "You are a helpful assistant for Collabora Online. "
+    "You are a helpful assistant for WYSIWYG-Editor. "
     "Help users with their documents - answering questions, suggesting edits, "
     "rewriting text, and more. When the user shares selected text from their document, "
     "provide relevant help with that text. When no selected text is provided, answer "

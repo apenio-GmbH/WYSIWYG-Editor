@@ -886,7 +886,7 @@ Poco::Path getConfigPath()
     // follows --with-app-name, so this tracks the product branding.
     NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleName"];
     if (appName.length == 0)
-        appName = @"Collabora Office";
+        appName = @"WYSIWYG-Editor";
 
     return Poco::Path(std::string([appSupport.path UTF8String]) + "/" +
                       std::string([appName UTF8String]));

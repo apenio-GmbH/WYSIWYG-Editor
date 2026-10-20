@@ -20,13 +20,13 @@ msgstr "👋 简介"
 
 #. content.xml (slide 'page1')
 msgid ""
-"<1>Collabora Office </1><2>presentation</2><3> is a </3><4>tool</4><5> that "
+"<1>WYSIWYG-Editor </1><2>presentation</2><3> is a </3><4>tool</4><5> that "
 "lets you create, edit, and deliver presentations in a simple way. You can "
 "work alone on a document, or collaboratively as part of a team. This "
 "introduction template will help you get started and explore some of the main "
 "features of the product.</5>"
 msgstr ""
-"<1>Collabora Office </1><2>演示文稿</2><3>是一个</3><4>工具</4><5>，可让帮助"
+"<1>WYSIWYG-Editor </1><2>演示文稿</2><3>是一个</3><4>工具</4><5>，可让帮助"
 "您以简单的方式创建、编辑和放映演示文稿。您可以独自处理文档，也可以团队协作。"
 "此简介模板将帮助您快速上手并了解产品的一些主要功能。</5>"
 

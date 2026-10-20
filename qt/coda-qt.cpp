@@ -213,7 +213,7 @@ int main(int argc, char** argv)
     QApplication::setWindowIcon(QIcon::fromTheme("com.collaboraoffice.Office.startcenter"));
 
     QCommandLineParser argParser;
-    argParser.setApplicationDescription("Collabora Office - Desktop Office Suite");
+    argParser.setApplicationDescription("WYSIWYG-Editor - Desktop Office Suite");
     argParser.addHelpOption();
     argParser.addVersionOption();
 
@@ -223,7 +223,7 @@ int main(int argc, char** argv)
     );
     QCommandLineOption forcedReadOnlyOption(
         QStringList() << "readonly",
-        "Open Collabora Office in read-only mode, only for document viewing."
+        "Open WYSIWYG-Editor in read-only mode, only for document viewing."
     );
     QCommandLineOption editOption(
         QStringList() << "edit",

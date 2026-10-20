@@ -14,8 +14,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice ແລະ ອື່ນໆ"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice ແລະ ອື່ນໆ"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -27,12 +27,12 @@ msgstr "ໂປຣແກຣມແກ້ໄຂເອກະສານ MS Office ແ�
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office ແມ່ນໂປຣແກຣມແກ້ໄຂຂໍ້ຄວາມ, ສະເປຣດຊີດ ແລະ ນຳສະເໜີ ທີ່ອີງໃສ່ LibreOffice "
+"WYSIWYG-Editor ແມ່ນໂປຣແກຣມແກ້ໄຂຂໍ້ຄວາມ, ສະເປຣດຊີດ ແລະ ນຳສະເໜີ ທີ່ອີງໃສ່ LibreOffice "
 "ເຊິ່ງເປັນຊຸດໂປຣແກຣມຫ້ອງການແບບໂອເພັນຊອດ (Open Source) ທີ່ໄດ້ຮັບຄວາມນິຍົມທີ່ສຸດໃນໂລກ - ແລະ "
 "ຕອນນີ້ມີໃຫ້ໃຊ້ໃນ Android ແລ້ວ, ເພີ່ມຂີດຄວາມສາມາດໃນການເຮັດວຽກຜ່ານມືຖື ແລະ ການເຮັດວຽກຮ່ວມກັນ."
 
@@ -88,12 +88,12 @@ msgstr "ກ່ຽວກັບແອັບ:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office ສຳລັບ Android ແມ່ນໃຊ້ກົນໄກດຽວກັນກັບ LibreOffice ສຳລັບ Windows, "
-"Mac, ແລະ Linux. ສິ່ງນີ້, ເມື່ອລວມເຂົ້າກັບສ່ວນຕິດຕໍ່ຜູ້ໃຊ້ໃໝ່ທີ່ອີງໃສ່ Collabora Online, "
+"WYSIWYG-Editor ສຳລັບ Android ແມ່ນໃຊ້ກົນໄກດຽວກັນກັບ LibreOffice ສຳລັບ Windows, "
+"Mac, ແລະ Linux. ສິ່ງນີ້, ເມື່ອລວມເຂົ້າກັບສ່ວນຕິດຕໍ່ຜູ້ໃຊ້ໃໝ່ທີ່ອີງໃສ່ WYSIWYG-Editor, "
 "ຈະເຮັດໃຫ້ການອ່ານ ແລະ ບັນທຶກເອກະສານຄ້າຍຄືກັບ LibreOffice ເວີຊັນເດັສທັອບ."
 
 #. Long description

@@ -17,8 +17,8 @@ msgstr ""
 
 #. App name - 50 chars limit
 #: descriptions/google-play.html%2Bhtml.body.h3:5-1
-msgid "Collabora Office: LibreOffice, OpenOffice & more"
-msgstr "Collabora Office: LibreOffice, OpenOffice & etj"
+msgid "WYSIWYG-Editor: LibreOffice, OpenOffice & more"
+msgstr "WYSIWYG-Editor: LibreOffice, OpenOffice & etj"
 
 #. Short description - 80 chars limit
 #: descriptions/google-play.html%2Bhtml.body.p:9-1
@@ -32,12 +32,12 @@ msgstr ""
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:13-1
 msgid ""
-"Collabora Office is a text editor, spreadsheet and presentation program "
+"WYSIWYG-Editor is a text editor, spreadsheet and presentation program "
 "based on LibreOffice, the world's most popular Open Source office suite - "
 "and now it's on Android, enhancing your possibilities to work on mobile and "
 "for collaboration."
 msgstr ""
-"Collabora Office është një përpunues tekstesh, fletëllogaritjesh dhe program "
+"WYSIWYG-Editor është një përpunues tekstesh, fletëllogaritjesh dhe program "
 "paraqitjesh i bazuar në LibreOffice, suita për zyra më popullore në botë me "
 "Burim të Hapët - dhe tani mund të kihet dhe në Android, duke thelluar "
 "mundësitë tuaja për punë në celular dhe për bashkëpunim."
@@ -96,13 +96,13 @@ msgstr "Rreth aplikacionit:"
 #. Long description
 #: descriptions/google-play.html%2Bhtml.body.p:44-1
 msgid ""
-"Collabora Office for Android uses the same engine as LibreOffice for "
-"Windows, Mac, and Linux. This, combined with a new front-end based on "
-"Collabora Online, reads and saves documents similarly to LibreOffice desktop."
+"WYSIWYG-Editor for Android uses the same engine as LibreOffice for Windows, "
+"Mac, and Linux. Its web-based front-end reads and saves documents similarly "
+"to LibreOffice desktop."
 msgstr ""
-"Collabora Office për Android përdor të njëjtin motor si LibreOffice për "
+"WYSIWYG-Editor për Android përdor të njëjtin motor si LibreOffice për "
 "Windows, Mac dhe Linux. Kjo, e ndërthurur me një pjesë të përparme të re, "
-"bazuar në Collabora Online, lexon dhe ruan dokumente në mënyrë të ngjashme "
+"bazuar në WYSIWYG-Editor, lexon dhe ruan dokumente në mënyrë të ngjashme "
 "me LibreOffice-in për desktop."
 
 #. Long description
