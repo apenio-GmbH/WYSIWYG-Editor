@@ -93,6 +93,7 @@ namespace pcr
         virtual void disposing() override;
 
         virtual weld::Widget* getWidget() override { return getTypedControlWindow(); }
+        virtual weld::Widget* getMnemonicWidget() override { return m_xEntry.get(); }
     };
 
     //= OEditControl
@@ -113,6 +114,7 @@ namespace pcr
         {
             OEditControl_Base::SetModifyHandler();
             getTypedControlWindow()->connect_changed( LINK( this, CommonBehaviourControlHelper, EditModifiedHdl ) );
+            getTypedControlWindow()->connect_activate( LINK( this, CommonBehaviourControlHelper, ActivateHdl ) );
         }
 
     private:
@@ -357,7 +359,7 @@ namespace pcr
         MultiLineOperationMode m_nOperationMode;
         std::unique_ptr<weld::Entry> m_xEntry;
         std::unique_ptr<weld::MenuButton> m_xButton;
-        std::unique_ptr<weld::Widget> m_xPopover;
+        std::unique_ptr<weld::Popover> m_xPopover;
         std::unique_ptr<weld::TextView> m_xTextView;
         std::unique_ptr<weld::Button> m_xOk;
 
@@ -381,6 +383,7 @@ namespace pcr
         virtual void setValue( const cpo::uno::Any& _value ) override;
         virtual cpo::uno::Type getValueType() override;
         virtual weld::Widget* getWidget() override { return getTypedControlWindow(); }
+        virtual weld::Widget* getMnemonicWidget() override { return m_xEntry.get(); }
 
         virtual void editChanged() override;
 
@@ -392,6 +395,7 @@ namespace pcr
             m_xButton->connect_focus_out( LINK( this, CommonBehaviourControlHelper, LoseFocusHdl ) );
 
             m_xEntry->connect_changed( LINK( this, CommonBehaviourControlHelper, EditModifiedHdl ) );
+            m_xEntry->connect_activate( LINK( this, CommonBehaviourControlHelper, ActivateHdl ) );
             m_xTextView->connect_changed( LINK( this, OMultilineEditControl, TextViewModifiedHdl ) );
         }
 

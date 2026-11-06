@@ -71,6 +71,32 @@ abstract class HandleGroup {
 		return false;
 	}
 
+	/*
+		Whether its handles are shown now: drawn, reached by a press and walked by the keyboard.
+		A hidden group still has its handles worked out, so the frame of the selection and its
+		middle are measured from them as always.
+	*/
+	public isShown(): boolean {
+		return true;
+	}
+
+	/// Whether one of its handles blinks while the keyboard is on it. Most of them do.
+	public blinksWhileActive(): boolean {
+		return true;
+	}
+
+	/// How far from its middle a press takes hold of one of its handles, from how far it does for
+	/// a handle of the usual size, in core pixels. Most groups take that distance.
+	public reachOf(usual: number): number {
+		return usual;
+	}
+
+	/// What a press on one of its handles does when it is let go where it started, besides
+	/// putting the keyboard on that handle. Nothing for most groups.
+	public letGoWhereItWasPressed(_handle: SelectionHandle): void {
+		// Most groups do nothing more.
+	}
+
 	/// The drag a press on one of its handles begins, or nothing where it begins none.
 	public interactionFor(
 		_handle: SelectionHandle,
@@ -218,6 +244,15 @@ abstract class HandleGroup {
 class FramingHandles extends HandleGroup {
 	public readonly name: string = 'framing';
 
+	/// The eight make way for the points to tie a connector to, and for the crop marks, while
+	/// either is shown.
+	public isShown(): boolean {
+		return (
+			!this.selection.tiePointsAreShown() &&
+			!CropHandles.areShownFor(this.selection)
+		);
+	}
+
 	public handles(): SelectionHandle[] {
 		return (
 			ObjectHandles.framingOf(
@@ -311,8 +346,10 @@ class CropHandles extends HandleGroup {
 	public readonly name: string = 'crop';
 
 	/// The picture the selection is, or nothing where it is not one picture.
-	private thePicture(): cool.SlideObject | undefined {
-		const objects = this.selection.selectedObjects();
+	private static thePictureOf(
+		selection: SelectionSection,
+	): cool.SlideObject | undefined {
+		const objects = selection.selectedObjects();
 		if (objects.length !== 1) return undefined;
 
 		const object = RenderGeometrySection.objectOf(objects[0]);
@@ -320,12 +357,16 @@ class CropHandles extends HandleGroup {
 	}
 
 	/// Whether the marks are shown at all: the crop switch is on and one picture is selected.
-	private shown(): boolean {
+	public static areShownFor(selection: SelectionSection): boolean {
 		return (
 			GraphicSelection.cropping &&
-			this.thePicture() !== undefined &&
-			ObjectHandles.canBeResized(this.selection.selectedObjects())
+			CropHandles.thePictureOf(selection) !== undefined &&
+			ObjectHandles.canBeResized(selection.selectedObjects())
 		);
+	}
+
+	private shown(): boolean {
+		return CropHandles.areShownFor(this.selection);
 	}
 
 	public handles(): SelectionHandle[] {
@@ -520,7 +561,7 @@ class CropHandles extends HandleGroup {
 	public paint(section: SelectionSection, _shown: SelectionHandle[]): void {
 		if (!this.shown()) return;
 
-		const picture = this.thePicture();
+		const picture = CropHandles.thePictureOf(this.selection);
 		const square = section.squareNow();
 		const data = RenderGeometrySection.currentPart();
 		if (!picture || !square || !data) return;
@@ -763,6 +804,15 @@ class CropHandles extends HandleGroup {
 */
 class TurningHandle extends HandleGroup {
 	public readonly name: string = 'turning';
+
+	/// The handle makes way for the points to tie a connector to, and for the crop marks, while
+	/// either is shown.
+	public isShown(): boolean {
+		return (
+			!this.selection.tiePointsAreShown() &&
+			!CropHandles.areShownFor(this.selection)
+		);
+	}
 
 	/// How far above the selection it sits, in core pixels.
 	public static readonly distance: number = 30;
@@ -1476,11 +1526,293 @@ class ShapingHandles extends HandlesMovedOneByOne {
 
 /*
 	The points someone added to an object for a connector to tie itself to, and, while an end of a
-	connector is dragged onto an object, every place that end could land. They are walked to and
-	marked; moving one is not built yet.
+	connector is dragged onto an object, every place that end could land. The points of the
+	selected object are shown only while they are asked for, in place of the eight that frame it
+	and the handle that turns it.
 */
 class TiePointHandles extends HandleGroup {
 	public readonly name: string = 'tiePoints';
+
+	public isShown(): boolean {
+		return (
+			this.selection.tiePointsAreShown() ||
+			this.selection.aimedAtObject() !== null
+		);
+	}
+
+	/// The point the keyboard is on is shown larger and holds still.
+	public blinksWhileActive(): boolean {
+		return false;
+	}
+
+	/// A point is small and sits on the edge of the object, so a press takes it from twice as far.
+	public reachOf(usual: number): number {
+		return 2 * usual;
+	}
+
+	/// A click on a point opens the menu of that point beside it.
+	public letGoWhereItWasPressed(handle: SelectionHandle): void {
+		if (handle.kind !== 'GluePoint') return;
+
+		this.openTheMenuOf(handle);
+	}
+
+	/// The id of the menu a click on a point opens.
+	private static readonly menuId: string = 'tie-point-menu';
+
+	/// The element the menu of a point opens from, or null before the first one opened.
+	private static menuAnchor: HTMLElement | null = null;
+
+	/*
+		Opens the menu of a point, below the point: the way a connector comes into the object
+		there, whether the point keeps its share of the size of the object, the side it is
+		measured from across the object and down it, and taking the point away. The ways the point
+		names are checked, both of them for a point that names two sides facing each other, and
+		none for a point that names no way. A point the shape makes from its own geometry keeps
+		all of these and stays, so for such a point the entries are shown disabled. The sides a
+		point is measured from count only for a point that keeps its distance, so they are
+		disabled for a point that keeps its share.
+	*/
+	private openTheMenuOf(handle: SelectionHandle): void {
+		const container = document.getElementById('canvas-container');
+		if (!container) return;
+
+		const at = Number(handle.name.split('.')[1]);
+		const point = this.held(handle);
+		if (!point || !(at >= 0)) return;
+
+		if (!TiePointHandles.menuAnchor?.isConnected) {
+			TiePointHandles.menuAnchor = document.createElement('div');
+			TiePointHandles.menuAnchor.style.position = 'absolute';
+			TiePointHandles.menuAnchor.style.zIndex = '1500';
+			container.append(TiePointHandles.menuAnchor);
+		}
+
+		// The canvas fills the container, so a place on the canvas is a place in the container.
+		const drawnAt = HandleLook.drawnAt(handle);
+		const below = 0.5 * ShapeHandlesSection.gluePointSize();
+		const anchor = TiePointHandles.menuAnchor;
+		anchor.style.left = drawnAt.vX / app.dpiScale + 'px';
+		anchor.style.top = (drawnAt.vY + below) / app.dpiScale + 'px';
+
+		const ways = TiePointHandles.waysOf(point.wayOut);
+		const canBeChanged = () => point.fromTheShape !== true;
+		const keepsItsDistance = point.keepsItsDistance === true;
+		const side = (id: string, text: string, img: string): MenuDefinition => ({
+			id,
+			type: 'action',
+			text,
+			img,
+			checked: ways.includes(id),
+			isEnabled: canBeChanged,
+		});
+
+		// A side the point is measured from, named by the axis and the side as the engine takes
+		// them. The render geometry leaves the middle out.
+		const from = (
+			axis: 'across' | 'down',
+			name: string,
+			text: string,
+			img: string,
+		): MenuDefinition => ({
+			id: axis + '-' + name,
+			type: 'action',
+			text,
+			img,
+			checked:
+				(axis === 'across' ? point.fromAcross : point.fromDown) ===
+				(name === 'middle' ? undefined : name),
+		});
+		const sidesCanBeChanged = () => canBeChanged() && keepsItsDistance;
+
+		const entries: MenuDefinition[] = [
+			{
+				id: 'gluepoint',
+				type: 'header',
+				text: _('Gluepoint'),
+			},
+			side('left', _('Left'), 'glueescapedirectionleft'),
+			side('right', _('Right'), 'glueescapedirectionright'),
+			side('top', _('Up'), 'glueescapedirectiontop'),
+			side('bottom', _('Down'), 'glueescapedirectionbottom'),
+			{ id: 'separator', type: 'separator' },
+			{
+				id: 'relative',
+				type: 'action',
+				text: _('Relative'),
+				img: 'gluepercent',
+				checked: !keepsItsDistance,
+				isEnabled: canBeChanged,
+			},
+			{
+				id: 'across',
+				type: 'menu',
+				text: _('Horizontal Alignment'),
+				img: 'gluehorzaligncenter',
+				isEnabled: sidesCanBeChanged,
+				items: [
+					from('across', 'left', _('Left'), 'gluehorzalignleft'),
+					from('across', 'middle', _('Center'), 'gluehorzaligncenter'),
+					from('across', 'right', _('Right'), 'gluehorzalignright'),
+				],
+			},
+			{
+				id: 'down',
+				type: 'menu',
+				text: _('Vertical Alignment'),
+				img: 'gluevertaligncenter',
+				isEnabled: sidesCanBeChanged,
+				items: [
+					from('down', 'top', _('Top'), 'gluevertaligntop'),
+					from('down', 'middle', _('Center'), 'gluevertaligncenter'),
+					from('down', 'bottom', _('Bottom'), 'gluevertalignbottom'),
+				],
+			},
+			{ id: 'separator', type: 'separator' },
+			{
+				id: 'delete',
+				type: 'action',
+				text: _('Delete'),
+				img: 'delete',
+				isEnabled: canBeChanged,
+			},
+		];
+
+		JSDialog.OpenDropdown(
+			TiePointHandles.menuId,
+			TiePointHandles.menuAnchor,
+			entries,
+			(
+				_objectType: string,
+				eventType: string,
+				_object: unknown,
+				_data: unknown,
+				entry: JSBuilder | MenuDefinition,
+			): boolean => {
+				if (eventType !== 'selected') return false;
+
+				// An entry of a submenu closes the submenu as well as the menu.
+				JSDialog.CloseAllDropdowns();
+
+				const chosen = (entry as MenuDefinition)?.id ?? '';
+				const [axis, name] = chosen.split('-');
+				if (chosen === 'delete') this.deleteThePoint(handle);
+				else if (chosen === 'relative')
+					this.sendAboutThePoint(
+						'setobjectgluepointdistance',
+						at,
+						'keeps=' + String(!keepsItsDistance),
+					);
+				else if ((axis === 'across' || axis === 'down') && name)
+					this.sendAboutThePoint(
+						'setobjectgluepointfrom',
+						at,
+						chosen.replace('-', '='),
+					);
+				else if (TiePointHandles.sides.some((one) => one.name === chosen))
+					this.sendAboutThePoint(
+						'setobjectgluepointwayout',
+						at,
+						'way=' + TiePointHandles.switchedWay(ways, chosen),
+					);
+				return true;
+			},
+			'',
+			false,
+			false,
+			true,
+		);
+	}
+
+	/// Sends a change of the point at that place in the list of the selected object, with the
+	/// parameters that say what the change is, or none for a change that needs none.
+	private sendAboutThePoint(command: string, at: number, change: string): void {
+		app.socket.sendMessage(
+			command +
+				' id=' +
+				String(this.selection.selectedObjects()[0]) +
+				' at=' +
+				String(at) +
+				(change ? ' ' + change : ''),
+		);
+	}
+
+	/*
+		Takes away the point that handle stands for. Answers whether the handle stands for a
+		point. A point the shape makes from its own geometry stays. The points after the one
+		taken away move up one place, so the keyboard leaves the points.
+	*/
+	public deleteThePoint(handle: SelectionHandle): boolean {
+		const at = Number(handle.name.split('.')[1]);
+		const point = this.held(handle);
+		if (!point || !(at >= 0)) return false;
+		if (point.fromTheShape === true) return true;
+
+		this.selection.travel.leave();
+		this.sendAboutThePoint('deleteobjectgluepoint', at, '');
+		return true;
+	}
+
+	/// The sides a way out names: one side, the two that face each other, or none.
+	private static waysOf(wayOut: cool.ObjectGluePoint['wayOut']): string[] {
+		return wayOut === 'horizontal'
+			? ['left', 'right']
+			: wayOut === 'vertical'
+				? ['top', 'bottom']
+				: wayOut
+					? [wayOut]
+					: [];
+	}
+
+	/*
+		The way out once that side is switched on or off among those ways, by the name the engine
+		takes. A point holds one side, or two that face each other, or none. A side switched on
+		joins the side facing it into a pair, and replaces any other side the point held.
+	*/
+	private static switchedWay(ways: string[], side: string): string {
+		if (ways.includes(side)) {
+			const left = ways.filter((one: string) => one !== side);
+			return left.length ? left[0] : 'smart';
+		}
+
+		const across = side === 'left' || side === 'right';
+		const facing = across
+			? side === 'left'
+				? 'right'
+				: 'left'
+			: side === 'top'
+				? 'bottom'
+				: 'top';
+		if (ways.includes(facing)) return across ? 'horizontal' : 'vertical';
+		return side;
+	}
+
+	/*
+		Gives the selected object a new point where the press landed, when it landed on the
+		object. Answers whether it did. The place goes to the engine on the object, as a share of
+		its width and of its height.
+	*/
+	public addAt(at: cool.SimplePoint): boolean {
+		const objects = this.selection.selectedObjects();
+		if (objects.length !== 1) return false;
+
+		const transform = RenderGeometrySection.transformOf(objects[0]);
+		const onTheObject = transform?.invert()?.apply(at.x, at.y);
+		if (!onTheObject) return false;
+
+		const inside = (value: number) => value >= 0 && value <= 1;
+		if (!inside(onTheObject.x) || !inside(onTheObject.y)) return false;
+
+		app.socket.sendMessage(
+			'insertobjectgluepoint id=' +
+				String(objects[0]) +
+				' x=' +
+				onTheObject.x.toFixed(4) +
+				' y=' +
+				onTheObject.y.toFixed(4),
+		);
+		return true;
+	}
 
 	/// the connectors tied to a point keys took, or a drag let go of, as they will run
 	public outline(): cool.ObjectPathPolygon[] | null {
@@ -1667,14 +1999,22 @@ class TiePointHandles extends HandleGroup {
 
 	/*
 		A point the object was given is moved where it is put, by the number it has in the object's
-		own list. The four an object falls back on are not its own and are shown only, so they
-		have no name and nothing takes hold of one.
+		own list. A point the shape makes from its own geometry is laid out again with the shape,
+		so it stays where the shape puts it. The four an object falls back on are not its own and
+		are shown only, so they have no name and nothing takes hold of one.
 	*/
 	public interactionFor(
 		handle: SelectionHandle,
 		_at: cool.SimplePoint,
 	): SelectionInteraction | null {
-		return handle.name ? new ShapingInteraction(this.selection, handle) : null;
+		return this.canBeMoved(handle)
+			? new ShapingInteraction(this.selection, handle)
+			: null;
+	}
+
+	/// Whether that handle stands for a point the object holds and may be moved by a drag or a key.
+	private canBeMoved(handle: SelectionHandle): boolean {
+		return handle.name !== '' && this.held(handle)?.fromTheShape !== true;
 	}
 
 	public handOver(handle: SelectionHandle, to: cool.Point): void {
@@ -1707,7 +2047,7 @@ class TiePointHandles extends HandleGroup {
 		towards: cool.Point,
 		event: KeyboardEvent,
 	): cool.Point | null {
-		if (!handle.name) return null;
+		if (!this.canBeMoved(handle)) return null;
 
 		return this.stepAndHandOver(handle, towards, event);
 	}
@@ -1771,16 +2111,9 @@ class TiePointHandles extends HandleGroup {
 		const radius = HandleLook.widthOf('tiePoint') * 0.5 + grown;
 
 		// The two that face each other are drawn as what they are, a nose on each side.
-		const wayOut = held?.wayOut;
-		const ways = (
-			wayOut === 'horizontal'
-				? ['left', 'right']
-				: wayOut === 'vertical'
-					? ['top', 'bottom']
-					: wayOut
-						? [wayOut]
-						: []
-		).map((name: string) => this.turnedBy(name));
+		const ways = TiePointHandles.waysOf(held?.wayOut).map((name: string) =>
+			this.turnedBy(name),
+		);
 
 		// A nose sits on a whole quarter of the circle. A point never carries more than two ways
 		// out, and those two face each other, so half the circle is left between them.

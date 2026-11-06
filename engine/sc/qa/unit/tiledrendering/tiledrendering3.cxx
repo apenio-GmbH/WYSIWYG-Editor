@@ -48,6 +48,7 @@
 #include <svx/svdpage.hxx>
 #include <svx/svdoole2.hxx>
 #include <svx/svdouno.hxx>
+#include <svx/svxids.hrc>
 #include <drawview.hxx>
 #include <com/sun/star/embed/EmbedVerbs.hpp>
 #include <vcl/virdev.hxx>
@@ -1833,6 +1834,22 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testOpenURL)
     // callback.
     CPPUNIT_ASSERT(aView1.m_aHyperlinkClicked.isEmpty());
     CPPUNIT_ASSERT(!aView2.m_aHyperlinkClicked.isEmpty());
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testOpenURLOnlyOrdinaryProtocols)
+{
+    createDoc("empty.ods");
+    ScTestViewCallback aView;
+
+    // A link to a dispatch command is not passed to the client.
+    ScGlobal::OpenURL(u".uno:About"_ustr, u""_ustr, /*bIgnoreSettings=*/true);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(aView.m_aHyperlinkClicked.isEmpty());
+
+    // A web link is.
+    ScGlobal::OpenURL(u"https://www.example.com/"_ustr, u""_ustr, /*bIgnoreSettings=*/true);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL("https://www.example.com/"_ostr, aView.m_aHyperlinkClicked);
 }
 
 CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testInvalidateForSplitPanes)
@@ -4282,6 +4299,29 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testCellRangeMarkerResentAfterCallbac
         aRanges.push_back(rRange.second.get_value<std::string>());
     CPPUNIT_ASSERT_EQUAL(std::size_t(1), aRanges.size());
     CPPUNIT_ASSERT_EQUAL(std::string("0, 0, 2, 3"), aRanges[0]);
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testSpellDialogAfterReadOnlyView)
+{
+    createDoc("empty.ods");
+    ScTestViewCallback aView;
+    const int nView = KitHelper::getCurrentView();
+    SfxViewFrame* pFrame = SfxViewFrame::Current();
+    // The empty sheet finishes spelling at once, with a message box nobody answers
+    const ViewShellDocId nDocId = SfxViewShell::Current()->GetDocId();
+    comphelper::COKit::setDialogsSuppressed(nDocId);
+    comphelper::ScopeGuard aGuard([nDocId] { comphelper::COKit::clearDialogsSuppressed(nDocId); });
+
+    // A dispatcher update in read-only mode leaves out the spelling dialog
+    KitHelper::setViewReadOnly(nView, true);
+    pFrame->GetDispatcher()->HideUI(true);
+    pFrame->GetDispatcher()->HideUI(false);
+    KitHelper::setViewReadOnly(nView, false);
+
+    comphelper::dispatchCommand(u".uno:SpellDialog"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+    // Without the fix, no spelling dialog opened until another dispatcher update
+    CPPUNIT_ASSERT(pFrame->GetChildWindow(SID_SPELL_DIALOG));
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

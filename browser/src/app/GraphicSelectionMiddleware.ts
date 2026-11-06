@@ -126,6 +126,9 @@ class GraphicSelection {
 			state: this.cropping ? 'true' : 'false',
 		});
 
+		// The keyboard leaves the handles, since the ones it walks are not the same any more.
+		this.travel()?.leave();
+
 		this.selectionSection?.refresh();
 		app.sectionContainer?.requestReDraw();
 	}
@@ -632,6 +635,21 @@ class GraphicSelection {
 		// and is taken here. Escape goes on to call the drag off, and the selection stays.
 		if (this.selectionSection?.isDragged()) return event.key !== 'Escape';
 
+		// Escape stops adding a point to tie a connector to, and the points stay shown.
+		if (event.key === 'Escape' && SelectionSection.stopAddingATiePoint())
+			return true;
+
+		// Delete and Backspace take away the point to tie a connector to that the keyboard is on,
+		// and the object stays.
+		if (
+			(event.key === 'Delete' || event.key === 'Backspace') &&
+			!event.ctrlKey &&
+			!event.altKey &&
+			!event.metaKey &&
+			this.selectionSection?.deleteTheTiePointByKey()
+		)
+			return true;
+
 		// A key that moves, turns, slants or resets what is selected waits while an undo or a redo
 		// is on its way, since the objects then stand where only the engine's answer tells. It is
 		// handled once the answer is in, from where the undo left the objects.
@@ -966,6 +984,7 @@ class GraphicSelection {
 			this.selectionSection = null;
 			RenderManager.drawnElsewhere([]);
 			this.dropThePlayer();
+			SelectionSection.hideTheTiePoints();
 		}
 
 		if (wanted === null) return;
@@ -985,6 +1004,10 @@ class GraphicSelection {
 		if (several)
 			(this.selectionSection as MultiSelectionSection).setObjects(objectIds);
 		else this.selectionSection.refresh();
+
+		// Objects that came into the selection start with their points hidden.
+		if (!this.selectionSection.tiePointsAreShown())
+			SelectionSection.hideTheTiePoints();
 	}
 
 	/*

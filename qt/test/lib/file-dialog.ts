@@ -8,8 +8,28 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { join } from 'path';
+import { copyFileSync } from 'fs';
+import { join, parse } from 'path';
 import * as webview from './webview.js';
+
+let fixtureCopies = 0;
+
+/**
+ * Copy a fixture to a new name in the test documents directory, and
+ * return that name.
+ *
+ * Opening a file that is already open activates its window or tab
+ * instead of opening it again, so a test that needs a document of its
+ * own opens a copy.
+ */
+export function copyFixture(fixture: string): string {
+	fixtureCopies++;
+	const { name, ext } = parse(fixture);
+	const copy = `${name}-copy-${process.pid}-${fixtureCopies}${ext}`;
+	const dir = process.env.CODA_TEST_DOCUMENTS_DIR!;
+	copyFileSync(join(dir, fixture), join(dir, copy));
+	return copy;
+}
 
 /**
  * Open a file from the test fixtures directory via the native file dialog.
@@ -20,22 +40,33 @@ import * as webview from './webview.js';
  *
  * On Qt the selectors target QFileDialog's accessibility IDs.  On
  * macOS they target NSOpenPanel by Obj-C class plus an "Open" button
- * by title.  The post-conditions (switch to new webview + doc
- * loaded) are the same on both platforms.
+ * by title.  On Windows they target the control IDs of the common
+ * file dialog: 1148 is the file name box and 1 the Open button.  The
+ * post-conditions (switch to new webview + doc loaded) are the same
+ * on all platforms.
  */
+const FILE_DIALOG_SELECTORS: { [platform: string]: { file: string; open: string } } = {
+	qt: {
+		file: '//*[@accessibility-id="QApplication.QFileDialog.fileNameEdit"]',
+		open: '//*[@accessibility-id="QApplication.QFileDialog.buttonBox.QPushButton"]',
+	},
+	macos: {
+		file: '//*[@accessibility-id="open-panel"]',
+		open: '//*[@accessibility-id="OKButton"]',
+	},
+	windows: {
+		file: '//*[@accessibility-id="1148"]',
+		open: '//*[@accessibility-id="1"]',
+	},
+};
+
 export async function openFixture(
 	webEngine: WebdriverIO.Browser,
 	native: WebdriverIO.Browser,
 	fileName: string,
 ): Promise<string> {
-	const onMacOS = process.env.CODA_PLATFORM === 'macos';
-
-	const fileSel = onMacOS
-		? '//*[@accessibility-id="open-panel"]'
-		: '//*[@accessibility-id="QApplication.QFileDialog.fileNameEdit"]';
-	const openSel = onMacOS
-		? '//*[@accessibility-id="OKButton"]'
-		: '//*[@accessibility-id="QApplication.QFileDialog.buttonBox.QPushButton"]';
+	const { file: fileSel, open: openSel } =
+		FILE_DIALOG_SELECTORS[process.env.CODA_PLATFORM || 'qt'];
 
 	// Snapshot the current WebView handles BEFORE dispatching .uno:Open.
 	// switchToNewWebView() below uses this snapshot to identify the

@@ -18,6 +18,7 @@
  */
 
 #include "browserline.hxx"
+#include "commoncontrol.hxx"
 
 #include <cpo/uno/XComponentContext.hpp>
 #include <com/sun/star/inspection/PropertyLineElement.hpp>
@@ -117,8 +118,13 @@ namespace pcr
         if ( m_pControlWindow )
         {
             m_pInitialControlParent->move(m_pControlWindow, m_xGrid.get());
+            m_xGrid->set_child_top_attach(*m_pControlWindow, 0);
             m_xGrid->set_child_left_attach(*m_pControlWindow, 1);
-            m_xFtTitle->set_mnemonic_widget(m_pControlWindow);
+            // the title names where the input happens, which may lie inside the control
+            weld::Widget* pMnemonic = m_pControlWindow;
+            if (auto pTransport = dynamic_cast<ControlWindowTransport*>(xWindow.get()))
+                pMnemonic = pTransport->getMnemonicWidget();
+            m_xFtTitle->set_mnemonic_widget(pMnemonic);
             m_pControlWindow->show();
         }
     }

@@ -164,6 +164,16 @@ template<class T> bool checkSfxViewShell(const SfxViewShell& pShell)
 
 typedef std::unordered_map<OUString, std::pair<Color, int>> StylesSpotlightColorMap;
 
+/// The part of a page holding a paragraph
+enum class SfxParagraphArea
+{
+    Body,
+    Header,
+    Footer,
+    Footnote,
+    Endnote
+};
+
 /// A comment on a paragraph, by its range in the accessible text of the paragraph
 struct SfxParagraphComment
 {
@@ -444,6 +454,10 @@ public:
     /// Invokes the registered callback, if there are any.
     virtual void viewCallback(COKitCallbackType eType, const OString& pPayload) const override;
     virtual void viewCallbackWithViewId(COKitCallbackType eType, const OString& pPayload, int nViewId) const override;
+    /// Sends rPayload as a clicked hyperlink, unless rURL has an exotic protocol.
+    void sendHyperlinkClicked(const OUString& rURL, const OString& rPayload) const;
+    /// Sends rURL as a clicked hyperlink, unless it has an exotic protocol.
+    void sendHyperlinkClicked(const OUString& rURL) const;
     virtual void viewInvalidateTilesCallback(const tools::Rectangle* pRect, int nPart, int nMode) const override;
     virtual void viewUpdatedCallback(COKitCallbackType eType) const override;
     virtual void viewUpdatedCallbackPerViewId(COKitCallbackType eType, int nViewId, int nSourceViewId) const override;
@@ -579,6 +593,13 @@ public:
     getKitParagraphComments(const cpo::uno::Reference<css::accessibility::XAccessibleText>&) const
     {
         return {};
+    }
+    /// The part of the page holding an accessible paragraph of this view, which the accessibility
+    /// tree lacks for a paragraph in a text frame
+    virtual SfxParagraphArea
+    getKitParagraphArea(const cpo::uno::Reference<css::accessibility::XAccessibleText>&) const
+    {
+        return SfxParagraphArea::Body;
     }
     /// The content controls in an accessible paragraph of this view, which the accessibility API
     /// lacks

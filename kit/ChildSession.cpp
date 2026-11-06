@@ -678,6 +678,11 @@ bool ChildSession::_handleInput(const char *buffer, int length)
                tokens.equals(0, "selectobjects") ||
                tokens.equals(0, "setobjectpoints") ||
                tokens.equals(0, "setobjectgluepoint") ||
+               tokens.equals(0, "insertobjectgluepoint") ||
+               tokens.equals(0, "deleteobjectgluepoint") ||
+               tokens.equals(0, "setobjectgluepointwayout") ||
+               tokens.equals(0, "setobjectgluepointdistance") ||
+               tokens.equals(0, "setobjectgluepointfrom") ||
                tokens.equals(0, "setobjecttransform") ||
                tokens.equals(0, "setobjectcontrolpoint") ||
                tokens.equals(0, "setobjecthandle") ||
@@ -771,6 +776,26 @@ bool ChildSession::_handleInput(const char *buffer, int length)
         else if (tokens.equals(0, "setobjectgluepoint"))
         {
             return setObjectGluePoint(tokens);
+        }
+        else if (tokens.equals(0, "insertobjectgluepoint"))
+        {
+            return insertObjectGluePoint(tokens);
+        }
+        else if (tokens.equals(0, "deleteobjectgluepoint"))
+        {
+            return deleteObjectGluePoint(tokens);
+        }
+        else if (tokens.equals(0, "setobjectgluepointwayout"))
+        {
+            return setObjectGluePointWayOut(tokens);
+        }
+        else if (tokens.equals(0, "setobjectgluepointdistance"))
+        {
+            return setObjectGluePointDistance(tokens);
+        }
+        else if (tokens.equals(0, "setobjectgluepointfrom"))
+        {
+            return setObjectGluePointFrom(tokens);
         }
         else if (tokens.equals(0, "setobjecttransform"))
         {
@@ -1918,6 +1943,147 @@ bool ChildSession::setObjectGluePoint(const StringVector& tokens)
     getLOKitDocument()->setObjectGluePoint(std::strtoull(objectId.c_str(), nullptr, 10), nAt,
                                            std::strtod(across.c_str(), nullptr),
                                            std::strtod(down.c_str(), nullptr));
+    return true;
+}
+
+bool ChildSession::insertObjectGluePoint(const StringVector& tokens)
+{
+    std::string objectId;
+    std::string across;
+    std::string down;
+
+    if (tokens.size() != 4 || !getTokenString(tokens[1], "id", objectId)
+        || !getTokenString(tokens[2], "x", across) || !getTokenString(tokens[3], "y", down))
+    {
+        sendTextFrameAndLogError("error: cmd=insertobjectgluepoint kind=syntax");
+        return false;
+    }
+
+    // A new point is a change of the document, which a read-only view does not make.
+    if (isReadOnly())
+    {
+        sendTextFrameAndLogError("error: cmd=insertobjectgluepoint kind=failure");
+        return false;
+    }
+
+    // The id an object is named by counts as far as an unsigned long long does, and the place on
+    // the object is a share of its width and of its height.
+    getLOKitDocument()->setView(_viewId);
+    getLOKitDocument()->insertObjectGluePoint(std::strtoull(objectId.c_str(), nullptr, 10),
+                                              std::strtod(across.c_str(), nullptr),
+                                              std::strtod(down.c_str(), nullptr));
+    return true;
+}
+
+bool ChildSession::deleteObjectGluePoint(const StringVector& tokens)
+{
+    std::string objectId;
+    int nAt = 0;
+
+    if (tokens.size() != 3 || !getTokenString(tokens[1], "id", objectId)
+        || !getTokenInteger(tokens[2], "at", nAt))
+    {
+        sendTextFrameAndLogError("error: cmd=deleteobjectgluepoint kind=syntax");
+        return false;
+    }
+
+    // Taking a point away is a change of the document, which a read-only view does not make.
+    if (isReadOnly())
+    {
+        sendTextFrameAndLogError("error: cmd=deleteobjectgluepoint kind=failure");
+        return false;
+    }
+
+    // The id an object is named by counts as far as an unsigned long long does.
+    getLOKitDocument()->setView(_viewId);
+    getLOKitDocument()->deleteObjectGluePoint(std::strtoull(objectId.c_str(), nullptr, 10), nAt);
+    return true;
+}
+
+bool ChildSession::setObjectGluePointWayOut(const StringVector& tokens)
+{
+    std::string objectId;
+    std::string way;
+    int nAt = 0;
+
+    if (tokens.size() != 4 || !getTokenString(tokens[1], "id", objectId)
+        || !getTokenInteger(tokens[2], "at", nAt) || !getTokenString(tokens[3], "way", way))
+    {
+        sendTextFrameAndLogError("error: cmd=setobjectgluepointwayout kind=syntax");
+        return false;
+    }
+
+    // The way out of a point is part of the document, which a read-only view does not change.
+    if (isReadOnly())
+    {
+        sendTextFrameAndLogError("error: cmd=setobjectgluepointwayout kind=failure");
+        return false;
+    }
+
+    // The id an object is named by counts as far as an unsigned long long does.
+    getLOKitDocument()->setView(_viewId);
+    getLOKitDocument()->setObjectGluePointWayOut(std::strtoull(objectId.c_str(), nullptr, 10),
+                                                 nAt, way.c_str());
+    return true;
+}
+
+bool ChildSession::setObjectGluePointDistance(const StringVector& tokens)
+{
+    std::string objectId;
+    std::string keeps;
+    int nAt = 0;
+
+    if (tokens.size() != 4 || !getTokenString(tokens[1], "id", objectId)
+        || !getTokenInteger(tokens[2], "at", nAt) || !getTokenString(tokens[3], "keeps", keeps)
+        || (keeps != "true" && keeps != "false"))
+    {
+        sendTextFrameAndLogError("error: cmd=setobjectgluepointdistance kind=syntax");
+        return false;
+    }
+
+    // How a point keeps its place is part of the document, which a read-only view does not
+    // change.
+    if (isReadOnly())
+    {
+        sendTextFrameAndLogError("error: cmd=setobjectgluepointdistance kind=failure");
+        return false;
+    }
+
+    // The id an object is named by counts as far as an unsigned long long does.
+    getLOKitDocument()->setView(_viewId);
+    getLOKitDocument()->setObjectGluePointKeepsItsDistance(
+        std::strtoull(objectId.c_str(), nullptr, 10), nAt, keeps == "true");
+    return true;
+}
+
+bool ChildSession::setObjectGluePointFrom(const StringVector& tokens)
+{
+    std::string objectId;
+    std::string side;
+    int nAt = 0;
+
+    // The side is named across the object or down it.
+    const bool down = tokens.size() == 4 && tokens.startsWith(3, "down=");
+    if (tokens.size() != 4 || !getTokenString(tokens[1], "id", objectId)
+        || !getTokenInteger(tokens[2], "at", nAt)
+        || !getTokenString(tokens[3], down ? "down" : "across", side))
+    {
+        sendTextFrameAndLogError("error: cmd=setobjectgluepointfrom kind=syntax");
+        return false;
+    }
+
+    // The side a point is measured from is part of the document, which a read-only view does not
+    // change.
+    if (isReadOnly())
+    {
+        sendTextFrameAndLogError("error: cmd=setobjectgluepointfrom kind=failure");
+        return false;
+    }
+
+    // The id an object is named by counts as far as an unsigned long long does.
+    getLOKitDocument()->setView(_viewId);
+    getLOKitDocument()->setObjectGluePointFrom(std::strtoull(objectId.c_str(), nullptr, 10), nAt,
+                                               down, side.c_str());
     return true;
 }
 

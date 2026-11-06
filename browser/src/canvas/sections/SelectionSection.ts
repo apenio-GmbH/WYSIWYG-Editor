@@ -40,7 +40,39 @@ abstract class SelectionSection extends CanvasSectionObject {
 			this.moveHandleBy(handle, towards, event),
 		(handle: SelectionHandle, event: KeyboardEvent) =>
 			this.pressTheHandle(handle, event),
+		(name: string) => this.blinksWhileActive(name),
 	);
+
+	/// Whether the handle the keyboard is on is a point to tie a connector to.
+	private keyboardIsOnATiePoint(): boolean {
+		const handle = this.travel.activeHandle();
+		return (
+			handle !== undefined && this.groupOf(handle) instanceof TiePointHandles
+		);
+	}
+
+	/*
+		Takes away the point to tie a connector to that the keyboard is on. Answers whether the
+		keyboard was on such a point. A point the shape makes from its own geometry stays.
+	*/
+	public deleteTheTiePointByKey(): boolean {
+		const handle = this.travel.activeHandle();
+		const group = handle ? this.groupOf(handle) : undefined;
+		return (
+			handle !== undefined &&
+			group instanceof TiePointHandles &&
+			group.deleteThePoint(handle)
+		);
+	}
+
+	/// Whether the handle of that name blinks while the keyboard is on it, as its group says.
+	private blinksWhileActive(name: string): boolean {
+		const handle = this.handles().find(
+			(one: SelectionHandle) => one.name === name,
+		);
+		const group = handle ? this.groupOf(handle) : undefined;
+		return group ? group.blinksWhileActive() : true;
+	}
 
 	/*
 		Space, Return or 0 on a handle the keyboard is on. On the handle above the selection, 0
@@ -153,6 +185,121 @@ abstract class SelectionSection extends CanvasSectionObject {
 	public static selectedHere(objectIds: number[]): void {
 		if (SelectionSection.shearing !== SelectionSection.keyOf(objectIds))
 			SelectionSection.shearing = null;
+	}
+
+	/*
+		The object whose points to tie a connector to are shown, as the key of its id, or null
+		while no points are shown. A new selection starts with them hidden.
+	*/
+	private static tiePointsShownFor: string | null = null;
+
+	/// Whether the next press on the object with its points shown gives it a new point. It is false
+	/// whenever no points are shown.
+	private static tiePointBeingAdded: boolean = false;
+
+	/// The state of the points last told to the toolbars.
+	private static tiePointsToldAs: boolean = false;
+
+	/// The state of adding a point last told to the toolbars.
+	private static addingToldAs: boolean = false;
+
+	/// The command whose state says whether the points to tie a connector to are shown.
+	public static readonly tiePointsCommand: string = 'showgluepoints';
+
+	/// The command whose state says whether a press on the object gives it a new point.
+	public static readonly addTiePointCommand: string = 'insertgluepoint';
+
+	/// Whether the points to tie a connector to are shown for this selection.
+	public tiePointsAreShown(): boolean {
+		return SelectionSection.tiePointsShownFor === this.keyOfTheSelection();
+	}
+
+	/// Shows the points to tie a connector to, or hides them again. They are shown for one
+	/// selected object only, since only one object at a time has its points drawn.
+	public switchTheTiePoints(): void {
+		if (!this.tiePointsAreShown() && this.selectedObjects().length !== 1)
+			return;
+
+		SelectionSection.tiePointsShownFor = this.tiePointsAreShown()
+			? null
+			: this.keyOfTheSelection();
+		if (SelectionSection.tiePointsShownFor === null)
+			SelectionSection.tiePointBeingAdded = false;
+
+		// The keyboard leaves the handles, since the ones it walks are not the same any more.
+		this.travel.leave();
+		this.refresh();
+		this.containerObject.requestReDraw();
+		SelectionSection.tellTheTiePoints();
+	}
+
+	/// Hides the points to tie a connector to, as a new selection does.
+	public static hideTheTiePoints(): void {
+		SelectionSection.tiePointsShownFor = null;
+		SelectionSection.tiePointBeingAdded = false;
+		SelectionSection.tellTheTiePoints();
+	}
+
+	/// Whether a press on the object gives it a new point to tie a connector to.
+	public isAddingATiePoint(): boolean {
+		return SelectionSection.tiePointBeingAdded && this.tiePointsAreShown();
+	}
+
+	/*
+		Starts adding a point to tie a connector to: the next press on the object, off its
+		handles, gives it a new point there. The pointer over the object becomes a cross. Adding
+		ends with that point, with Escape, or when the points are hidden.
+	*/
+	public startAddingATiePoint(): void {
+		if (!this.tiePointsAreShown()) return;
+
+		SelectionSection.tiePointBeingAdded = true;
+		this.travel.leave();
+		this.containerObject.requestReDraw();
+		SelectionSection.tellTheTiePoints();
+	}
+
+	/// Stops adding a point to tie a connector to, and the pointer is the one for where the mouse
+	/// stands. Answers whether a point was being added.
+	public static stopAddingATiePoint(): boolean {
+		if (!SelectionSection.tiePointBeingAdded) return false;
+
+		SelectionSection.tiePointBeingAdded = false;
+		GraphicSelection.selectionSection?.pointAtTheMouse();
+		SelectionSection.tellTheTiePoints();
+		return true;
+	}
+
+	/// Tells the toolbars whether the points to tie a connector to are shown, and whether a point
+	/// is being added, each when it changed.
+	public static tellTheTiePoints(): void {
+		const section = GraphicSelection.selectionSection;
+		const shown = section?.tiePointsAreShown() ?? false;
+		const adding = section?.isAddingATiePoint() ?? false;
+
+		if (shown !== SelectionSection.tiePointsToldAs) {
+			SelectionSection.tiePointsToldAs = shown;
+			app.map.fire('commandstatechanged', {
+				commandName: SelectionSection.tiePointsCommand,
+				state: shown ? 'true' : 'false',
+			});
+		}
+
+		if (adding !== SelectionSection.addingToldAs) {
+			SelectionSection.addingToldAs = adding;
+			app.map.fire('commandstatechanged', {
+				commandName: SelectionSection.addTiePointCommand,
+				state: adding ? 'true' : 'false',
+			});
+		}
+	}
+
+	/// The group of the points to tie a connector to.
+	private tiePointGroup(): TiePointHandles | undefined {
+		return this.groups().find(
+			(group: HandleGroup): group is TiePointHandles =>
+				group instanceof TiePointHandles,
+		);
 	}
 
 	/// The mode the handle above the selection is in. It shears only where every selected object
@@ -518,7 +665,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 		Nothing where the client did not work the framing handles out.
 	*/
 	public middle(): cool.SimplePoint | undefined {
-		return SelectionSection.middleOf(this.handles());
+		return SelectionSection.middleOf(this.handlesOf(this.groups()));
 	}
 
 	/// The middle of the selection as those handles frame it.
@@ -538,6 +685,13 @@ abstract class SelectionSection extends CanvasSectionObject {
 	/// The handles as they are drawn now: where a drag would leave them while one runs, where
 	/// the objects put them otherwise.
 	public handles(): SelectionHandle[] {
+		return this.handlesOf(
+			this.groups().filter((group: HandleGroup) => group.isShown()),
+		);
+	}
+
+	/// The handles of those groups as the running interaction leaves them, shown or not.
+	private handlesOf(groups: HandleGroup[]): SelectionHandle[] {
 		const shown = this.interaction?.handles(this.known) ?? this.known;
 
 		/*
@@ -546,7 +700,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 			selection keeps its distance from the upper side however the selection is scaled, and
 			the points to tie to follow the object under the mouse rather than the drag.
 		*/
-		return this.groups().flatMap((group: HandleGroup) => {
+		return groups.flatMap((group: HandleGroup) => {
 			const placed = group.place(shown);
 			if (placed)
 				return placed.map((handle: SelectionHandle) => ({
@@ -639,9 +793,10 @@ abstract class SelectionSection extends CanvasSectionObject {
 			if (!shown[at].name || (shown[at].deactivated && !deactivatedToo))
 				continue;
 
+			const reach = this.groupOf(shown[at])?.reachOf(usual) ?? usual;
 			const half = shown[at].larger
-				? usual + HandleLook.largerBy('shaping')
-				: usual;
+				? reach + HandleLook.largerBy('shaping')
+				: reach;
 			const point = HandleLook.drawnAt(shown[at]);
 			if (Math.abs(point.vX - x) <= half && Math.abs(point.vY - y) <= half)
 				return shown[at];
@@ -663,9 +818,10 @@ abstract class SelectionSection extends CanvasSectionObject {
 	/// The four corners the eight stand on, in the order they go round, in view pixels. Empty for
 	/// a selection that is framed by no handles.
 	private framingCorners(): cool.Point[] {
+		const framing = this.handlesOf(this.groups());
 		return ['1', '3', '8', '6']
 			.map((kind: string) =>
-				this.handles().find((handle: SelectionHandle) => handle.kind === kind),
+				framing.find((handle: SelectionHandle) => handle.kind === kind),
 			)
 			.filter((handle): handle is SelectionHandle => handle !== undefined)
 			.map((handle: SelectionHandle) => {
@@ -2928,6 +3084,25 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.pressedAHandle = handle !== undefined;
 		this.pressedHandle = handle ?? null;
 
+		/*
+			While a point is being added, a press on the object off its handles gives the object a
+			new point there, and adding ends. The press is taken like a press on a handle, so the
+			click that follows goes nowhere else.
+		*/
+		if (
+			!handle &&
+			this.isAddingATiePoint() &&
+			this.tiePointGroup()?.addAt(at)
+		) {
+			SelectionSection.stopAddingATiePoint();
+			this.pressedAHandle = true;
+			this.pressedGroup = null;
+			this.interaction = null;
+			this.stopPropagating();
+			e.stopPropagation();
+			return;
+		}
+
 		// a press on a grey handle is taken and begins nothing, as in the office
 		if (!handle && this.handleAt(onCanvas[0], onCanvas[1], true)) {
 			this.pressedAHandle = true;
@@ -2990,44 +3165,39 @@ abstract class SelectionSection extends CanvasSectionObject {
 		e.stopPropagation();
 	}
 
-	onMouseMove(point: cool.SimplePoint, dragDistance: number[], e: MouseEvent) {
-		// The mouse control follows a drag that started on the edited text.
-		if (this.pressedTheText && this.containerObject.isDraggingSomething()) {
-			this.handToTheMouseControl(point, (control, at) =>
-				control.onMouseMove(at, dragDistance, e),
-			);
-			return;
-		}
+	/// Sets the pointer and the marked handle for the mouse standing at that point while no drag
+	/// runs.
+	private pointAt(point: cool.SimplePoint): void {
+		const onCanvas = [
+			this.myTopLeft[0] + point.pX,
+			this.myTopLeft[1] + point.pY,
+		];
+		let over = this.handleAt(onCanvas[0], onCanvas[1]);
+		// While a press runs that has not become a drag yet, the handle of the other mode,
+		// which the press took away, stays away.
+		if (
+			!this.interaction &&
+			this.followTheOtherMode(over, new cool.Point(onCanvas[0], onCanvas[1]))
+		)
+			over = undefined;
 
-		if (!this.containerObject.isDraggingSomething() || !this.interaction) {
-			const onCanvas = [
-				this.myTopLeft[0] + point.pX,
-				this.myTopLeft[1] + point.pY,
-			];
-			let over = this.handleAt(onCanvas[0], onCanvas[1]);
-			// While a press runs that has not become a drag yet, the handle of the other mode,
-			// which the press took away, stays away.
-			if (
-				!this.interaction &&
-				this.followTheOtherMode(over, new cool.Point(onCanvas[0], onCanvas[1]))
-			)
-				over = undefined;
-
-			// Off a handle but still on the object, the pointer is the object's again, or the
-			// one it left on a handle would stay: over text the text pointer, the hand where the
-			// selection may be carried, the plain pointer where it may not.
-			const onTheObject = this.groups().some((group: HandleGroup) =>
-				group.takesAPress(onCanvas[0], onCanvas[1]),
-			);
-			const inTheDocument = this.inTheDocument(point);
-			const overText =
-				app.file.textCursor.visible ||
-				RenderGeometrySection.pointerAt(inTheDocument.x, inTheDocument.y) ===
-					'text';
-			this.context.canvas.style.cursor = over
-				? this.pointerOver(over)
-				: this.handleAt(onCanvas[0], onCanvas[1], true)
-					? 'not-allowed'
+		// Off a handle but still on the object, the pointer is the object's again, or the
+		// one it left on a handle would stay: over text the text pointer, the hand where the
+		// selection may be carried, the plain pointer where it may not.
+		const onTheObject = this.groups().some((group: HandleGroup) =>
+			group.takesAPress(onCanvas[0], onCanvas[1]),
+		);
+		const inTheDocument = this.inTheDocument(point);
+		const overText =
+			app.file.textCursor.visible ||
+			RenderGeometrySection.pointerAt(inTheDocument.x, inTheDocument.y) ===
+				'text';
+		this.context.canvas.style.cursor = over
+			? this.pointerOver(over)
+			: this.handleAt(onCanvas[0], onCanvas[1], true)
+				? 'not-allowed'
+				: onTheObject && this.isAddingATiePoint()
+					? 'crosshair'
 					: this.partMarkedAt(inTheDocument) !== undefined
 						? 'pointer'
 						: !onTheObject
@@ -3038,16 +3208,41 @@ abstract class SelectionSection extends CanvasSectionObject {
 									? SelectionSection.grabPointer()
 									: 'default';
 
-			// The handle under the mouse is marked, so that it is plain which one a press would
-			// take hold of where several lie close together.
-			// On the bar to the handle of the other mode the one it stands beside stays marked.
-			const hovered =
-				over?.name ??
-				(this.otherModeShown ? SelectionSection.turningKind : null);
-			if (hovered !== this.hovered) {
-				this.hovered = hovered;
-				this.containerObject.requestReDraw();
-			}
+		// The handle under the mouse is marked, so that it is plain which one a press would
+		// take hold of where several lie close together.
+		// On the bar to the handle of the other mode the one it stands beside stays marked.
+		const hovered =
+			over?.name ?? (this.otherModeShown ? SelectionSection.turningKind : null);
+		if (hovered !== this.hovered) {
+			this.hovered = hovered;
+			this.containerObject.requestReDraw();
+		}
+	}
+
+	/// Sets the pointer and the marked handle for where the mouse was last seen.
+	private pointAtTheMouse(): void {
+		const mouse = this.containerObject.getMousePosition();
+		if (!mouse) return;
+
+		this.pointAt(
+			cool.SimplePoint.fromCorePixels([
+				mouse[0] - this.myTopLeft[0],
+				mouse[1] - this.myTopLeft[1],
+			]),
+		);
+	}
+
+	onMouseMove(point: cool.SimplePoint, dragDistance: number[], e: MouseEvent) {
+		// The mouse control follows a drag that started on the edited text.
+		if (this.pressedTheText && this.containerObject.isDraggingSomething()) {
+			this.handToTheMouseControl(point, (control, at) =>
+				control.onMouseMove(at, dragDistance, e),
+			);
+			return;
+		}
+
+		if (!this.containerObject.isDraggingSomething() || !this.interaction) {
+			this.pointAt(point);
 			return;
 		}
 
@@ -3123,8 +3318,15 @@ abstract class SelectionSection extends CanvasSectionObject {
 				this.switchTheHandleMode();
 				this.interaction = null;
 				this.followTheOtherMode(this.pressedHandle);
-			} else if (this.pressedHandle?.name)
+			} else if (this.pressedHandle?.name) {
 				this.travel.goTo(this.pressedHandle.name);
+				this.groupOf(this.pressedHandle)?.letGoWhereItWasPressed(
+					this.pressedHandle,
+				);
+			} else if (this.pressedGroup && this.keyboardIsOnATiePoint()) {
+				// A click on the object, off the handles, takes the keyboard off the point.
+				this.travel.leave();
+			}
 
 			// The press hid the buttons beside the bands as a drag does; a click brings them back.
 			this.interaction = null;

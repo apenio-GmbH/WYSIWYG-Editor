@@ -926,6 +926,16 @@ class Dispatcher {
 		};
 	}
 
+	private updatePresentationLeader(isWelcomePresentation: boolean) {
+		const presenter = app.map.slideShowPresenter;
+		if (!presenter || presenter._checkAlreadyPresenting()) return;
+		presenter.setLeader(
+			app.map.uiManager.shouldPresentToAll() &&
+				!isWelcomePresentation &&
+				!presenter.isFollower(),
+		);
+	}
+
 	private addImpressAndDrawCommands() {
 		this.actionsMap['presentation'] = this.actionsMap[
 			'fullscreen-presentation'
@@ -933,6 +943,7 @@ class Dispatcher {
 			const isWelcomePresentation =
 				window.coolParams.get('welcome') === 'true' ? true : false;
 			if (window.canvasSlideshowEnabled) {
+				this.updatePresentationLeader(isWelcomePresentation);
 				// The Presenter View toggle decides whether the start buttons open
 				// the presenter console. The welcome slideshow always plays plain.
 				if (
@@ -951,6 +962,7 @@ class Dispatcher {
 					? data.startSlideNumber
 					: app.map.getCurrentPartNumber();
 			if (window.canvasSlideshowEnabled) {
+				this.updatePresentationLeader(false);
 				if (app.map.uiManager.shouldShowPresenterConsole())
 					app.map.fire('newpresentinconsole', { startSlideNumber });
 				else app.map.fire('newfullscreen', { startSlideNumber });
@@ -962,6 +974,7 @@ class Dispatcher {
 				const welcomePresentation =
 					window.coolParams.get('welcome') === 'true' ? true : false;
 				if (window.canvasSlideshowEnabled) {
+					this.updatePresentationLeader(welcomePresentation);
 					// The Presenter View toggle decides whether the console opens too.
 					if (
 						!welcomePresentation &&
@@ -997,6 +1010,10 @@ class Dispatcher {
 		this.actionsMap['presenterconsole'] = () => {
 			if (window.canvasSlideshowEnabled)
 				app.map.uiManager.togglePresenterConsole();
+		};
+
+		this.actionsMap['presenttoall'] = () => {
+			app.map.uiManager.togglePresentToAll();
 		};
 
 		this.actionsMap['fullscreen-drawing'] = () => {
@@ -1201,6 +1218,16 @@ class Dispatcher {
 			app.map.notesPanel.setOpen(false);
 			if (app.impress.notesMode)
 				app.map.sendUnoCommand('.uno:NormalMultiPaneGUI');
+		};
+
+		// Shows the points to tie a connector to on the selected shape, or hides them again.
+		this.actionsMap[SelectionSection.tiePointsCommand] = () => {
+			GraphicSelection.selectionSection?.switchTheTiePoints();
+		};
+
+		// The next press on the selected shape gives it a new point to tie a connector to.
+		this.actionsMap[SelectionSection.addTiePointCommand] = () => {
+			GraphicSelection.selectionSection?.startAddingATiePoint();
 		};
 
 		this.actionsMap['animationdeck'] = () => {

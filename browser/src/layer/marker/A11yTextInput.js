@@ -52,6 +52,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 
 		this._updateA11yEditableStateBound = this._updateA11yEditableState.bind(this);
 		this._onStrayKeyDownBound = this._onStrayKeyDown.bind(this);
+		// for a jump that moved nothing
+		this._endCommentJumpBound = () => { this._commentJump = false; };
 	},
 
 	onAdd: function() {
@@ -63,6 +65,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		this._map.on('updateparts', this._onA11yPartChanged, this);
 		app.events.on('updatepermission', this._updateA11yEditableStateBound);
 		document.addEventListener('keydown', this._onStrayKeyDownBound, true);
+		for (const type of ['pointerdown', 'keydown', 'wheel'])
+			document.addEventListener(type, this._endCommentJumpBound, true);
 		window.L.DomEvent.on(this._textArea, 'click auxclick contextmenu dragstart',
 			this._onLinkEvent, this);
 	},
@@ -73,6 +77,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		this._map.off('updateparts', this._onA11yPartChanged, this);
 		app.events.off('updatepermission', this._updateA11yEditableStateBound);
 		document.removeEventListener('keydown', this._onStrayKeyDownBound, true);
+		for (const type of ['pointerdown', 'keydown', 'wheel'])
+			document.removeEventListener(type, this._endCommentJumpBound, true);
 		window.L.DomEvent.off(this._textArea, 'click auxclick contextmenu dragstart',
 			this._onLinkEvent, this);
 		var canvas = document.getElementById('document-canvas');
@@ -246,15 +252,13 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 	// a comment; a status message gives the comment reached.
 	_announceCommentAt: function(pos) {
 		// the paragraph refill to come carries the caret
-		if (!this._commentJumpTime || this._pendingFocusedParagraph)
+		if (!this._commentJump || this._pendingFocusedParagraph)
 			return;
-		// a key that moved nothing leaves no claim on a later caret update
-		const recent = performance.now() - this._commentJumpTime < 2000;
-		this._commentJumpTime = 0;
+		this._commentJump = false;
 		const comments = (this._focusedComments || []).filter((c) => parseInt(c.end) - 1 === pos);
 		// a range continuing past this paragraph ends here too, without its anchor here
 		const comment = comments.find((c) => parseInt(c.start) === pos) || comments[0];
-		if (!recent || !comment || !this._commentStatus)
+		if (!comment || !this._commentStatus)
 			return;
 		const status = this._commentStatus;
 		// a live region is announced on a change, so empty it for a repeated message
@@ -350,8 +354,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		this._lineNavigation = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(ev.key)
 			|| ((ev.key === 'Home' || ev.key === 'End') && ev.ctrlKey);
 		// Ctrl or, on a Mac, Cmd: the modifier sent as Ctrl to the document
-		this._commentJumpTime = (ev.key === 'PageUp' || ev.key === 'PageDown') && ev.altKey
-			&& !ev.shiftKey && (ev.ctrlKey || ev.metaKey) ? performance.now() : 0;
+		this._commentJump = (ev.key === 'PageUp' || ev.key === 'PageDown') && ev.altKey
+			&& !ev.shiftKey && (ev.ctrlKey || ev.metaKey);
 		window.L.TextInput.prototype._onKeyDown.call(this, ev);
 	},
 
@@ -375,6 +379,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 	// One description carries every piece, so setting it alone would drop the others.
 	_caretDescription: function() {
 		const parts = [];
+		if (this._area)
+			parts.push(this._areaName(this._area));
 		if (this._headingLevel)
 			parts.push(_('Heading level {0}').replace('{0}', this._headingLevel));
 		return parts.join('. ');
@@ -406,12 +412,69 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		this._describeCaretState();
 	},
 
+	_areaName: function(area) {
+		switch (area) {
+		case 'header':
+			return _('Header');
+		case 'footer':
+			return _('Footer');
+		case 'footnote':
+			return _('Footnote');
+		case 'endnote':
+			return _('Endnote');
+		}
+		return '';
+	},
+
+	_areaExitName: function(area) {
+		switch (area) {
+		case 'header':
+			return _('Out of header');
+		case 'footer':
+			return _('Out of footer');
+		case 'footnote':
+			return _('Out of footnote');
+		case 'endnote':
+			return _('Out of endnote');
+		}
+		return '';
+	},
+
+	// area: 'header', 'footer', 'footnote' or 'endnote' for a paragraph outside the body text.
+	// Returns null for the same area, else the description of leaving the previous one, if any.
+	_setArea: function(area) {
+		const previous = this._area || '';
+		this._area = area || '';
+		if (this._area === previous)
+			return null;
+		return previous ? this._areaExitName(previous) + '. ' : '';
+	},
+
+	// Leaving an area is announced once, like leaving a table. Called after _setHeadingLevel,
+	// whose description would otherwise replace that announcement.
+	_updateArea: function(area) {
+		const exitDescription = this._setArea(area);
+		if (exitDescription === null)
+			return;
+		if (this._timeoutForA11yDescription)
+			clearTimeout(this._timeoutForA11yDescription);
+		if (!exitDescription) {
+			this._describeCaretState();
+			return;
+		}
+		this._setDescription(exitDescription + this._caretDescription());
+		this._caretDescribed = true;
+		this._timeoutForA11yDescription = setTimeout(this._describeCaretState.bind(this), 1000);
+	},
+
 	// elements: cool.ParagraphInlineElements
 	onAccessibilityFocusChanged: function(content, pos, start, end, listPrefixLength, force, before, after,
-		beforeRects, afterRects, headingLevel, beforeLevels, afterLevels, elements, list, table) {
+		beforeRects, afterRects, headingLevel, beforeLevels, afterLevels, elements, list, table, area) {
 		this._listPrefixLength = listPrefixLength;
 		this._setHeadingLevel(headingLevel);
+		// after the focus returns from a context region, which describes the caret again
 		this._endContextJump();
+		this._updateArea(area);
 		this._keepCommentDetails(elements);
 		this._setContextParagraphs(before, after, beforeRects, afterRects, beforeLevels,
 			afterLevels, elements);
@@ -435,9 +498,10 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 
 	// elements: cool.ParagraphInlineElements
 	setA11yFocusedParagraph: function(content, pos, start, end, before, after, beforeRects, afterRects, headingLevel,
-		beforeLevels, afterLevels, elements, list, table) {
+		beforeLevels, afterLevels, elements, list, table, area) {
 		this._contextPending = Math.max(0, (this._contextPending || 0) - 1);
 		this._setHeadingLevel(headingLevel);
+		this._updateArea(area);
 		this._keepCommentDetails(elements);
 		if (this._isComposing) {
 			this._remoteContent = content;
@@ -493,7 +557,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		// present from the start, as a live region added just before its text can go unheard
 		this._commentStatus = window.L.DomUtil.create('div', 'visuallyhidden', this._container);
 		this._commentStatus.id = 'a11y-jump-status';
-		this._commentStatus.setAttribute('role', 'status');
+		this._commentStatus.setAttribute('aria-live', 'polite');
+		this._commentStatus.setAttribute('aria-atomic', 'true');
 	},
 
 	_setContextList: function(list) {
@@ -1149,7 +1214,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		}
 	},
 
-	_updateTable: function(outCount, inList, row, col, rowSpan, colSpan) {
+	// areaExit: the description of leaving a header, a footer or a note, if the cell is outside it
+	_updateTable: function(outCount, inList, row, col, rowSpan, colSpan, areaExit) {
 		this._log('_updateTable: '
 			+ '\n outCount: ' + outCount
 			+ '\n inList: ' + inList.toString()
@@ -1170,6 +1236,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		for (var i = 0; i < outCount; i++) {
 			eventDescription += _('Out of table') + '. ';
 		}
+		// a table in the area is left before the area
+		eventDescription += areaExit;
 		for (i = 0; i < inList.length; i++) {
 			// One msgid can carry only one plural count, so the row and the column
 			// count are separate plural entries that the sentence below composes.
@@ -1219,7 +1287,8 @@ window.L.A11yTextInput = window.L.TextInput.extend({
 		this._setFocusedParagraph(paragraph.content, parseInt(paragraph.position),
 			parseInt(paragraph.start), parseInt(paragraph.end), elements.paragraph);
 		this._setHeadingLevel(paragraph.headingLevel);
-		this._updateTable(outCount, inList, row + 1, col + 1, rowSpan, colSpan);
+		const areaExit = this._setArea(paragraph.area);
+		this._updateTable(outCount, inList, row + 1, col + 1, rowSpan, colSpan, areaExit || '');
 	},
 
 	onAccessibilityEditingInSelectionState: function(cell, enabled, selectionDescr, paragraph) {

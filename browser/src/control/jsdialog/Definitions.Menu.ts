@@ -2296,6 +2296,11 @@ function generateLayoutPopupGrid(unoCommand: string): GridWidgetJSON {
 		children: new Array<WidgetJSON>(),
 	};
 
+	// Changing the layout marks the layout the current slide has, which is the
+	// state of .uno:AssignLayout. A new slide has no layout yet to mark.
+	const stateCommand =
+		unoCommand === 'AssignLayout' ? '.uno:AssignLayout' : undefined;
+
 	for (let i = 0; i < 16; i += 4) {
 		for (let j = i; j < i + 4; j++) {
 			grid.children.push({
@@ -2303,6 +2308,8 @@ function generateLayoutPopupGrid(unoCommand: string): GridWidgetJSON {
 				type: 'toolitem',
 				command:
 					'.uno:' + unoCommand + '?WhatLayout:long=' + layoutMap[j].layout,
+				stateCommand: stateCommand,
+				stateValue: stateCommand ? String(layoutMap[j].layout) : undefined,
 				text: layoutMap[j].text,
 				noLabel: true,
 				left: j % 4,
@@ -2433,6 +2440,21 @@ menuDefinitions.set('PictureColorMode', [
 		text: _('Watermark'),
 		img: 'insertgraphic',
 		uno: '.uno:GrafMode?ColorMode:short=3',
+	},
+] as Array<MenuDefinition>);
+
+menuDefinitions.set('GluePointsMenu', [
+	{
+		text: _('Show'),
+		action: 'showgluepoints',
+		checked: false,
+	},
+	{
+		text: _('Add New'),
+		action: 'insertgluepoint',
+		checked: false,
+		isEnabled: () =>
+			GraphicSelection.selectionSection?.tiePointsAreShown() ?? false,
 	},
 ] as Array<MenuDefinition>);
 

@@ -339,6 +339,7 @@ protected:
     bool mbDiagaramReplacementExport;
     bool mbDiagramModelTextExport;
     sal_Int32 mnDiagramModelTextParagraph;
+    sal_Int32 mnDiagramModelTextParagraphCount;
 
     bool mbEmbedFonts = false;
 
@@ -349,6 +350,15 @@ protected:
     bool GetDirectProperty(const cpo::uno::Reference<css::beans::XPropertySet>& rXPropSet,
                            const cpo::uno::Reference<css::beans::XPropertyState>& rXPropState,
                            const OUString& aName);
+    /** Returns the pitch and the family a text holds, as the one number the format states them
+        in, taking the two named properties. It is zero where the text holds neither. */
+    sal_Int32 GetFontPitchFamily(const cpo::uno::Reference<css::beans::XPropertySet>& rXPropSet,
+                                 const OUString& rPitchName, const OUString& rFamilyName);
+    /** Writes one font of a text as the named element, giving it the typeface along with the
+        pitch and the family taken from the two named properties. */
+    void WriteFontElement(sal_Int32 nElement, const OUString& rTypeface,
+                          const cpo::uno::Reference<css::beans::XPropertySet>& rXPropSet,
+                          const OUString& rPitchName, const OUString& rFamilyName);
     OUString GetFieldValue( const cpo::uno::Reference< css::text::XTextRange >& rRun, bool& bIsURLField );
     /** Gets OOXML datetime field type from LO Date format
 
@@ -424,12 +434,13 @@ public:
     bool isDiagaramExport() const { return mbDiagaramExport;}
 
     // True while the text of the data model of a Diagram is written
-    // nParagraph gives which paragraph of the shape represents the Point being written, and -1
-    // that the shape represents the Point with all its paragraphs.
-    void setDiagramModelTextExport(bool bNew, sal_Int32 nParagraph = -1)
+    // nParagraph gives the first of the nCount paragraphs of the shape that represent the Point
+    // being written, and -1 that the shape represents the Point with all its paragraphs.
+    void setDiagramModelTextExport(bool bNew, sal_Int32 nParagraph = -1, sal_Int32 nCount = 1)
     {
         mbDiagramModelTextExport = bNew;
         mnDiagramModelTextParagraph = nParagraph;
+        mnDiagramModelTextParagraphCount = nCount;
     }
     bool isDiagramModelTextExport() const { return mbDiagramModelTextExport; }
 

@@ -33,6 +33,7 @@
 #include <drawingml/fillproperties.hxx>
 #include <drawingml/fontworkhelpers.hxx>
 #include <drawingml/textparagraph.hxx>
+#include <drawingml/textfont.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/relationship.hxx>
@@ -59,6 +60,8 @@
 
 #include <com/sun/star/awt/CharSet.hpp>
 #include <com/sun/star/awt/FontDescriptor.hpp>
+#include <com/sun/star/awt/FontFamily.hpp>
+#include <com/sun/star/awt/FontPitch.hpp>
 #include <com/sun/star/awt/FontSlant.hpp>
 #include <com/sun/star/awt/FontStrikeout.hpp>
 #include <com/sun/star/awt/FontWeight.hpp>
@@ -285,6 +288,7 @@ DrawingML::DrawingML(::sax_fastparser::FSHelperPtr pFS, ::oox::core::XmlFilterBa
     , mbDiagaramReplacementExport(false)
     , mbDiagramModelTextExport(false)
     , mnDiagramModelTextParagraph(-1)
+    , mnDiagramModelTextParagraphCount(1)
 {
     uno::Reference<beans::XPropertySet> xSettings(pFB->getModelFactory()->createInstance(u"com.sun.star.document.Settings"_ustr), uno::UNO_QUERY);
     if (xSettings.is())
@@ -363,6 +367,35 @@ bool DrawingML::GetDirectProperty(
     PropertyState state;
     return GetPropertyAndState(rXPropSet, rXPropState, aName, state)
            && state == beans::PropertyState_DIRECT_VALUE;
+}
+
+sal_Int32 DrawingML::GetFontPitchFamily(const cpo::uno::Reference<beans::XPropertySet>& rXPropSet,
+                                        const OUString& rPitchName, const OUString& rFamilyName)
+{
+    sal_Int16 nFontPitch = awt::FontPitch::DONTKNOW;
+    if (GetProperty(rXPropSet, rPitchName))
+        mAny >>= nFontPitch;
+    sal_Int16 nFontFamily = awt::FontFamily::DONTKNOW;
+    if (GetProperty(rXPropSet, rFamilyName))
+        mAny >>= nFontFamily;
+    return TextFont::makePitchFamily(nFontPitch, nFontFamily);
+}
+
+void DrawingML::WriteFontElement(sal_Int32 nElement, const OUString& rTypeface,
+                                 const cpo::uno::Reference<beans::XPropertySet>& rXPropSet,
+                                 const OUString& rPitchName, const OUString& rFamilyName)
+{
+    OUString aTypeface(rTypeface);
+    if (!mbEmbedFonts || EmbeddedFontsManager::isCommonFont(aTypeface))
+    {
+        OUString aSubstName(GetSubsFontName(aTypeface, SubsFontFlags::ONLYONE | SubsFontFlags::MS));
+        if (!aSubstName.isEmpty())
+            aTypeface = aSubstName;
+    }
+
+    sal_Int32 nPitchFamily = GetFontPitchFamily(rXPropSet, rPitchName, rFamilyName);
+    mpFS->singleElementNS(XML_a, nElement, XML_typeface, aTypeface, XML_pitchFamily,
+                          sax_fastparser::UseIf(OString::number(nPitchFamily), nPitchFamily != 0));
 }
 
 namespace
@@ -2936,49 +2969,33 @@ void DrawingML::WriteRunProperties(const Reference<XPropertySet>& rRun, sal_Int3
 
     if (GetProperty(xCharAttrSource, u"CharFontName"_ustr))
     {
-        const char* const pitch = nullptr;
-        const char* const charset = nullptr;
         OUString usTypeface;
-
         mAny >>= usTypeface;
-
-        if (!mbEmbedFonts || EmbeddedFontsManager::isCommonFont(usTypeface))
-        {
-            OUString aSubstName( GetSubsFontName( usTypeface, SubsFontFlags::ONLYONE | SubsFontFlags::MS ) );
-            if (!aSubstName.isEmpty())
-                usTypeface = aSubstName;
-        }
-
-        mpFS->singleElementNS( XML_a, XML_latin,
-                               XML_typeface, usTypeface,
-                               XML_pitchFamily, pitch,
-                               XML_charset, charset );
+        WriteFontElement(XML_latin, usTypeface, rXPropSet, u"CharFontPitch"_ustr,
+                         u"CharFontFamily"_ustr);
     }
 
-    // the Asian and complex fonts of a Fontwork are the shape's as well
-    if (bFontwork
-            ? GetProperty(xCharAttrSource,
-                          bComplex ? u"CharFontNameComplex"_ustr : u"CharFontNameAsian"_ustr)
-            : (rRunInput.bCheckDirect
-               && GetDirectProperty(rXPropSet, rXPropState,
-                                    bComplex ? u"CharFontNameComplex"_ustr
-                                             : u"CharFontNameAsian"_ustr)))
+    // A text holds an eastern and a complex font of its own beside the western one, and the
+    // format states each of the three in its own element. The eastern and the complex font of
+    // a Fontwork are the shape's as well.
+    if (bFontwork ? GetProperty(xCharAttrSource, u"CharFontNameAsian"_ustr)
+                  : (rRunInput.bCheckDirect
+                     && GetDirectProperty(rXPropSet, rXPropState, u"CharFontNameAsian"_ustr)))
     {
-        const char* const pitch = nullptr;
-        const char* const charset = nullptr;
         OUString usTypeface;
-
         mAny >>= usTypeface;
-        if (!mbEmbedFonts || EmbeddedFontsManager::isCommonFont(usTypeface))
-        {
-            OUString aSubstName( GetSubsFontName( usTypeface, SubsFontFlags::ONLYONE | SubsFontFlags::MS ) );
-            if (!aSubstName.isEmpty())
-                usTypeface = aSubstName;
-        }
-        mpFS->singleElementNS( XML_a, bComplex ? XML_cs : XML_ea,
-                               XML_typeface, usTypeface,
-                               XML_pitchFamily, pitch,
-                               XML_charset, charset );
+        WriteFontElement(XML_ea, usTypeface, rXPropSet, u"CharFontPitchAsian"_ustr,
+                         u"CharFontFamilyAsian"_ustr);
+    }
+
+    if (bFontwork ? GetProperty(xCharAttrSource, u"CharFontNameComplex"_ustr)
+                  : (rRunInput.bCheckDirect
+                     && GetDirectProperty(rXPropSet, rXPropState, u"CharFontNameComplex"_ustr)))
+    {
+        OUString usTypeface;
+        mAny >>= usTypeface;
+        WriteFontElement(XML_cs, usTypeface, rXPropSet, u"CharFontPitchComplex"_ustr,
+                         u"CharFontFamilyComplex"_ustr);
     }
 
     if (rRunInput.bIsField)
@@ -3776,8 +3793,8 @@ bool DrawingML::WriteParagraphProperties(const Reference<XTextContent>& rParagra
     if (GetProperty(rXPropSet, u"ParaTabStopDefaultDistance"_ustr))
         mAny >>= nParaDefaultTabSize;
 
-    // A paragraph that hangs its punctuation says so. One that does not leaves the attribute out,
-    // which is the state a paragraph arrives in when a file names nothing.
+    // A paragraph states whether it hangs its punctuation either way round, because a paragraph
+    // that leaves the attribute out hangs it.
     bool bHangingPunctuation = false;
     if (GetProperty(rXPropSet, u"ParaIsHangingPunctuation"_ustr))
         mAny >>= bHangingPunctuation;
@@ -3803,7 +3820,7 @@ bool DrawingML::WriteParagraphProperties(const Reference<XTextContent>& rParagra
                            XML_algn, GetAlignment( nAlignment, mbPlaceholder ),
                            XML_defTabSz, sax_fastparser::UseIf(OString::number(oox::drawingml::convertHmmToEmu(nParaDefaultTabSize)), nParaDefaultTabSize > 0),
                            XML_rtl, sax_fastparser::UseIf(ToPsz10(bRtl), bRtl),
-                           XML_hangingPunct, sax_fastparser::UseIf("1", bHangingPunctuation));
+                           XML_hangingPunct, ToPsz10(bHangingPunctuation));
     else
         // A placeholder paragraph with no visible bullet, an empty line, or a level without
         // numbering writes marL even when it is 0. (same as with indent) A reader takes an omitted
@@ -3815,7 +3832,7 @@ bool DrawingML::WriteParagraphProperties(const Reference<XTextContent>& rParagra
                            XML_algn, GetAlignment( nAlignment, mbPlaceholder ),
                            XML_defTabSz, sax_fastparser::UseIf(OString::number(oox::drawingml::convertHmmToEmu(nParaDefaultTabSize)), nParaDefaultTabSize > 0),
                            XML_rtl, sax_fastparser::UseIf(ToPsz10(bRtl), bRtl),
-                           XML_hangingPunct, sax_fastparser::UseIf("1", bHangingPunctuation));
+                           XML_hangingPunct, ToPsz10(bHangingPunctuation));
 
 
     if( bHasLinespacing )
@@ -5117,10 +5134,13 @@ void DrawingML::WriteText(const Reference<XInterface>& rXIface, bool bBodyPr, bo
 
         if( any >>= paragraph)
         {
-            // A shape of a Diagram can represent several Points, one paragraph of it each. Only
-            // the paragraph that represents the Point being written belongs in it.
-            const bool bOtherPoint(isDiagramModelTextExport() && mnDiagramModelTextParagraph >= 0
-                                   && nParagraphIndex != mnDiagramModelTextParagraph);
+            // A shape of a Diagram can represent several Points, their paragraphs one after the
+            // other. Only the paragraphs that represent the Point being written belong in it.
+            const bool bOtherPoint(
+                isDiagramModelTextExport() && mnDiagramModelTextParagraph >= 0
+                && (nParagraphIndex < mnDiagramModelTextParagraph
+                    || nParagraphIndex
+                           >= mnDiagramModelTextParagraph + mnDiagramModelTextParagraphCount));
             nParagraphIndex++;
 
             if (bOtherPoint)
