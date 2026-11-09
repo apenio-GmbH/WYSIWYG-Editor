@@ -183,8 +183,16 @@ cd ..
   --with-lo-path=/opt/collaboraoffice \
   --disable-about
 
-make -j "$(nproc)"
+ENVCFLAGSCXX="-fmacro-prefix-map=$(pwd)/=" make -j "$(nproc)"
 ```
+
+`ENVCFLAGSCXX` keeps the build location out of the binaries. `coolwsd` and the
+other server executables are compiled by the engine's gbuild with absolute
+source paths, so without this flag every log line would show the build path,
+for example `|home/<user>/WYSIWYG-Editor/wsd/FileServer.cpp:820`. With it,
+the logs show `|wsd/FileServer.cpp:820`. If you add the flag to an existing
+build tree, run `make clean` first: gbuild does not recompile objects when only
+the flags change.
 
 ## Prepare the Docker build context
 
