@@ -438,6 +438,9 @@ private:
     SfxItemSet          m_aFillAttributeSet;
     OUString            sLastItemIdent;
     Size                aIconSize;
+    // Position in the preset list of the preset that was selected last, or -1 if none was.
+    // Editing a gradient value clears the visible selection but keeps this position.
+    sal_Int32           m_nLastSelectedPos;
 
     // MCGR: Preserve ColorStops until we have a UI to edit these
     basegfx::BColorStops m_aColorStops;
@@ -478,6 +481,7 @@ private:
     DECL_LINK( ChangeAutoStepHdl_Impl, weld::Toggleable&, void );
     DECL_LINK( ModifiedSliderHdl_Impl, weld::Scale&, void );
     void ModifiedHdl_Impl(void const *);
+    void UnselectPreset();
 
     void SetControlState_Impl( css::awt::GradientStyle eXGS );
     sal_Int32 SearchGradientList(std::u16string_view rGradientName);
@@ -531,6 +535,9 @@ private:
     MapUnit             m_ePoolUnit;
     OUString            sLastItemIdent;
     Size                aIconSize;
+    // Position in the preset list of the preset that was selected last, or -1 if none was.
+    // Editing a hatch value clears the visible selection but keeps this position.
+    sal_Int32           m_nLastSelectedPos;
 
     SvxXRectPreview m_aCtlPreview;
     std::unique_ptr<weld::MetricSpinButton> m_xMtrDistance;
@@ -559,6 +566,7 @@ private:
     DECL_LINK( ModifiedBackgroundHdl_Impl, ColorListBox&, void );
     DECL_LINK( ModifiedSliderHdl_Impl, weld::Scale&, void );
     void ModifiedHdl_Impl(void const *);
+    void UnselectPreset();
     DECL_LINK( ClickAddHdl_Impl, weld::Button&, void );
     DECL_LINK( ClickModifyHdl_Impl, weld::Button&, void );
 
@@ -699,6 +707,9 @@ private:
 
     OUString            sLastItemIdent;
     Size                aIconSize;
+    // Position in the preset list of the preset that was selected last, or -1 if none was.
+    // Editing the pattern pixels or colors clears the visible selection but keeps this position.
+    sal_Int32           m_nLastSelectedPos;
 
     SvxXRectPreview m_aCtlPreview;
     std::unique_ptr<SvxPixelCtl> m_xCtlPixel;
@@ -721,6 +732,7 @@ private:
     DECL_LINK(QueryTooltipHdl, const weld::TreeIter&, OUString);
 
     sal_Int32 SearchPatternList(std::u16string_view rPatternName);
+    void UnselectPreset();
 
     void AddPattern(const OUString& aName, tools::Long nCount);
     void runAddNameDialog(VclPtr<AbstractSvxNameDialog> pDlg, tools::Long nCount);

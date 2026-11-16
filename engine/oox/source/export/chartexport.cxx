@@ -1903,7 +1903,9 @@ void ChartExport::exportData_chartex( [[maybe_unused]] const Reference< css::cha
 
                                 pFS->startElement(FSNS(XML_cx, XML_f));
 
-                                Reference<chart2::data::XDataSequence> xSeq(aSeqCnt[0]->getValues());
+                                Reference<chart2::data::XDataSequence> xSeq(
+                                    aSeqCnt.hasElements() ? aSeqCnt[0]->getValues()
+                                                          : Reference<chart2::data::XDataSequence>());
                                 ChartDimInfo aInfo = getChartDimInfo(xSeq);
                                 if (aInfo.bHasInfo && !aInfo.sFormula.isEmpty()) {
                                     pFS->writeEscaped(aInfo.sFormula);
@@ -1977,7 +1979,9 @@ void ChartExport::exportData_chartex( [[maybe_unused]] const Reference< css::cha
                             pFS->startElement(FSNS(XML_cx, XML_f));
 
                             // Get the stored formula reference
-                            Reference<chart2::data::XDataSequence> xSeq(aSeqCnt[0]->getValues()); // TODO
+                            Reference<chart2::data::XDataSequence> xSeq( // TODO
+                                aSeqCnt.hasElements() ? aSeqCnt[0]->getValues()
+                                                      : Reference<chart2::data::XDataSequence>());
                             ChartDimInfo aInfo = getChartDimInfo(xSeq);
                             if (aInfo.bHasInfo && !aInfo.sFormula.isEmpty()) {
                                 pFS->writeEscaped(aInfo.sFormula);
@@ -5395,7 +5399,18 @@ void ChartExport::exportOneAxis_chartex(
     const AxisIdPair& rAxisIdPair)
 {
     FSHelperPtr pFS = GetFS();
-    pFS->startElement(FSNS(XML_cx, XML_axis), XML_id, OString::number(rAxisIdPair.nAxisId));
+
+    bool bShow = false;
+    if( xAxisProp.is() )
+    {
+        xAxisProp->getPropertyValue(u"Show"_ustr) >>= bShow;
+    }
+    if (bShow) {
+        pFS->startElement(FSNS(XML_cx, XML_axis), XML_id, OString::number(rAxisIdPair.nAxisId));
+    } else {
+        pFS->startElement(FSNS(XML_cx, XML_axis), XML_id,
+                OString::number(rAxisIdPair.nAxisId), XML_hidden, "true");
+    }
 
     // The following is in the 2010 chart code above:
     //    bool bVisible = true;

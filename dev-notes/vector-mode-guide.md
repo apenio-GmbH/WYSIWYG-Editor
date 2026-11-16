@@ -117,6 +117,80 @@ A click a little beside a thin line still takes the object: 8 screen pixels, wha
 The distance can be set in the client's preferences as vectorHitTolerance, in screen pixels.
 
 
+### Creating a shape by a drag
+
+A shape chosen from the shapes grid - Insert, Shapes in the notebookbar, or Insert, "Shapes ..."
+in the compact menu - is not added in the middle of the slide. The pointer turns into a cross,
+and the shape is dragged out where it is to go, as in the office:
+
+| What | What happens |
+|---|---|
+| Before the press | Two lines across the view meet where the drag would begin, snapped as a move snaps, with the place above and to the left of them. A line that meets an edge of another object takes the colour of the snap lines. |
+| Press and drag | The shape itself shows, half see-through, in the dragged size, with its width and height beside the corner the mouse holds; towards the upper left they are negative and stand outside it. Until the engine has told how the shape looks, a frame stands in for it, so on a slow connection the drag can begin at once. |
+| Shift | The shape is as wide as it is high. The square, the circle, the ring, the circle pie and the rounded square are made so anyway; for them Shift lets the drag go free, as in the office. |
+| Alt | The shape is dragged from its middle. |
+| Ctrl | Turns the snap over: with the grid on, it snaps to the edges of other objects instead. |
+| Let go | The shape is made where it was dragged and selected at once, with its handles, as one undo step, also before the engine has answered on a slow connection; a callout goes into its text. The mode is over. |
+| Escape, a click without a drag, a command, a press elsewhere, another slide, a text edit that starts | End the mode without a shape. |
+
+How a shape looks is asked of the engine when the mouse rests on it in the shapes grid, and kept
+for the session, so a drag shows it from the first move. The looks of shapes that were created
+are also kept in the browser's storage, over documents and restarts, for documents whose new
+shapes take the same attributes and the same engine build. Where the attributes new shapes take
+change, as by a change of the default drawing style, the kept looks are forgotten at once, and the
+shape is asked for again. In the debug panel, "Keep shape looks" under Vector switched off forgets
+all looks, the stored ones too, and keeps none until it is switched on again.
+
+Shift, Alt and Ctrl take effect at once, also while the mouse stands still. Positions and sizes are
+in the unit of the sidebar's Position and Size. The Shapes deck of the sidebar still adds the shape
+in the middle of the slide. Snap to grid is on by default in Impress (View, Snap to Grid).
+
+### Creating a text box
+
+Insert, Text Box - in the notebookbar, the compact menu or the compact toolbar - puts one into the
+same mode for text, with the office's text pointer, a cross with a text cursor beside it:
+
+| What | What happens |
+|---|---|
+| Drag | A text box of the dragged width, which grows downwards with its text. |
+| Click on empty space | A text starts at that point and grows to the right while typing, without wrapping. |
+| Click on an object that holds text | The mode ends and the text of that object is edited, with the cursor where it was clicked. |
+
+Either new text is in text edit at once. A text left empty goes again when its edit ends, and the
+view is back in the selection; the mode does not stay on for another text.
+
+### Creating a line
+
+Insert, Line - in the notebookbar or the compact toolbar - puts one into the same mode for a line,
+with the cross as pointer. Its arrow opens "Lines and Arrows", a grid of the line kinds: the line
+with an arrow at one end or both, with a circle or a square, the plain line, the dimension line
+and the line at 45 degrees. Every one of them, chosen there or anywhere else, is dragged out from
+its start to its end:
+
+| What | What happens |
+|---|---|
+| Before the press | The lines across the view and the place, as for a shape. |
+| Press and drag | The line shows plain, half see-through, from where the press was to the mouse, with its length and its angle beside the mouse; the angle counts upwards from the right. A dimension line shows as one, with its help lines and the box of its text, and the value it will write beside the mouse. |
+| Shift | The line turns to the nearest multiple of 45 degrees and keeps its length. The line at 45 degrees does so by itself, and Shift lets it go free. |
+| Alt | The line is dragged out from its middle. |
+| Ctrl | Turns the snap over, as for a shape. |
+| Let go | The line is made from the start to the end and selected at once, also before the engine has answered; its arrows show once the engine has. An arrow at the start stays at the start, whichever way the line was dragged. The mode is over. |
+| Escape, a click without a drag, a command, a press elsewhere, another slide | End the mode without a line. |
+
+### Creating a connector
+
+A connector chosen from the Connectors grid - in the Home tab, or in the grid of Lines in the
+Insert tab - or anywhere else puts one into the same mode for a connector. It is dragged out from
+its start to its end:
+
+| What | What happens |
+|---|---|
+| Before the press | The object under the mouse shows the places a connector can tie itself to, its own glue points and the middles of its sides. The one within reach is lit, and the press would start there. |
+| Press and drag | The connector shows as a line from its start to the mouse, with its length. The object under the mouse shows its places, and the end snaps to the one within reach. The start keeps showing the place it is tied to. |
+| Let go | The connector is made, tied at each end as shown: to a glue point of its own, to the middle of a side, or to the object as a whole where an end stands on its middle. An end over none of them stays free. It is selected at once, also before the engine has answered. The mode is over. |
+| Escape, a click without a drag, a command, a press elsewhere, another slide | End the mode without a connector. |
+
+
 ## 2. Changing objects
 
 ### The handles
@@ -242,7 +316,7 @@ These work as in the office, through the engine:
 
 | Keys | What they do |
 |---|---|
-| Delete or Backspace | Deletes what is selected. The selection goes to what is left: inside a group it stays in the group. |
+| Delete or Backspace | Deletes what is selected, at once, also before the engine has answered on a slow connection; a group whose members all went goes too. The selection goes to what is left: inside a group it stays in the group. Placeholders of the layout, and a slide's footer, date and slide number, are emptied or switched off by the engine instead, after its answer. |
 | Ctrl + Z / Ctrl + Y | Undo / redo. |
 | Ctrl + C / Ctrl + X / Ctrl + V | Copy / cut / paste. A node of a diagram is copied as a plain shape. |
 
@@ -765,6 +839,11 @@ draws them.
 ## 8. Not there yet
 
 What is still missing, or only partly there:
+
+- Creating by a drag works for the shapes grid and for text boxes. Lines, curves, connectors,
+  polygons, our own callouts and vertical text are still added in the middle of the slide by
+  default; they are to be created by drags of their own. The Freeform Line tool draws by a drag
+  already. Tables keep their own insert dialog.
 
 - 3D objects and 3D charts: they are shown as one picture. Selecting single objects inside a
   scene, and turning a scene in 3D as the office does, are planned.

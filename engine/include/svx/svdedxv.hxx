@@ -146,6 +146,9 @@ protected:
     OutlinerView* ImpMakeOutlinerView(vcl::Window* pWin, OutlinerView* pGivenView, SfxViewShell* pViewShell = nullptr) const;
     // Tell the view's EditView which drawing object it edits the text of.
     void ImpSetKitTextObjectId(OutlinerView& rView) const;
+    // The id of rObject in the caret messages of a COKit client: its unique id, or the id of its
+    // entry where the document gives its drawing objects ids of their own.
+    virtual sal_uInt64 GetKitTextObjectId(const SdrTextObj& rObject) const;
     void ImpPaintOutlinerView(OutlinerView& rOutlView, const tools::Rectangle& rRect, OutputDevice& rTargetDevice) const;
     void ImpInvalidateOutlinerView(OutlinerView const & rOutlView) const;
 
@@ -293,7 +296,8 @@ public:
     /** Put the caret of the running text edit at a character offset of a paragraph, and select
         the text from the anchor to it.
 
-        nObjectId is the unique id of the edited object. An anchor at the caret selects nothing.
+        nObjectId is the id of the edited object as GetKitTextObjectId() gives it. An anchor at
+        the caret selects nothing.
         An offset past the end of a paragraph means its end. Returns false when no text edit
         runs, another object is edited or a paragraph does not exist. While an edit runs, the
         caret that stays is reported again.

@@ -7255,7 +7255,7 @@ bool SwFrame::IsInCoveredCell() const
 
 void SwTabFrame::CreatePrimitives(sw::vector::Collector& rCollector) const
 {
-    if (!getFramePrintArea().HasArea())
+    if (!getFramePrintArea().HasArea() || !rCollector.wants(GetPaintArea()))
         return;
 
     rCollector.open(*this);
@@ -7263,7 +7263,9 @@ void SwTabFrame::CreatePrimitives(sw::vector::Collector& rCollector) const
     drawinglayer::primitive2d::Primitive2DContainer aBorders;
     rCollector.add(CreateShadowAndBorderPrimitives(rCollector.origin(), aBorders));
     rCollector.deferBorders(*this, std::move(aBorders));
-    for (const SwFrame* pLower = Lower(); pLower; pLower = pLower->GetNext())
+    // The table is kept alive over the walk of its rows, which ends at a row that left the table.
+    SwFrameDeleteGuard aDeleteGuard(const_cast<SwTabFrame*>(this));
+    for (const SwFrame* pLower = Lower(); pLower && IsAnLower(pLower); pLower = pLower->GetNext())
         pLower->CreatePrimitives(rCollector);
 
     // Collapsing borders lie over the cells, so they are an entry of the table after its rows.

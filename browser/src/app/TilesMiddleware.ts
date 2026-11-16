@@ -426,6 +426,14 @@ class RenderManager {
 		RenderManager.ensureInstance().endTextDrag();
 	}
 
+	static textDragLeavesItsText(x: number, y: number): boolean {
+		return RenderManager.ensureInstance().textDragLeavesItsText(x, y);
+	}
+
+	static textFrameAt(x: number, y: number): number | undefined {
+		return RenderManager.ensureInstance().textFrameAt(x, y);
+	}
+
 	static placeCaretAt(
 		x: number,
 		y: number,
@@ -497,6 +505,45 @@ class RenderManager {
 			objectIds,
 			matrix,
 		);
+	}
+
+	/*
+		Takes an object created here into the part, on top, as the engine is to report it: it is
+		drawn, hit and selected as any other, and the engine's entry of the same id replaces it.
+		Where none comes within that many milliseconds, it goes again. Answers whether it could.
+	*/
+	static addProvisionalObject(
+		partId: cool.VectorPartGuid,
+		object: cool.SlideObject,
+		wait: number,
+	): boolean {
+		return RenderManager.ensureInstance().addProvisionalObject(
+			partId,
+			object,
+			wait,
+		);
+	}
+
+	/*
+		Takes those objects, with the members of a group among them, out of the part as deleted
+		here, until the engine reports it. Where no report confirms it within that many
+		milliseconds, the part is asked for again. Answers whether it could.
+	*/
+	static deleteLocally(
+		partId: cool.VectorPartGuid,
+		objectIds: number[],
+		wait: number,
+	): boolean {
+		return RenderManager.ensureInstance().deleteLocally(
+			partId,
+			objectIds,
+			wait,
+		);
+	}
+
+	/// The engine refused the oldest delete made here; the objects come back as it has them.
+	static deleteRefused(): void {
+		RenderManager.ensureInstance().deleteRefused();
 	}
 
 	static renderPrimitives(

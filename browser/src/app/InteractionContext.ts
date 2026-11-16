@@ -72,6 +72,10 @@ interface InteractionContext {
 	/// by command name.
 	commandStates(): { [command: string]: boolean };
 
+	/// A key went down or up, before anything else handled it, with the modifiers held as they are
+	/// after it. Answers whether the key was used here, so nothing else handles it.
+	keyEvent(event: KeyboardEvent, modifier: number): boolean;
+
 	/// Whether the groups the selection stands in are marked by bands, with the buttons beside
 	/// them. Inside an object active in place its surround marks the level instead.
 	showsGroupBands(): boolean;
@@ -118,6 +122,34 @@ interface InteractionContext {
 	/// Objects of the selection were deleted, by this view or another. Answers the selection to
 	/// take instead, from what was selected and the groups it stood in, from its parent up.
 	whatIsLeft(selected: number[], groupsAbove: number[]): number[];
+}
+
+/*
+	A context one is put into by choosing a tool, not by what is selected: creating an object by
+	a drag, for one. While it is on it takes every press, every movement of the mouse and every
+	key, and the selection waits under it.
+*/
+interface InteractionMode extends InteractionContext {
+	/// The mouse is at that point of the page, in twips, with those modifiers, the button up or
+	/// down.
+	mouseAt(at: cool.Point, modifier: number, pressed: boolean): void;
+	/// The left button went down at that point of the page.
+	mouseDown(at: cool.Point, modifier: number): void;
+	/// The button came up at that point; dragged says whether the mouse moved far enough in
+	/// between to count as a drag.
+	mouseUp(at: cool.Point, modifier: number, dragged: boolean): void;
+	/// The drag was called off, by the container or by a key.
+	dragCancelled(): void;
+	/// The mouse left the page.
+	mouseLeft(): void;
+	/// The pointer to show over the page.
+	pointer(): string;
+	/// Draws what the mode shows over the page, into the section that lies over it.
+	draw(section: CanvasSectionObject): void;
+	/// Whether something drawn still waits for the engine after the mode is over.
+	stillDraws(): boolean;
+	/// The mode is over; what it held is let go.
+	ended(): void;
 }
 
 /// A way of editing: the context it gives for each place one can stand at.
@@ -240,9 +272,84 @@ class Interaction {
 
 	/// The context for the selection as it is now.
 	public static context(): InteractionContext {
+		// a mode one was put into takes everything while it is on
+		if (Interaction.mode) return Interaction.mode;
 		return Interaction.contextAt(
 			Interaction.placeOf(GraphicSelection.selectedObjectIDs),
 		);
+	}
+
+	/// Whether the keys are followed, which they are once.
+	private static followingTheKeys: boolean = false;
+
+	/*
+		Follows every key that goes down or up, ahead of every other listener of the page, so the
+		context one stands in has it first, wherever the focus is. A key it uses goes no further.
+	*/
+	public static followTheKeys(): void {
+		if (Interaction.followingTheKeys) return;
+		Interaction.followingTheKeys = true;
+		const listener = (event: KeyboardEvent) => {
+			if (!RenderManager.drawsFromObjects() || !Interaction.keyEvent(event))
+				return;
+			event.preventDefault();
+			event.stopPropagation();
+		};
+		window.addEventListener('keydown', listener, true);
+		window.addEventListener('keyup', listener, true);
+	}
+
+	/*
+		Hands a key to the context one stands in, before anything else handles it. Answers whether
+		the context used it.
+	*/
+	public static keyEvent(event: KeyboardEvent): boolean {
+		if (event.type !== 'keydown' && event.type !== 'keyup') return false;
+		return Interaction.context().keyEvent(
+			event,
+			Interaction.modifiersOf(event),
+		);
+	}
+
+	/*
+		The modifiers held after a key, as the engine numbers them. The key that went down or up
+		counts as held or let go by the kind of the event: on some systems the event of a modifier
+		key reports the modifiers as they were before it.
+	*/
+	public static modifiersOf(event: KeyboardEvent): number {
+		const held = (key: string, flag: boolean) =>
+			event.key === key ? event.type === 'keydown' : flag;
+		return (
+			(held('Shift', event.shiftKey) ? app.UNOModifier.SHIFT : 0) |
+			(held('Control', event.ctrlKey) ? app.UNOModifier.CTRL : 0) |
+			(held('Alt', event.altKey) ? app.UNOModifier.ALT : 0) |
+			(held('Meta', event.metaKey) ? app.UNOModifier.CTRLMAC : 0)
+		);
+	}
+
+	/// The mode that is on, or null while one stands where the selection says.
+	private static mode: InteractionMode | null = null;
+
+	/// The mode that is on.
+	public static modeOn(): InteractionMode | null {
+		return Interaction.mode;
+	}
+
+	/// Puts one into that mode, ending the one that was on.
+	public static enterMode(mode: InteractionMode): void {
+		Interaction.leaveMode();
+		Interaction.mode = mode;
+		InteractionModeSection.follow();
+	}
+
+	/// Ends the mode that is on, where one is. Answers whether one was.
+	public static leaveMode(): boolean {
+		const mode = Interaction.mode;
+		if (!mode) return false;
+		Interaction.mode = null;
+		mode.ended();
+		InteractionModeSection.follow();
+		return true;
 	}
 
 	/// The context for that place, which may be one the selection stood at before.

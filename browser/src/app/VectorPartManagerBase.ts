@@ -27,11 +27,30 @@ interface PredictedTextEdit extends cool.UnansweredEdit {
 	objectId: number;
 }
 
+/// Where a press puts the caret: the edit target, the entry and the logical caret in it.
+interface CaretPress {
+	target: EditTarget;
+	entryId: number;
+	logical: cool.LogicalCaret;
+}
+
 /// The cached tree and caret that a predicted edit works on.
 interface EditTarget {
 	tree: cool.PredictionTree;
 	caret: cool.SimpleRectangle;
 	logical: cool.LogicalCaret | null;
+	/// The text frame on a text document page that holds the caret, which the logical caret
+	/// alone finds a place in. Undefined on a slide, where the caret's rectangle picks the
+	/// object.
+	entryId?: number;
+}
+
+/// Objects deleted here that the engine has not reported gone yet: the part they were in, their
+/// ids, and the time after which the part is asked for again.
+interface DeletedHere {
+	partId: cool.VectorPartGuid;
+	objectIds: Set<number>;
+	timer: ReturnType<typeof setTimeout>;
 }
 
 abstract class VectorPartManagerBase extends VectorManagerBase {
@@ -414,6 +433,8 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 			// they arrive in is the order they are drawn in.
 			order: values.order || arrived,
 		};
+		this._keepProvisional(partId, data, arrived);
+		this._keepDeleted(partId, data, true);
 		this._takePageEntry(data, received);
 		this._cache.set(partId, data);
 		this._staleParts.delete(partId);
@@ -426,6 +447,167 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		this._reconcile(partId, values.inputSequence);
 		this._fireChanged(undefined, values.inputSequence);
 		this.setVisualsReady();
+	}
+
+	/// The objects created here that the engine has not reported yet, by id: the part they are in,
+	/// the entry they stand as, and the time after which they go again.
+	private _provisional = new Map<
+		number,
+		{
+			partId: cool.VectorPartGuid;
+			object: cool.SlideObject;
+			timer: ReturnType<typeof setTimeout>;
+		}
+	>();
+
+	addProvisionalObject(
+		partId: cool.VectorPartGuid,
+		object: cool.SlideObject,
+		wait: number,
+	): boolean {
+		const data = this._cache.get(partId);
+		const id = object.id;
+		if (!data || id === undefined) return false;
+
+		this._forgetProvisional(id);
+		data.objects.set(id, object);
+		if (data.order.indexOf(id) < 0) data.order = data.order.concat([id]);
+		this._provisional.set(id, {
+			partId: partId,
+			object: object,
+			timer: setTimeout(() => this._dropProvisional(id), wait),
+		});
+		this._fireChanged([]);
+		return true;
+	}
+
+	private _forgetProvisional(id: number): void {
+		const held = this._provisional.get(id);
+		if (!held) return;
+		clearTimeout(held.timer);
+		this._provisional.delete(id);
+	}
+
+	/// Takes away an object created here that the engine never reported.
+	private _dropProvisional(id: number): void {
+		const held = this._provisional.get(id);
+		if (!held) return;
+		this._forgetProvisional(id);
+		const data = this._cache.get(held.partId);
+		if (!data || data.objects.get(id) !== held.object) return;
+		data.objects.delete(id);
+		data.order = data.order.filter((one: number) => one !== id);
+		this._fireChanged([]);
+	}
+
+	/*
+		Keeps the objects created here in the part an answer of the engine brought, until the
+		engine reports them: an answer about a change made before carries an order without them,
+		which would drop them. They stay on top, where they were created. An object the answer
+		carries is the engine's own now.
+	*/
+	private _keepProvisional(
+		partId: cool.VectorPartGuid,
+		data: cool.VectorPrimitivesData,
+		carried: number[],
+	): void {
+		for (const id of carried) this._forgetProvisional(id);
+		for (const [id, held] of this._provisional) {
+			if (held.partId !== partId) continue;
+			if (!data.objects.has(id)) data.objects.set(id, held.object);
+			if (data.order.indexOf(id) < 0) data.order = data.order.concat([id]);
+		}
+	}
+
+	/// The objects deleted here that the engine has not reported gone yet: the part they were in,
+	/// their ids, and the time after which the part is asked for again.
+	private _deletedHere: DeletedHere[] = [];
+
+	deleteLocally(
+		partId: cool.VectorPartGuid,
+		objectIds: number[],
+		wait: number,
+	): boolean {
+		const data = this._cache.get(partId);
+		if (!data || !objectIds.length) return false;
+
+		// the members of a deleted group go with it, however deep, and a group whose members all
+		// went goes too, upwards, as the engine deletes it
+		const gone = new Set(objectIds);
+		for (let grew = true; grew;) {
+			grew = false;
+			for (const [id, object] of data.objects) {
+				if (!gone.has(id) && object.parent && gone.has(object.parent)) {
+					gone.add(id);
+					grew = true;
+				}
+			}
+			for (const id of Array.from(gone)) {
+				const parent = data.objects.get(id)?.parent;
+				if (!parent || gone.has(parent)) continue;
+				const members = Array.from(data.objects.values()).filter(
+					(object) => object.parent === parent,
+				);
+				if (members.every((object) => gone.has(object.id ?? -1))) {
+					gone.add(parent);
+					grew = true;
+				}
+			}
+		}
+
+		const note: DeletedHere = {
+			partId: partId,
+			objectIds: gone,
+			timer: setTimeout(() => this._noDeleteReported(note), wait),
+		};
+		this._deletedHere.push(note);
+		this._takeOut(data, gone);
+		this._fireChanged([]);
+		return true;
+	}
+
+	private _takeOut(data: cool.VectorPrimitivesData, gone: Set<number>): void {
+		for (const id of gone) data.objects.delete(id);
+		data.order = data.order.filter((id: number) => !gone.has(id));
+	}
+
+	/// The engine refused the oldest delete made here, which changes nothing on the page, so the
+	/// part is asked for again as the engine has it.
+	deleteRefused(): void {
+		const oldest = this._deletedHere[0];
+		if (oldest) this._noDeleteReported(oldest);
+	}
+
+	/// No report of the engine took the objects deleted here away, as where it refused to delete
+	/// them, so the part is asked for again as the engine has it.
+	private _noDeleteReported(note: DeletedHere): void {
+		const at = this._deletedHere.indexOf(note);
+		if (at < 0) return;
+		this._deletedHere.splice(at, 1);
+		this.clearCachedPart(note.partId);
+		this._fireChanged([]);
+	}
+
+	/*
+		Keeps the objects deleted here out of the part an answer of the engine brought, until the
+		engine reports them gone: an answer about a change made before can bring them back. An
+		order without any of them is the engine's report that they are gone.
+	*/
+	private _keepDeleted(
+		partId: cool.VectorPartGuid,
+		data: cool.VectorPrimitivesData,
+		orderCame: boolean,
+	): void {
+		this._deletedHere = this._deletedHere.filter((note) => {
+			if (note.partId !== partId) return true;
+			const named = data.order.some((id: number) => note.objectIds.has(id));
+			if (orderCame && !named) {
+				clearTimeout(note.timer);
+				return false;
+			}
+			this._takeOut(data, note.objectIds);
+			return true;
+		});
 	}
 
 	/// Apply a pushed delta and replay the pending edits on the objects it
@@ -553,6 +735,13 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 			cached.order = values.order;
 		}
 
+		this._keepProvisional(
+			partId,
+			cached,
+			carried.flatMap((object) => (object.id === undefined ? [] : [object.id])),
+		);
+		this._keepDeleted(partId, cached, values.order !== undefined);
+
 		cached.version = values.version;
 
 		this._resources.add(partId, (walker) => {
@@ -625,15 +814,25 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		return this._textMeasurer;
 	}
 
-	private _treeOf(data: cool.VectorPrimitivesData): cool.PredictionTree {
-		return new cool.PredictionTree(data, this._measurer());
+	protected _treeOf(data: cool.VectorPrimitivesData): cool.PredictionTree {
+		return new cool.PredictionTree(
+			data,
+			this._measurer(),
+			this._paragraphsKeepTheirLines(),
+		);
+	}
+
+	/// True when the text after each paragraph lies where the server placed it, so an edit here
+	/// keeps a paragraph to the lines it has. The text of a slide grows inside its object.
+	protected _paragraphsKeepTheirLines(): boolean {
+		return false;
 	}
 
 	// The measured text of the last entry pointed at, reused while the tree still holds it and
 	// nothing changed it here.
 	private _objectText: { entryId: number; text: cool.ObjectText } | null = null;
 
-	private _textOf(
+	protected _textOf(
 		tree: cool.PredictionTree,
 		entryId: number,
 	): cool.ObjectText | null {
@@ -649,12 +848,9 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		return text;
 	}
 
-	/// The id of the page in the edit view, or undefined while the page list
-	/// does not name it.
-	private _selectedPartId(): cool.VectorPartGuid | undefined {
-		const entry = app.impress?.partList?.[this._docLayer._selectedPart];
-		return typeof entry?.part === 'string' ? entry.part : undefined;
-	}
+	/// The id of the page in the edit view, or undefined while no page is named as the one in
+	/// the edit view.
+	protected abstract _selectedPartId(): cool.VectorPartGuid | undefined;
 
 	/// The tree with the entries of other views' running text edits left out of
 	/// the order. Every view that edits an object has its own entry for it.
@@ -697,7 +893,7 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 
 	// The cached tree and caret of the edited part, with text selected or not, or null when no
 	// caret is visible or the part is not cached.
-	private _caretTarget(): EditTarget | null {
+	protected _caretTarget(): EditTarget | null {
 		const cursor = app.file.textCursor;
 		if (!cursor || !cursor.visible || !cursor.rectangle) return null;
 		const partId = this._selectedPartId();
@@ -710,8 +906,36 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		};
 	}
 
+	/// Where the twips of an entry start in document twips, or null when the entry is not known.
+	/// The twips of a slide are document twips already.
+	protected _entryOrigin(
+		_data: cool.VectorPrimitivesData,
+		_entryId: number | undefined,
+	): { x: number; y: number } | null {
+		return { x: 0, y: 0 };
+	}
+
+	// A caret in the twips of the entry, moved to document twips, or null.
+	private _inDocument(
+		data: cool.VectorPrimitivesData,
+		entryId: number | undefined,
+		geometry: cool.CaretGeometry,
+	): cool.CaretGeometry | null {
+		const origin = this._entryOrigin(data, entryId);
+		if (!origin) return null;
+		return {
+			x: geometry.x + origin.x,
+			top: geometry.top + origin.y,
+			height: geometry.height,
+		};
+	}
+
 	// The caret position in the edit target, or null.
 	private _lookUpCaret(target: EditTarget): cool.CaretPosition | null {
+		if (target.entryId !== undefined)
+			return target.logical
+				? target.tree.caretIn(target.entryId, target.logical)
+				: null;
 		return target.tree.caretAt(
 			target.caret.x1,
 			target.caret.y1,
@@ -865,20 +1089,21 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 
 	// The edited part, the entry and the caret where a press at (x, y) on the object hitId
 	// lands, or null when the press is for the server.
-	private _pressAt(
+	protected _pressAt(
 		x: number,
 		y: number,
 		hitId: number | undefined,
-	): {
-		target: EditTarget;
-		entryId: number;
-		logical: cool.LogicalCaret;
-	} | null {
+	): CaretPress | null {
 		const target = this._caretTarget();
 		if (!target) return null;
 		const entryId = this._pressedEntry(target, hitId, x, y);
 		if (entryId === undefined) return null;
-		const logical = this._textOf(target.tree, entryId)?.caretAtPoint(x, y);
+		const origin = this._entryOrigin(target.tree.data, entryId);
+		if (!origin) return null;
+		const logical = this._textOf(target.tree, entryId)?.caretAtPoint(
+			x - origin.x,
+			y - origin.y,
+		);
 		return logical ? { target, entryId, logical } : null;
 	}
 
@@ -895,7 +1120,10 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		y: number,
 	): boolean {
 		const objects = this._cache.get(partId)?.objects;
-		if (objects?.get(hitId)?.objectKind !== VectorPartManagerBase.tableKind)
+		if (
+			!objects ||
+			objects.get(hitId)?.objectKind !== VectorPartManagerBase.tableKind
+		)
 			return true;
 		const text = objects.get(entryId);
 		if (
@@ -956,7 +1184,7 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 	}
 
 	// The entry and the caret where a drag that selects text started.
-	private _dragStart: { entryId: number; anchor: cool.LogicalCaret } | null =
+	protected _dragStart: { entryId: number; anchor: cool.LogicalCaret } | null =
 		null;
 
 	/// Start a drag that selects text from a press at (x, y), in document twips. hitId is the
@@ -977,10 +1205,13 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 	dragTextTo(x: number, y: number): void {
 		const start = this._dragStart;
 		const target = this._caretTarget();
-		if (!start || !target) return;
+		const origin = target
+			? this._entryOrigin(target.tree.data, start?.entryId)
+			: null;
+		if (!start || !target || !origin) return;
 		const logical = this._textOf(target.tree, start.entryId)?.caretNearPoint(
-			x,
-			y,
+			x - origin.x,
+			y - origin.y,
 		);
 		if (logical) this._moveCaret(target, start.entryId, logical, start.anchor);
 	}
@@ -997,7 +1228,10 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		logical: cool.LogicalCaret,
 		anchor: cool.LogicalCaret | null,
 	): boolean {
-		const geometry = target.tree.caretIn(entryId, logical)?.geometry();
+		const local = target.tree.caretIn(entryId, logical)?.geometry();
+		const geometry = local
+			? this._inDocument(target.tree.data, entryId, local)
+			: null;
 		if (!geometry) return false;
 		// An anchor at the caret selects nothing.
 		if (anchor && cool.compareCarets(anchor, logical) === 0) anchor = null;
@@ -1013,10 +1247,15 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		});
 		app.file.textCursor.logical = { ...logical };
 		app.file.textCursor.anchor = anchor ? { ...anchor } : null;
+		this._caretMovedTo(entryId);
 		this._setCaretRectangle(geometry);
 		this._showSelection(target.tree, entryId, anchor, logical);
 		return true;
 	}
+
+	/// The caret moved here into the entry. On a slide the edited object stays the same.
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	protected _caretMovedTo(_entryId: number): void {}
 
 	// Draw the selection from the anchor to the caret, or remove it without an anchor.
 	private _showSelection(
@@ -1030,13 +1269,18 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 			if (TextSelections.isActive()) documentLayer.showTextSelection([]);
 			return;
 		}
+		const origin = this._entryOrigin(tree.data, entryId);
+		if (!origin) return;
 		const rectangles =
 			this._textOf(tree, entryId)?.selectionRectangles(anchor, logical) ?? [];
 		documentLayer.showTextSelection(
 			rectangles.map((rectangle) =>
-				[rectangle.x, rectangle.y, rectangle.width, rectangle.height].map(
-					Math.round,
-				),
+				[
+					rectangle.x + origin.x,
+					rectangle.y + origin.y,
+					rectangle.width,
+					rectangle.height,
+				].map(Math.round),
 			),
 		);
 
@@ -1046,7 +1290,10 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 				? [anchor, logical]
 				: [logical, anchor];
 		const handle = (caret: cool.LogicalCaret): cool.SimpleRectangle | null => {
-			const geometry = tree.caretIn(entryId, caret)?.geometry();
+			const local = tree.caretIn(entryId, caret)?.geometry();
+			const geometry = local
+				? this._inDocument(tree.data, entryId, local)
+				: null;
 			return geometry
 				? new cool.SimpleRectangle(
 						Math.round(geometry.x),
@@ -1113,7 +1360,10 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 	// the caret before the edit, which finds the edited object in the new tree.
 	protected _placeCaret(target: EditTarget, fallbackShift: number): void {
 		if (target.logical) {
-			const geometry = this._lookUpCaret(target)?.geometry();
+			const local = this._lookUpCaret(target)?.geometry();
+			const geometry = local
+				? this._inDocument(target.tree.data, target.entryId, local)
+				: null;
 			if (geometry) {
 				this._setCaretRectangle(geometry);
 				return;
@@ -1133,7 +1383,7 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 	}
 
 	// The edits typed here that the engine has not answered, of every part.
-	private _typedEdits = new cool.UnansweredEdits<PredictedTextEdit>();
+	protected _typedEdits = new cool.UnansweredEdits<PredictedTextEdit>();
 
 	// The edits of the part.
 	private static _ofPart(
@@ -1192,6 +1442,26 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 	): void {
 		const ofPart = VectorPartManagerBase._ofPart(partId);
 		if (!this._typedEdits.has(ofPart)) return;
+		if (
+			replaced &&
+			inputSequence !== undefined &&
+			this._answerCarriesEditedEntries()
+		) {
+			// An edit this delta answers whose entry came without new content was not applied,
+			// so the part is asked for whole, which takes the predicted text out of the tree.
+			const sequence: number = inputSequence;
+			const replacedIds: number[] = replaced;
+			const notApplied = this._typedEdits.has(
+				(edit) =>
+					ofPart(edit) &&
+					edit.ticket.appliedBy(sequence) &&
+					!replacedIds.includes(edit.objectId),
+			);
+			if (notApplied) {
+				this._abandonEdits(partId);
+				return;
+			}
+		}
 		const remaining = this._typedEdits.answered(inputSequence, ofPart);
 		const toReplay = replaced
 			? remaining.filter((edit) => replaced.includes(edit.objectId))
@@ -1217,9 +1487,12 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 				moved.sequence > cool.UnansweredEdits.sentAs(newest)
 					? { entryId: moved.caret.entryId, logical: moved.caret.logical }
 					: { entryId: newest.objectId, logical: newest.caretAfter };
-			const geometry = this._treeOf(data)
+			const local = this._treeOf(data)
 				.caretIn(caret.entryId, caret.logical)
 				?.geometry();
+			const geometry = local
+				? this._inDocument(data, caret.entryId, local)
+				: null;
 			if (geometry) this._setCaretRectangle(geometry);
 			app.file.textCursor.logical = {
 				paragraph: caret.logical.paragraph,
@@ -1227,6 +1500,13 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 			};
 		}
 		this.changedHere();
+	}
+
+	/// True when the delta that answers an applied edit always carries the new content of the
+	/// entry the edit went into. An answered edit whose entry came without new content was then
+	/// not applied by the engine.
+	protected _answerCarriesEditedEntries(): boolean {
+		return false;
 	}
 
 	// Apply a recorded edit. Returns true when the tree changed.
@@ -1249,6 +1529,11 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		);
 	}
 
+	/// The part that the predicted edits lie on: the part of a slide that is selected.
+	protected _editedPartId(): cool.VectorPartGuid | undefined {
+		return this._selectedPartId();
+	}
+
 	/// True when the update is older than the newest edit, so the local caret
 	/// stays. A current update that puts the caret elsewhere, as after
 	/// autocorrect, drops the edits and re-fetches the part.
@@ -1257,7 +1542,7 @@ abstract class VectorPartManagerBase extends VectorManagerBase {
 		// up.
 		const moved = LocalCaret.ahead();
 		if (LocalCaret.isAhead(update)) return true;
-		const partId = this._selectedPartId();
+		const partId = this._editedPartId();
 		if (partId === undefined) return false;
 		const verdict = this._typedEdits.verdictOn(
 			update,

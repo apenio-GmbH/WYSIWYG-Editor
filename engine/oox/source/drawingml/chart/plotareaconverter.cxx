@@ -363,6 +363,19 @@ PlotAreaConverter::~PlotAreaConverter()
 {
 }
 
+/** Removes each id from rAxisIds that names no axis in rAxisMap, or names an axis that is neither
+    a category axis nor a value axis (it has no cx:catScaling or cx:valScaling element). */
+static void lclRemoveAxisIdsWithoutScaling(std::vector<sal_Int32>& rAxisIds,
+                                    const AxesSetModel::AxisMap& rAxisMap)
+{
+    std::erase_if(rAxisIds,
+                  [&rAxisMap](sal_Int32 nAxisId)
+                  {
+                      const auto xAxis = rAxisMap.get(nAxisId);
+                      return !xAxis || !xAxis->mobCatNotVal.has_value();
+                  });
+}
+
 void PlotAreaConverter::convertFromModel( View3DModel& rView3DModel,
         DataSourceCxModel& rDataCxModel )
 {
@@ -397,8 +410,9 @@ void PlotAreaConverter::convertFromModel( View3DModel& rView3DModel,
     {
         OSL_ENSURE( axis->mnAxisId >= 0, "PlotAreaConverter::convertFromModel - invalid axis identifier" );
         OSL_ENSURE( !aAxisMap.has( axis->mnAxisId ), "PlotAreaConverter::convertFromModel - axis identifiers not unique" );
-        if( axis->mnAxisId != -1 )
+        if( axis->mnAxisId != -1 ) {
             aAxisMap[ axis->mnAxisId ] = axis;
+        }
 
         if ( axis->mnAxisId != -1 && axis->mnTypeId == C_TOKEN(valAx) )
         {
@@ -429,6 +443,7 @@ void PlotAreaConverter::convertFromModel( View3DModel& rView3DModel,
                     case CX_TOKEN(paretoLine):
                     case CX_TOKEN(waterfall):
                     {
+                        lclRemoveAxisIdsWithoutScaling(elemSeries->maAxisIds, aAxisMap);
                         bool bNeedCat = false, bNeedVal = false;
                         // Should have two axes, one category and one value
                         // (though they may be hidden)
@@ -482,19 +497,18 @@ void PlotAreaConverter::convertFromModel( View3DModel& rView3DModel,
                     }
                     case CX_TOKEN(funnel):
                     {
+                        lclRemoveAxisIdsWithoutScaling(elemSeries->maAxisIds, aAxisMap);
                         bool bNeedCat = false;
                         // Should have one category axis (though it may be hidden)
                         // Funnel never seems to have a value axis
                         if (elemSeries->maAxisIds.size() == 0) {
                             bNeedCat = true;
-                        } else if (elemSeries->maAxisIds.size() == 1) {
+                        } else {
+                            // First axis should be cat
                             assert(aAxisMap[elemSeries->maAxisIds[0]]->mobCatNotVal.has_value());
                             [[maybe_unused]] bool bCatNotVal = aAxisMap[elemSeries->maAxisIds[0]]->mobCatNotVal.value();
 
                             assert(bCatNotVal);
-                        } else {
-                            // more than one axis: don't know what to do with this
-                            assert(false);
                         }
 
                         if (bNeedCat) {

@@ -39,6 +39,7 @@
 /// <reference path="./helper/CanvasRecorder.ts"/>
 /// <reference path="./helper/ScratchCanvasStub.ts"/>
 /// <reference path="./helper/Path2DRecorder.ts"/>
+/// <reference path="./helper/HitTestContext.ts"/>
 /// <reference path="./helper/ImageRecorder.ts"/>
 /// <reference path="./helper/VectorRenderingReference.ts"/>
 /// <reference path="./helper/aiChat.ts"/>
@@ -95,6 +96,7 @@
 /// <reference path="./ImpressVectorManager.test.ts" />
 /// <reference path="./ShapeTransitionMask.test.ts" />
 /// <reference path="./VectorSlideLayers.test.ts" />
+/// <reference path="./SlideMorph.test.ts" />
 /// <reference path="./SlideAnimations.test.ts" />
 /// <reference path="./AnimatedContentRenderer.test.ts" />
 /// <reference path="./VectorCompositor.test.ts" />

@@ -49,6 +49,7 @@
 #include <editeng/colritem.hxx>
 #include <editeng/editeng.hxx>
 #include <editeng/editview.hxx>
+#include <editeng/fhgtitem.hxx>
 #include <editeng/justifyitem.hxx>
 #include <svl/intitem.hxx>
 #include <svl/numformat.hxx>
@@ -62,6 +63,7 @@
 #include <vcl/scheduler.hxx>
 #include <vcl/virdev.hxx>
 
+#include <i18nlangtag/lang.h>
 #include <o3tl/unit_conversion.hxx>
 #include <osl/process.h>
 
@@ -71,6 +73,7 @@
 #include <optional>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
 namespace
@@ -166,6 +169,29 @@ bool hasCellMark(const boost::property_tree::ptree& rResponse, std::string_view 
         }
     }
     return false;
+}
+
+/// The outline of the button that a cell mark draws: the path of its first filled shape.
+std::string cellMarkOutline(const boost::property_tree::ptree& rResponse, std::string_view aKind,
+                            int nColumn, int nRow)
+{
+    for (const auto& rRow : blockRows(rResponse))
+    {
+        auto oMarks = rRow.get_child_optional("content.layers.marks");
+        if (!oMarks)
+            continue;
+        for (const auto& rMark : *oMarks)
+        {
+            if (rMark.second.get<std::string>("kind") != aKind
+                || rMark.second.get<int>("column") != nColumn
+                || rMark.second.get<int>("row") != nRow)
+                continue;
+            // The button is a group of shapes, and the outline is filled first.
+            const auto& rGroup = rMark.second.get_child("children").front().second;
+            return rGroup.get_child("children").front().second.get<std::string>("path");
+        }
+    }
+    return std::string();
 }
 
 /// The border layer of the first block in a response that has borders, or an empty tree.
@@ -614,9 +640,10 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testPrimitiveTileStepsMatchTiles)
     CPPUNIT_ASSERT_LESS(1500, differingPixels(aTiles, aPrimitives));
 }
 
-CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedCurrencyWraps)
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedCurrencyShowsHash)
 {
-    // A number in a currency format wraps like text. Only a plain number format ignores the wrap.
+    // A number never wraps, whatever its number format, as in the window and in Excel: a currency
+    // that does not fit shows "###". It wrapped like text.
     ScModelObj* pModelObj = createDoc("empty.ods");
     ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
     CPPUNIT_ASSERT(pDocShell);
@@ -636,8 +663,66 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedCurrencyWraps)
     const auto oText = cellTextAt(aResponse, 0, 0);
     CPPUNIT_ASSERT(oText);
     const std::set<std::string> aFlags = cellTextFlags(*oText);
-    CPPUNIT_ASSERT(aFlags.count("wrap"));
-    CPPUNIT_ASSERT(!aFlags.count("hashFill"));
+    CPPUNIT_ASSERT(!aFlags.count("wrap"));
+    CPPUNIT_ASSERT(aFlags.count("hashFill"));
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedCurrencyWithNoBreakSpaceShowsHash)
+{
+    // A currency whose thousands separator is a no-break space is laid out by the EditEngine, and
+    // it does not wrap there either: it shows "###" when it does not fit. It wrapped there.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    rDocument.SetColWidth(0, 0, 800);
+    setCellValue(*pDocShell, 0, 0, 123456789.0);
+
+    // The no-break spaces are written into the format, so the case does not depend on locale data.
+    OUString aCode(u"0\"\u00A0\"000\"\u00A0\"000 [$EUR]"_ustr);
+    sal_Int32 nCheckPos = 0;
+    SvNumFormatType nType = SvNumFormatType::ALL;
+    sal_uInt32 nFormat = 0;
+    rDocument.GetFormatTable()->PutEntry(aCode, nCheckPos, nType, nFormat, LANGUAGE_ENGLISH_US);
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), nCheckPos);
+    CPPUNIT_ASSERT(nType & SvNumFormatType::CURRENCY);
+    ScPatternAttr aPattern(rDocument.getCellAttributeHelper());
+    aPattern.ItemSetPut(ScLineBreakCell(true));
+    aPattern.ItemSetPut(SfxUInt32Item(ATTR_VALUE_FORMAT, nFormat));
+    applyToCell(*pDocShell, 0, 0, aPattern);
+    CPPUNIT_ASSERT(rDocument.GetString(0, 0, 0).indexOf(u'\u00A0') >= 0);
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    const auto oText = cellTextAt(aResponse, 0, 0);
+    CPPUNIT_ASSERT(oText);
+    const std::set<std::string> aFlags = cellTextFlags(*oText);
+    CPPUNIT_ASSERT(!aFlags.count("wrap"));
+    CPPUNIT_ASSERT(aFlags.count("hashFill"));
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorJustifiedNumberShowsHash)
+{
+    // Justified text breaks into lines, but a number in a plain number format does not, as in the
+    // window: it shows "###" when it does not fit.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    rDocument.SetColWidth(0, 0, 400);
+    setCellValue(*pDocShell, 0, 0, 123456789.0);
+
+    ScPatternAttr aPattern(rDocument.getCellAttributeHelper());
+    aPattern.ItemSetPut(SvxHorJustifyItem(SvxCellHorJustify::Block, ATTR_HOR_JUSTIFY));
+    applyToCell(*pDocShell, 0, 0, aPattern);
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    const auto oText = cellTextAt(aResponse, 0, 0);
+    CPPUNIT_ASSERT(oText);
+    const std::set<std::string> aFlags = cellTextFlags(*oText);
+    CPPUNIT_ASSERT(!aFlags.count("wrap"));
+    CPPUNIT_ASSERT(aFlags.count("hashFill"));
 }
 
 CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedNumberShowsHashAndArrow)
@@ -665,6 +750,37 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedNumberShowsHashAndAr
     // A number aligns to the right, so it is cut off at the left.
     CPPUNIT_ASSERT(hasCellMark(aResponse, "clipLeft", 0, 0));
     CPPUNIT_ASSERT(!hasCellMark(aResponse, "clipRight", 0, 0));
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorNarrowAutoFilterButtonIsHalfTheCell)
+{
+    // An autofilter button is at most half as wide as its cell, as in the window, where only that
+    // part opens the menu. It filled a narrow cell, so a click on its left half did nothing.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    setColumnWidth(*pDocShell, 0, 200);
+    setColumnWidth(*pDocShell, 1, 2000);
+    rDocument.ApplyFlagsTab(0, 0, 1, 0, 0, ScMF::Auto);
+    pDocShell->PostPaintGridAll();
+    Scheduler::ProcessEventsToIdle();
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    // Where the button starts in its column: the first point of its outline is "column:offset".
+    auto aButtonStartOf = [&aResponse](int nColumn) {
+        const std::string aOutline = cellMarkOutline(aResponse, "autoFilter", nColumn, 0);
+        CPPUNIT_ASSERT(!aOutline.empty());
+        const std::string aStart = aOutline.substr(1, aOutline.find(',') - 1);
+        CPPUNIT_ASSERT_EQUAL(std::to_string(nColumn) + ":", aStart.substr(0, aStart.find(':') + 1));
+        return std::stod(aStart.substr(aStart.find(':') + 1));
+    };
+
+    // The narrow column is 200 twips wide, so its button starts in the middle.
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(100.0, aButtonStartOf(0), 1.0);
+    // The wide column keeps a button of 17 pixels of 15 twips, at its right edge.
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(2000.0 - 17 * 15, aButtonStartOf(1), 1.0);
 }
 
 CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorShrunkTextGetsNoClipArrow)
@@ -840,6 +956,35 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorMergedCellsShowTheTextOfThe
     CPPUNIT_ASSERT_EQUAL(aExpected.size(), aAreas[0].size());
     for (size_t nIndex = 0; nIndex < aExpected.size(); ++nIndex)
         CPPUNIT_ASSERT_EQUAL(aExpected[nIndex], aAreas[0][nIndex]);
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorMergedCellsWithHiddenFirstCellShowText)
+{
+    // A merged area whose first column or first row is hidden still shows the text of its first
+    // cell in its visible part, as in the window. The text was missing.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    // B2:D2 with column B hidden, and B4:C6 with row 4 hidden.
+    setCellString(*pDocShell, 1, 1, u"First column hidden"_ustr);
+    setCellString(*pDocShell, 1, 3, u"First row hidden"_ustr);
+    for (const auto& [nEndColumn, nRow, nEndRow] :
+         { std::tuple<SCCOL, SCROW, SCROW>{ 3, 1, 1 }, { 2, 3, 5 } })
+    {
+        ScCellMergeOption aMerge(1, nRow, nEndColumn, nEndRow);
+        aMerge.maTabs.insert(0);
+        pDocShell->GetDocFunc().MergeCells(aMerge, false, true, true);
+    }
+    rDocument.SetColHidden(1, 1, 0, true);
+    rDocument.SetRowHidden(3, 3, 0, true);
+    pDocShell->PostPaintGridAll();
+    Scheduler::ProcessEventsToIdle();
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    CPPUNIT_ASSERT(cellTextAt(aResponse, 1, 1));
+    CPPUNIT_ASSERT(cellTextAt(aResponse, 1, 3));
 }
 
 CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorHiddenRowDrawsNoText)
@@ -1336,6 +1481,115 @@ CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorStackedCellTakesItsAlignmen
     CPPUNIT_ASSERT_GREATER(1000.0, aStartOf(2));
     CPPUNIT_ASSERT_LESS(2000.0, aStartOf(2));
     CPPUNIT_ASSERT_GREATER(2000.0, aStartOf(3));
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorTurnedCellTextTakesItsVerticalAlignment)
+{
+    // The lines of text turned by 90 degrees run up the cell, so the vertical alignment of the cell
+    // aligns each line along it, as in the window: a short last line starts at the top of a cell
+    // aligned to the top, and at the bottom of one aligned to the bottom. Every cell aligned its
+    // lines by the horizontal alignment instead.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    rDocument.SetRowHeight(1, 0, 1500);
+    rDocument.SetManualHeight(1, 1, 0, true);
+    const SvxCellVerJustify aJustify[]
+        = { SvxCellVerJustify::Top, SvxCellVerJustify::Center, SvxCellVerJustify::Bottom };
+    for (SCCOL nColumn = 1; nColumn <= 3; ++nColumn)
+    {
+        setCellString(*pDocShell, nColumn, 1,
+                      u"A long header text that wraps onto a shorter line"_ustr);
+        ScPatternAttr aPattern(rDocument.getCellAttributeHelper());
+        aPattern.ItemSetPut(ScRotateValueItem(Degree100(9000)));
+        aPattern.ItemSetPut(ScLineBreakCell(true));
+        aPattern.ItemSetPut(SvxVerJustifyItem(aJustify[nColumn - 1], ATTR_VER_JUSTIFY));
+        applyToCell(*pDocShell, nColumn, 1, aPattern);
+    }
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    // Where the last line starts along its line, in the coordinates of the turned text.
+    auto aLastLineStartOf = [&aResponse](int nColumn) {
+        const auto oText = cellTextAt(aResponse, nColumn, 1);
+        CPPUNIT_ASSERT(oText);
+        std::optional<double> oStart;
+        std::function<void(const boost::property_tree::ptree&)> aFind
+            = [&](const boost::property_tree::ptree& rNode) {
+                  if (rNode.get<std::string>("type", "") == "textSimplePortion")
+                      oStart = rNode.get<double>("x");
+                  for (const auto& rChild : rNode)
+                      aFind(rChild.second);
+              };
+        aFind(*oText);
+        CPPUNIT_ASSERT(oStart);
+        return *oStart;
+    };
+
+    // Text turned up the cell reads from the bottom: its line ends at the top of a cell aligned to
+    // the top, and starts at the bottom of one aligned to the bottom.
+    const double fTop = aLastLineStartOf(1);
+    const double fCenter = aLastLineStartOf(2);
+    const double fBottom = aLastLineStartOf(3);
+    CPPUNIT_ASSERT_GREATER(fCenter, fTop);
+    CPPUNIT_ASSERT_GREATER(fBottom, fCenter);
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedLineTooHighStaysAtTheBottom)
+{
+    // A single wrapped line that is too high for its cell stays at the bottom of the cell, as in
+    // the window, where only several lines that are clearly too high start at the top. It started
+    // at the top.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    rDocument.SetRowHeight(1, 0, 300);
+    rDocument.SetManualHeight(1, 1, 0, true);
+    setCellString(*pDocShell, 1, 1, u"Big"_ustr);
+    ScPatternAttr aPattern(rDocument.getCellAttributeHelper());
+    aPattern.ItemSetPut(ScLineBreakCell(true));
+    aPattern.ItemSetPut(SvxFontHeightItem(400, 100, ATTR_FONT_HEIGHT));
+    applyToCell(*pDocShell, 1, 1, aPattern);
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    const auto oText = cellTextAt(aResponse, 1, 1);
+    CPPUNIT_ASSERT(oText);
+    std::vector<boost::property_tree::ptree> aBounds;
+    collectNamed(*oText, "bounds", aBounds);
+    CPPUNIT_ASSERT_EQUAL(size_t(1), aBounds.size());
+    // The bounds are the left, top, right and bottom of the paragraph. Its top sticks out of the
+    // cell, so it is in the row above.
+    const auto aTop = std::next(aBounds[0].begin());
+    CPPUNIT_ASSERT_EQUAL(0, cellPosition(aTop->second).first);
+}
+
+CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorWrappedTextTooHighGetsClipArrow)
+{
+    // Wrapped text of several lines that is clearly too high for its cell gets the arrow at the
+    // right edge, as on tiles, where it shows that the text goes on below. A single line that is
+    // too high does not. Neither had an arrow.
+    ScModelObj* pModelObj = createDoc("empty.ods");
+    ScDocShell* pDocShell = dynamic_cast<ScDocShell*>(pModelObj->GetEmbeddedObject());
+    CPPUNIT_ASSERT(pDocShell);
+    ScDocument& rDocument = pDocShell->GetDocument();
+    setColumnWidth(*pDocShell, 1, 1700);
+    rDocument.SetRowHeightRange(1, 3, 0, 300);
+    rDocument.SetManualHeight(1, 3, 0, true);
+    setCellString(*pDocShell, 1, 1, u"First line second line third line fourth line"_ustr);
+    setCellString(*pDocShell, 1, 3, u"Big"_ustr);
+    ScPatternAttr aWrap(rDocument.getCellAttributeHelper());
+    aWrap.ItemSetPut(ScLineBreakCell(true));
+    applyToCell(*pDocShell, 1, 1, aWrap);
+    aWrap.ItemSetPut(SvxFontHeightItem(400, 100, ATTR_FONT_HEIGHT));
+    applyToCell(*pDocShell, 1, 3, aWrap);
+
+    const boost::property_tree::ptree aResponse
+        = requestVectorPrimitives(pModelObj, "partid=0&mode=-1&blocks=0:0");
+    CPPUNIT_ASSERT(hasCellMark(aResponse, "clipRight", 1, 1));
+    CPPUNIT_ASSERT(!hasCellMark(aResponse, "clipRight", 1, 3));
 }
 
 CPPUNIT_TEST_FIXTURE(ScTiledRenderingTest, testVectorRotatedCellTextTakesItsAlignment)

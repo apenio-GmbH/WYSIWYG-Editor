@@ -697,6 +697,7 @@ bool ChildSession::_handleInput(const char *buffer, int length)
                tokens.equals(0, "cropobject") ||
                tokens.equals(0, "formcontrol") ||
                tokens.equals(0, "selectcells") ||
+               tokens.equals(0, "setconnectorend") ||
                tokens.equals(0, "downloadas") ||
                tokens.equals(0, "getchildid") ||
                tokens.equals(0, "gettextselection") ||
@@ -862,6 +863,10 @@ bool ChildSession::_handleInput(const char *buffer, int length)
         else if (tokens.equals(0, "selectcells"))
         {
             return selectCells(tokens);
+        }
+        else if (tokens.equals(0, "setconnectorend"))
+        {
+            return setConnectorEnd(tokens);
         }
         else if (tokens.equals(0, "downloadas"))
         {
@@ -1801,7 +1806,7 @@ bool ChildSession::getCommandValues(const StringVector& tokens)
     if (isForgetPart)
     {
         if (!partId.empty())
-            _docManager->releaseVectorParts(*this, { partId });
+            _docManager->releaseVectorParts(*this, { std::move(partId) });
         return true;
     }
 
@@ -2490,6 +2495,32 @@ bool ChildSession::selectCells(const StringVector& tokens)
     return true;
 }
 
+bool ChildSession::setConnectorEnd(const StringVector& tokens)
+{
+    std::string connectorId;
+    std::string tiedTo;
+    int start = 0;
+    int x = 0;
+    int y = 0;
+    int gluePoint = -1;
+
+    if (!hasTokens(tokens, 7) || !getTokenString(tokens[1], "id", connectorId)
+        || !getTokenInteger(tokens[2], "start", start) || !getTokenInteger(tokens[3], "x", x)
+        || !getTokenInteger(tokens[4], "y", y) || !getTokenString(tokens[5], "tiedto", tiedTo)
+        || !getTokenInteger(tokens[6], "gluepoint", gluePoint))
+    {
+        sendTextFrameAndLogError("error: cmd=setconnectorend kind=syntax");
+        return false;
+    }
+
+    getLOKitDocument()->setView(_viewId);
+    getLOKitDocument()->setConnectorEnd(std::strtoull(connectorId.c_str(), nullptr, 10),
+                                        start != 0, x, y,
+                                        std::strtoull(tiedTo.c_str(), nullptr, 10), gluePoint);
+
+    return true;
+}
+
 bool ChildSession::setObjectTransform(const StringVector& tokens)
 {
     std::string mappings;
@@ -2687,7 +2718,12 @@ bool ChildSession::downloadAsHere([[maybe_unused]] const DownloadAsRequest& requ
 #else
     // Nothing else on this document is served while the export runs here, so hold off
     // the other messages and let the responsiveness watchdog know this wait is expected.
-    InputProcessingManager processInput(getProtocol(), false);
+    // An export that asks the user something keeps taking messages, because the answer to
+    // its dialog arrives as one.
+    const std::shared_ptr<ProtocolHandlerInterface> heldProtocol =
+        exportRaisesDialog(request._format) ? std::shared_ptr<ProtocolHandlerInterface>()
+                                            : getProtocol();
+    InputProcessingManager processInput(heldProtocol, false);
     WatchdogGuard watchdogGuard;
 
     const std::chrono::steady_clock::time_point timeStart = std::chrono::steady_clock::now();
@@ -5157,6 +5193,9 @@ bool ChildSession::unoCommand(const StringVector& tokens)
     const bool notify = (tokens.equals(1, ".uno:Save") ||
                           tokens.equals(1, ".uno:Undo") ||
                           tokens.equals(1, ".uno:Redo") ||
+                          // A view that draws from objects takes deleted objects away at once,
+                          // and needs to know where the engine refused to delete them.
+                          tokens.equals(1, ".uno:Delete") ||
                           tokens.equals(1, ".uno:Cut") ||
                           tokens.equals(1, ".uno:Copy") ||
                           tokens.equals(1, ".uno:CopySlide") ||
@@ -6161,9 +6200,11 @@ bool ChildSession::saveAs(const StringVector& tokens)
                                          format.empty() ? nullptr : format.c_str(),
                                          filterOptions.empty() ? nullptr : filterOptions.c_str());
 
-    if (!success)
+    // A target without an extension gets the one of the document type and a second try. A
+    // target that has one failed for another reason, such as the user cancelling a question
+    // the save asked, and is not tried again.
+    if (!success && Poco::Path(url).getExtension().empty())
     {
-        // a desperate try - add an extension hoping that it'll help
         bool retry = true;
         switch (getLOKitDocument()->getDocumentType())
         {
@@ -7497,12 +7538,12 @@ void ChildSession::loKitCallback(const COKitCallbackType type, const std::string
     }
     case COKitCallbackType::A11Y_CARET_CHANGED:
     {
-        sendTextFrame("a11ycaretchanged: " + payload);
+        sendTextFrame("a11ycaretchanged: " + withInputSequence(payload));
         break;
     }
     case COKitCallbackType::A11Y_TEXT_SELECTION_CHANGED:
     {
-        sendTextFrame("a11ytextselectionchanged: " + payload);
+        sendTextFrame("a11ytextselectionchanged: " + withInputSequence(payload));
         break;
     }
     case COKitCallbackType::A11Y_FOCUSED_CELL_CHANGED:
@@ -7850,8 +7891,8 @@ std::string ChildSession::inputSequenceToken() const
     return _inputSequence > 0 ? " inputSequence=" + std::to_string(_inputSequence) : std::string();
 }
 
-// The caret payload is a JSON object, so the sequence is one of its fields. The JSON is compact, so
-// the closing brace follows the last value directly. A payload that is not a JSON object is
+// The caret payloads are JSON objects, so the sequence is one of their fields. The JSON is compact,
+// so the closing brace follows the last value directly. A payload that is not a JSON object is
 // returned unchanged.
 std::string ChildSession::withInputSequence(const std::string& json) const
 {

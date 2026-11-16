@@ -138,6 +138,9 @@ namespace desktop {
             m_aVectorRenderingModes.clear();
         }
 
+        /// The next flush sends the caret of the view, also when it is the caret sent last.
+        void resendVisibleCursor();
+
         DESKTOP_DLLPUBLIC void tilePainted(const OString& rPart, int nMode,
                                            const tools::Rectangle& rRectangle);
         const OString& getViewRenderState() const { return m_aViewRenderState; }
@@ -484,6 +487,8 @@ namespace desktop {
                                const char* pValue) override;
         void selectTableCells(unsigned long long nObjectId, int nFirstColumn, int nFirstRow,
                               int nLastColumn, int nLastRow) override;
+        void setConnectorEnd(unsigned long long nConnectorId, bool bStart, int nX, int nY,
+                             unsigned long long nTiedTo, int nGluePoint) override;
     };
 
     struct DESKTOP_DLLPUBLIC COKitImpl : public COKit

@@ -1827,6 +1827,14 @@ void CallbackFlushHandler::dumpState(rtl::OStringBuffer &rState)
     }
 }
 
+void CallbackFlushHandler::resendVisibleCursor()
+{
+    std::unique_lock<std::recursive_mutex> lock(m_mutex);
+    // A caret equal to the one sent last is dropped at the flush, so the record of that one is
+    // reset to the value it starts with.
+    m_states[COKitCallbackType::INVALIDATE_VISIBLE_CURSOR] = "NIL"_ostr;
+}
+
 void CallbackFlushHandler::viewAddPendingInvalidateTiles()
 {
     // Invoke() will call flushPendingKitInvalidateTiles(), so just make sure the timer is active.
@@ -3070,9 +3078,10 @@ static COKitDocument* lo_documentLoadWithOptions(COKit* pThis, const char* pURL,
         COKitDocumentImpl* pDocument = new COKitDocumentImpl(xComponent, nThisDocumentId);
         pDocument->maOriginalDocumentUrlKey = aOriginalDocumentUrlKey;
 
-        // A remote checker's server that had not answered when the kit was
-        // forked, or that was set up since, is asked now, and the local spell
-        // checker steps aside for a reachable one.
+        // The kit asks the remote checkers' servers itself: the forkit's
+        // answers may not hold in the jail. The local spell checker steps
+        // aside for a server the kit reaches, and takes back what it handed
+        // to one the kit does not.
         desktop::remotechecker::handLanguagesToRemoteCheckers();
 
         if (bSuppressDialogs)
@@ -6185,7 +6194,16 @@ void COKitDocumentImpl::postUnoCommand(const char* pCommand, const char* pArgume
 
     if (aCommand.startsWith(".uno:SetTextCursor?"))
     {
-        kitcommand::setTextCursor(*pViewShell, aCommand);
+        // The client shows the caret where it asked for it. When the caret cannot go there, the
+        // view sends where its caret is, also when that did not change.
+        if (!kitcommand::setTextCursor(*pViewShell, getTiledRenderable(this), aCommand))
+        {
+            const auto aHandler = mpCallbackFlushHandlers.find(pViewShell->GetViewShellId().get());
+            if (aHandler != mpCallbackFlushHandlers.end() && aHandler->second)
+                aHandler->second->resendVisibleCursor();
+            KitHelper::notifyUpdatePerViewId(*pViewShell,
+                                             COKitCallbackType::INVALIDATE_VISIBLE_CURSOR);
+        }
         return;
     }
 
@@ -8983,6 +9001,58 @@ void COKitDocumentImpl::setObjectHandle(unsigned long long nObjectId, int nKind,
         pObject->SetChanged();
         pObject->BroadcastObjectChange();
     }
+
+    rModel.EndUndo();
+}
+
+void COKitDocumentImpl::setConnectorEnd(unsigned long long nConnectorId, bool bStart, int nX,
+                                        int nY, unsigned long long nTiedTo, int nGluePoint)
+{
+    comphelper::ProfileZone aZone("COKitDocumentImpl::setConnectorEnd");
+
+    SolarMutexGuard aGuard;
+    SetLastExceptionMsg();
+
+    if (SfxViewShell::IsCurrentKitViewReadOnly())
+        return;
+
+    SfxViewShell* pViewShell = SfxViewShell::Current();
+    SdrView* pView = pViewShell ? pViewShell->GetDrawView() : nullptr;
+    SdrPageView* pPageView = pView ? pView->GetSdrPageView() : nullptr;
+    const SdrPage* pPage = pPageView ? pPageView->GetPage() : nullptr;
+    auto* pConnector
+        = pPage ? dynamic_cast<SdrEdgeObj*>(pPage->FindObjectByUniqueID(nConnectorId)) : nullptr;
+
+    if (!pConnector)
+    {
+        SetLastExceptionMsg(u"No connector of that id is on the page the view shows"_ustr);
+        SAL_WARN("sd", "setconnectorend did nothing: no connector of that id");
+        return;
+    }
+
+    if (!lcl_viewReaches(*pPageView, *pConnector))
+    {
+        SAL_WARN("sd", "setconnectorend did nothing: the connector is not one this view changes");
+        return;
+    }
+
+    // an end tied to nothing that is on the page is left free
+    SdrObject* pNode = nTiedTo ? pPage->FindObjectByUniqueID(nTiedTo) : nullptr;
+
+    // The place arrives in twips and the model holds the page in its own unit.
+    const Point aWhereTo(o3tl::convert(tools::Long(nX), o3tl::Length::twip, o3tl::Length::mm100),
+                         o3tl::convert(tools::Long(nY), o3tl::Length::twip, o3tl::Length::mm100));
+
+    // the move changes the run and the items of the connector, as a drag of the end does
+    SdrModel& rModel(pConnector->getSdrModelFromSdrObject());
+    SdrUndoFactory& rFactory(rModel.GetSdrUndoFactory());
+    rModel.BegUndo(SvxResId(STR_DragMethMove));
+    rModel.AddUndo(rFactory.CreateUndoAttrObject(*pConnector));
+    rModel.AddUndo(rFactory.CreateUndoGeoObject(*pConnector));
+
+    pConnector->MoveEndTo(bStart, aWhereTo, pNode, nGluePoint);
+    pConnector->SetChanged();
+    pConnector->BroadcastObjectChange();
 
     rModel.EndUndo();
 }
@@ -12127,7 +12197,8 @@ static void preloadData()
 
     // setup the remote checkers before spell checking init. Their servers
     // are asked here, within the probe's limit, so the kits are forked with
-    // the answers and with the languages already handed over.
+    // the languages already handed over; a kit asks again itself, as its
+    // jail may not reach what this process reaches.
     desktop::remotechecker::setRemoteCheckerConfig();
     desktop::remotechecker::handLanguagesToRemoteCheckers();
     desktop::remotechecker::logRemoteCheckerLanguages();

@@ -1005,10 +1005,10 @@ abstract class SelectionSection extends CanvasSectionObject {
 			held !== undefined &&
 			['9.0.0', '9.0.1'].includes(held.name);
 
-		const under = onAnEnd
-			? (RenderGeometrySection.objectIdAt(at.x, at.y) ?? null)
-			: null;
-		const aimed = under === connector ? null : under;
+		const aimed =
+			onAnEnd && connector !== undefined
+				? SelectionSection.tieTargetAt(new cool.Point(at.x, at.y), connector)
+				: null;
 
 		if (aimed === this.aimingAt) return;
 
@@ -1034,9 +1034,46 @@ abstract class SelectionSection extends CanvasSectionObject {
 		tie: cool.ConnectorTie;
 		point?: cool.Point;
 	} | null {
-		const aimed = this.aimingAt;
-		if (aimed === null) return null;
+		return this.aimingAt === null
+			? null
+			: SelectionSection.tieOn(this.aimingAt, at);
+	}
 
+	/// The object an end of a connector at that point can tie to: the frontmost one there that is
+	/// no connector, as a connector is tied to nothing, and not the one left out; null for none.
+	public static tieTargetAt(
+		at: cool.Point,
+		leavingOut?: number,
+	): number | null {
+		return (
+			RenderGeometrySection.objectIdsAt(at.x, at.y).find(
+				(objectId: number) =>
+					objectId !== leavingOut && !ObjectHandles.isAConnector(objectId),
+			) ?? null
+		);
+	}
+
+	/*
+		The glue point a tie names, counted as the engine counts the glue points of a connector:
+		-1 for the best side, 0 to 3 for the middles of the sides, and an own point by its id
+		and 3.
+	*/
+	public static gluePointIndexOf(tie: cool.ConnectorTie): number {
+		if (tie.autoVertex) return tie.point ?? 0;
+		if (tie.bestVertex) return -1;
+		return (tie.point ?? 0) + 3;
+	}
+
+	/// Where an end of a connector at that point would tie itself to that object, by the same
+	/// rule as an end dragged there; nothing where it would stay free.
+	public static tieOn(
+		aimed: number,
+		at: cool.Point,
+	): {
+		objectId: number;
+		tie: cool.ConnectorTie;
+		point?: cool.Point;
+	} | null {
 		const object = RenderGeometrySection.objectOf(aimed);
 		if (!object) return null;
 
@@ -1708,23 +1745,77 @@ abstract class SelectionSection extends CanvasSectionObject {
 			: this.groups().flatMap((group: HandleGroup) => group.outline() ?? []);
 		if (!polygons?.length) return;
 
-		this.context.save();
-		this.context.setTransform(1, 0, 0, 1, 0, 0);
+		SelectionSection.strokeOutline(
+			this.context,
+			polygons,
+			HandleLook.outlineOfADrag,
+		);
+	}
+
+	/*
+		Draws the places an end of a connector can tie itself to on that object, its own points
+		and the middles of its sides, as the drag of an end shows them; the one at that point is
+		lit.
+	*/
+	public static paintTargets(
+		context: CanvasRenderingContext2D,
+		objectId: number,
+		lit: cool.Point | null,
+	): void {
+		const size = ShapeHandlesSection.handleSize();
+		context.save();
+		context.setTransform(1, 0, 0, 1, 0, 0);
+		for (const target of [
+			...GluePointHandles.ownPointsOf(objectId),
+			...GluePointHandles.defaultPointsOf(objectId),
+		]) {
+			const isLit = !!lit && target.point.equals(lit);
+			context.beginPath();
+			context.strokeStyle = HandleLook.outlineColour;
+			context.fillStyle = HandleLook.lay(
+				context,
+				'tiePoint',
+				HandleLook.drawnAt(target),
+				isLit ? size / 8 : 0,
+			);
+			context.closePath();
+			context.fill();
+			context.stroke();
+			if (isLit) {
+				context.strokeStyle = SelectionSection.underTheMouse(
+					String(context.fillStyle),
+				);
+				context.lineWidth = 2 * app.dpiScale;
+				context.stroke();
+				context.lineWidth = 1;
+			}
+		}
+		context.restore();
+	}
+
+	/// Draws those polygons, given in twips, as a thin line of that colour on the canvas.
+	public static strokeOutline(
+		context: CanvasRenderingContext2D,
+		polygons: cool.ObjectPathPolygon[],
+		colour: string,
+	): void {
+		context.save();
+		context.setTransform(1, 0, 0, 1, 0, 0);
 
 		// The point at the very start of the document says where the drawing of the part begins
 		// on the canvas, and a twip is that many pixels wide.
 		const origin = new cool.SimplePoint(0, 0);
-		this.context.translate(origin.vX, origin.vY);
-		this.context.scale(app.twipsToPixels, app.twipsToPixels);
-		this.context.strokeStyle = HandleLook.outlineOfADrag;
-		this.context.lineWidth = app.pixelsToTwips;
-		this.context.beginPath();
+		context.translate(origin.vX, origin.vY);
+		context.scale(app.twipsToPixels, app.twipsToPixels);
+		context.strokeStyle = colour;
+		context.lineWidth = app.pixelsToTwips;
+		context.beginPath();
 
 		for (const polygon of polygons) {
 			const points = polygon.points ?? [];
 			if (!points.length) continue;
 
-			this.context.moveTo(points[0].x, points[0].y);
+			context.moveTo(points[0].x, points[0].y);
 
 			for (let at = 1; at <= points.length; ++at) {
 				const from = points[at - 1];
@@ -1732,7 +1823,7 @@ abstract class SelectionSection extends CanvasSectionObject {
 				if (at === points.length && !polygon.closed) break;
 
 				if (from.aheadX !== undefined || to.behindX !== undefined)
-					this.context.bezierCurveTo(
+					context.bezierCurveTo(
 						from.aheadX ?? from.x,
 						from.aheadY ?? from.y,
 						to.behindX ?? to.x,
@@ -1740,14 +1831,14 @@ abstract class SelectionSection extends CanvasSectionObject {
 						to.x,
 						to.y,
 					);
-				else this.context.lineTo(to.x, to.y);
+				else context.lineTo(to.x, to.y);
 			}
 
-			if (polygon.closed) this.context.closePath();
+			if (polygon.closed) context.closePath();
 		}
 
-		this.context.stroke();
-		this.context.restore();
+		context.stroke();
+		context.restore();
 	}
 
 	onDraw(): void {
@@ -3156,20 +3247,23 @@ abstract class SelectionSection extends CanvasSectionObject {
 	*/
 	private lastMoved: { at: cool.SimplePoint; event?: MouseEvent } | null = null;
 
-	private readonly keysChanged = (e: KeyboardEvent): void => {
-		if (!this.interaction || !this.lastMoved) return;
-		if (!['Shift', 'Alt', 'Control'].includes(e.key)) return;
-
-		// The event that lets a key go can still carry that key as held, so the key it names
-		// is taken as let go whatever its flag says.
-		const letGo = e.type === 'keyup' ? e.key : null;
+	/*
+		Shift, Alt or Ctrl went down or up during a drag: the drag goes to the same place again
+		with the modifiers as they are now, as the engine numbers them. Answers whether a drag
+		took the key, which then belongs to it alone.
+	*/
+	public keysChanged(e: KeyboardEvent, modifier: number): boolean {
+		if (!this.interaction) return false;
+		if (!['Shift', 'Alt', 'Control'].includes(e.key)) return false;
+		if (!this.lastMoved) return true;
 
 		this.interaction.move(this.lastMoved.at, {
-			shiftKey: letGo !== 'Shift' && e.shiftKey,
-			altKey: letGo !== 'Alt' && e.altKey,
-			ctrlKey: letGo !== 'Control' && e.ctrlKey,
+			shiftKey: (modifier & app.UNOModifier.SHIFT) !== 0,
+			altKey: (modifier & app.UNOModifier.ALT) !== 0,
+			ctrlKey: (modifier & app.UNOModifier.CTRL) !== 0,
 		} as MouseEvent);
-	};
+		return true;
+	}
 
 	onMouseDown(point: cool.SimplePoint, e: MouseEvent): void {
 		const at = this.inTheDocument(point);
@@ -3257,9 +3351,6 @@ abstract class SelectionSection extends CanvasSectionObject {
 
 			// The handle of the other mode goes with the press, and one waiting to come up.
 			this.dropTheOtherMode();
-
-			document.addEventListener('keydown', this.keysChanged, true);
-			document.addEventListener('keyup', this.keysChanged, true);
 		}
 
 		this.stopPropagating();
@@ -3718,6 +3809,12 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.containerObject.requestReDraw();
 	}
 
+	/// A drag that runs on a selection taken away, as by a deletion, is called off with it, so
+	/// the container does not hand its release to a section that is gone.
+	onRemove(): void {
+		if (this.interaction) this.containerObject.cancelPress();
+	}
+
 	onDragCancel(): void {
 		if (this.pressedTheText) {
 			this.handToTheMouseControl(null, (control) => control.onDragCancel());
@@ -3796,8 +3893,6 @@ abstract class SelectionSection extends CanvasSectionObject {
 		this.tellWhoStandsIn();
 		GraphicSelection.followTheGroupButtons();
 		this.lastMoved = null;
-		document.removeEventListener('keydown', this.keysChanged, true);
-		document.removeEventListener('keyup', this.keysChanged, true);
 		this.snap.forget();
 
 		// Nothing is aimed at once the drag is over, so the places to tie to go with it.

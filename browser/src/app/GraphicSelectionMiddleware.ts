@@ -373,6 +373,10 @@ class GraphicSelection {
 		if (this.sameObjects(this.announcedObjectIDs, this.selectedObjectIDs))
 			return;
 		this.announcedObjectIDs = this.selectedObjectIDs.slice();
+
+		// Cropping belongs to the picture it was switched on for, so another selection ends it.
+		if (this.cropping) this.toggleCropping();
+
 		app.events.fire('graphicselectionchanged', {
 			objectIds: this.selectedObjectIDs.slice(),
 		});
@@ -493,6 +497,63 @@ class GraphicSelection {
 		}
 
 		this.selectAndShow(wanted);
+	}
+
+	/*
+		Deletes the selected objects and takes them out of the part at once, on the page and in a
+		group. The engine is told first, so it deletes them before it hears of what is selected
+		after; the selection follows the deleted objects as it does for every deletion. In a
+		table, a diagram and an object active in place, Delete does more than take the selected
+		objects away, so it is left to the engine there. Answers whether they were deleted here.
+	*/
+	private static deleteTheObjectsHere(): boolean {
+		const selected = this.selectedObjectIDs.slice();
+		const part = RenderGeometrySection.currentPart();
+		const kind = Interaction.placeOf(selected).kind;
+		if (
+			!selected.length ||
+			!part ||
+			!RenderManager.drawsFromObjects() ||
+			!app.map.isEditMode() ||
+			(kind !== 'page' && kind !== 'group')
+		)
+			return false;
+
+		GraphicSelection.followTheDeletes();
+		// a placeholder, or a slide's copy of one of the master, is emptied or switched off by
+		// deleting, which the engine alone knows, so it is left to the engine
+		const ofTheLayout = (objectId: number): boolean => {
+			const object = RenderGeometrySection.objectOf(objectId);
+			if (object?.placeholder || object?.masterContent) return true;
+			return Array.from(part.objects.values()).some(
+				(member) => member.parent === objectId && ofTheLayout(member.id ?? -1),
+			);
+		};
+		if (selected.some(ofTheLayout)) return false;
+
+		app.map.sendUnoCommand('.uno:Delete');
+		return RenderManager.deleteLocally(
+			part.partId,
+			selected,
+			GraphicSelection.longestDeleteWait,
+		);
+	}
+
+	/// How long the objects deleted here stay away without the engine reporting them gone, in
+	/// milliseconds. The engine answers every delete, so this is for an answer that got lost.
+	private static readonly longestDeleteWait: number = 30000;
+
+	/// Whether the answers to deletes are followed, which they are once.
+	private static followingDeletes: boolean = false;
+
+	/// Brings back the objects of a delete made here where the engine refused it.
+	private static followTheDeletes(): void {
+		if (GraphicSelection.followingDeletes) return;
+		GraphicSelection.followingDeletes = true;
+		app.map.on('commandresult', (event: any) => {
+			if (event.commandName === '.uno:Delete' && event.success === false)
+				RenderManager.deleteRefused();
+		});
 	}
 
 	/// The engine was asked to enter the selected group; the context says what is selected then.
@@ -745,6 +806,17 @@ class GraphicSelection {
 		)
 			return true;
 
+		// Delete and Backspace delete the selected objects, shown at once, where nothing else
+		// happens to the page with them.
+		if (
+			(event.key === 'Delete' || event.key === 'Backspace') &&
+			!event.ctrlKey &&
+			!event.altKey &&
+			!event.metaKey &&
+			this.deleteTheObjectsHere()
+		)
+			return true;
+
 		// A key that moves, turns, slants or resets what is selected waits while an undo or a redo
 		// is on its way, since the objects then stand where only the engine's answer tells. It is
 		// handled once the answer is in, from where the undo left the objects.
@@ -836,8 +908,17 @@ class GraphicSelection {
 		object pressed without marking anything new, so no report says so. The engine works on that
 		object already, and is not told again, which would end the edit.
 	*/
+	/// The object this view edited the text of when the objects last changed, if any.
+	private static lastEdited: number | undefined = undefined;
+
 	private static followTheTextEdit(): void {
 		const edited = this.objectUnderTextEdit();
+
+		// a text edit that starts ends a mode one was put into, as creating an object by a drag
+		if (edited !== undefined && edited !== this.lastEdited)
+			Interaction.leaveMode();
+		this.lastEdited = edited;
+
 		if (!edited || this.selectedObjectIDs.includes(edited)) return;
 		if (!RenderGeometrySection.objectOf(edited)) return;
 
@@ -1807,6 +1888,8 @@ class GraphicSelection {
 
 			this.handlesSection.refreshInfo(this.extraInfo);
 			this.handlesSection.setShowSection(editMode);
+			if (app.file.textCursor.visible)
+				app.events.fire('TextCursorVisibility', { visible: true });
 			GraphicSelection.updateSelectionSection();
 			this.selectionSection?.setShowSection(editMode);
 			app.sectionContainer.requestReDraw();

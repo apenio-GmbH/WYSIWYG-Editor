@@ -377,7 +377,10 @@ class Dispatcher {
 		};
 
 		this.actionsMap['inserttextbox'] = () => {
-			app.map.sendUnoCommand('.uno:Text?CreateDirectly:bool=true');
+			// in a view that draws from objects the text box is dragged out or clicked where it goes
+			if (ClassicCreateContext.canCreate(ClassicCreateContext.text))
+				ClassicCreateContext.start(ClassicCreateContext.text);
+			else app.map.sendUnoCommand('.uno:Text?CreateDirectly:bool=true');
 		};
 		this.actionsMap['insertannotation'] = () => {
 			app.map.insertComment();
@@ -1657,6 +1660,9 @@ class Dispatcher {
 	}
 
 	public dispatch(action: string, data?: any) {
+		// an action ends a mode one was put into, as creating a shape by a drag
+		Interaction.leaveMode();
+
 		// Don't allow to execute new actions while any dialog is visible.
 		// It prevents launching multiple instances of the same dialog.
 		// Exception: validatedialogsa11y needs to run when dialogs are open.

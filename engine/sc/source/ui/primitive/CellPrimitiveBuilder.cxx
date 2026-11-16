@@ -1129,10 +1129,8 @@ bool CellPrimitiveBuilder::Impl::addSimpleText(const CellSource& rSource)
     SvxCellVerJustify eVerJust = rPattern.GetItem(ATTR_VER_JUSTIFY, pCondSet).GetValue();
     if (eVerJust == SvxCellVerJustify::Standard)
         eVerJust = SvxCellVerJustify::Bottom;
-    bool bLineBreak = rPattern.GetItem(ATTR_LINEBREAK, pCondSet).GetValue();
-    // A number in a plain number format never wraps. Currency, percent, date and time formats do.
-    if (bLineBreak && rCell.hasNumeric() && pFormatter->GetType(nFormat) == SvNumFormatType::NUMBER)
-        bLineBreak = false;
+    const bool bLineBreak = sc::wrapsTextAutomatically(
+        rPattern.GetItem(ATTR_LINEBREAK, pCondSet).GetValue(), rCell.hasNumeric());
     const bool bRepeatAttr = eHorJustAttr == SvxCellHorJustify::Repeat;
     const bool bRotated
         = !bRepeatAttr && rPattern.GetItem(ATTR_ROTATE_VALUE, pCondSet).GetValue() != 0_deg100;
@@ -1600,12 +1598,17 @@ void CellPrimitiveBuilder::Impl::addEditText(const CellSource& rSource)
         default:
             break;
     }
-    // A number in a plain number format never wraps. Currency, percent, date and time formats do.
+    // Stacked text has a line per character. Justified text breaks into lines, except a number in a
+    // plain number format, as in ScOutputData::LayoutStrings.
     SvNumberFormatter* pFormatter = mrDocument.GetFormatTable();
     const sal_uInt32 nFormat = rPattern.GetNumberFormat(pFormatter, pCondSet);
-    if (bBreak && bCellIsValue && !bStacked
-        && pFormatter->GetType(nFormat) == SvNumFormatType::NUMBER)
-        bBreak = false;
+    if (!bStacked)
+    {
+        if (eHorJustAttr != SvxCellHorJustify::Block)
+            bBreak = sc::wrapsTextAutomatically(bBreak, bCellIsValue);
+        else if (bCellIsValue && pFormatter->GetType(nFormat) == SvNumFormatType::NUMBER)
+            bBreak = false;
+    }
 
     const OUString aCellString = mrDocument.GetString(nColumn, nRow, mnTab);
     const SvxCellHorJustify eHorJustContext
@@ -1652,11 +1655,13 @@ void CellPrimitiveBuilder::Impl::addEditText(const CellSource& rSource)
                 break;
         }
     }
-    if (bAsianVertical)
+    // The lines of turned and Asian vertical text run along the height of the cell, so its
+    // vertical alignment aligns them, as in ScOutputData::DrawEditParam::setAlignmentToEngine.
+    if (bVertical || bAsianVertical)
     {
         sc::setVerticalTextAlignment(
-            rEngine, true, eVerJust, rPattern.GetItem(ATTR_VER_JUSTIFY_METHOD, pCondSet).GetValue(),
-            eHorJust);
+            rEngine, eOrient == SvxCellOrientation::TopBottom || bAsianVertical, eVerJust,
+            rPattern.GetItem(ATTR_VER_JUSTIFY_METHOD, pCondSet).GetValue(), eHorJust);
     }
     else
     {
@@ -1841,10 +1846,27 @@ void CellPrimitiveBuilder::Impl::addEditText(const CellSource& rSource)
         fExtentY = fEngineHeight;
     }
 
-    // Wrapped text taller than the cell starts at the top; text taller than the cell is cut.
+    // Normal and stacked wrapped text that is clearly too high for the cell gets the arrow on the
+    // right, and the text is cut before it, as in ScOutputData. Normal text then starts at the top
+    // instead of the bottom. Text taller than the cell is cut.
     const double fAlignInnerHeight = aSizes.mfAlignHeight - fTopMargin - fBottomMargin;
-    const bool bStartAtTop
-        = fExtentY > fAlignInnerHeight && bBreak && eVerJust == SvxCellVerJustify::Standard;
+    const bool bClearlyTooHigh
+        = !bVertical && !bAsianVertical && nRotate == 0_deg100
+          && sc::editTextClearlyTooHigh(
+              fExtentY * constMm100PerTwip, fAlignInnerHeight * constMm100PerTwip,
+              bStacked ? bStackedWraps : bBreak, maSettings.mbClipMarks,
+              rEngine.GetParagraphCount() > 1 || rEngine.GetLineCount(0) > 1);
+    if (bClearlyTooHigh && !bClipRightMark)
+    {
+        bClipRightMark = true;
+        if (!aArea.mbRightMarkRoom)
+        {
+            aArea.mbRightMarkRoom = true;
+            aSizes.mfClipWidth -= SC_CLIPMARK_SIZE;
+        }
+    }
+    const bool bStartAtTop = bClearlyTooHigh && eVerJust == SvxCellVerJustify::Standard
+                             && eOrient == SvxCellOrientation::Standard;
     if (fExtentY > fAlignInnerHeight + 1)
         eFlags |= CellTextFlags::ClippedBottom;
     if (aArea.mbLeftClip)
@@ -2011,7 +2033,7 @@ void CellPrimitiveBuilder::Impl::placeEditText(const CellEditText& rText)
 void CellPrimitiveBuilder::Impl::buildText(const ScTableInfo& rInfo)
 {
     const RowInfo* pRowInfo = rInfo.mpRowInfo.get();
-    std::set<std::pair<SCCOL, SCROW>> aOutsideOrigins;
+    std::set<std::pair<SCCOL, SCROW>> aOrigins;
 
     SCCOL nLastContentColumn = mrDocument.MaxCol();
     if (maSettings.mbTextFromOutside)
@@ -2032,15 +2054,16 @@ void CellPrimitiveBuilder::Impl::buildText(const ScTableInfo& rInfo)
             const ScCellInfo& rCell = rRow.cellInfo(nColumn);
             if (rCell.bHOverlapped || rCell.bVOverlapped)
             {
-                // A merged area shows the text of its first cell, which can be outside the range.
-                if (maSettings.mbTextFromOutside)
-                {
-                    SCCOL nOriginColumn = nColumn;
-                    SCROW nOriginRow = nRow;
-                    mrDocument.ExtendOverlapped(nOriginColumn, nOriginRow, nColumn, nRow, mnTab);
-                    if (nOriginColumn < mnStartColumn || nOriginRow < mnStartRow)
-                        aOutsideOrigins.emplace(nOriginColumn, nOriginRow);
-                }
+                // A merged area shows the text of its first cell. The loop does not come to that
+                // cell when it is hidden, or outside the range, as in ScOutputData.
+                SCCOL nOriginColumn = nColumn;
+                SCROW nOriginRow = nRow;
+                mrDocument.ExtendOverlapped(nOriginColumn, nOriginRow, nColumn, nRow, mnTab);
+                const bool bOutside = nOriginColumn < mnStartColumn || nOriginRow < mnStartRow;
+                if (bOutside ? maSettings.mbTextFromOutside
+                             : isColumnHidden(nOriginColumn)
+                                   || mrDocument.RowHidden(nOriginRow, mnTab))
+                    aOrigins.emplace(nOriginColumn, nOriginRow);
                 continue;
             }
             if (isColumnHidden(nColumn))
@@ -2072,7 +2095,7 @@ void CellPrimitiveBuilder::Impl::buildText(const ScTableInfo& rInfo)
             addCellText(nRight, nRow, nullptr);
     }
 
-    for (const auto& [nColumn, nRow] : aOutsideOrigins)
+    for (const auto& [nColumn, nRow] : aOrigins)
         addCellText(nColumn, nRow, nullptr);
 }
 

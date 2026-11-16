@@ -350,7 +350,7 @@ void SwTextFrame::PaintExtraData( const SwRect &rRect ) const
 }
 
 drawinglayer::primitive2d::Primitive2DContainer
-SwTextFrame::CreateExtraDataPrimitives( const Point& rOrigin ) const
+SwTextFrame::CreateExtraDataPrimitives(const Point& rOrigin, bool bForView) const
 {
     drawinglayer::primitive2d::Primitive2DContainer aPrimitives;
     if ( !getRootFrame()->GetCurrShell() || !::IsExtraData( GetDoc() ) )
@@ -371,7 +371,7 @@ SwTextFrame::CreateExtraDataPrimitives( const Point& rOrigin ) const
     if ( const SwPageFrame* pPage = FindPageFrame() )
         aDrawArea.Union( pPage->getFrameArea() );
 
-    sw::vector::TextSink aSink( rOrigin );
+    sw::vector::TextSink aSink(rOrigin, bForView);
     DrawExtraData( aDrawArea, &aSink );
     return aSink.take();
 }
@@ -466,7 +466,11 @@ void SwTextFrame::DrawExtraData( const SwRect &rRect, sw::vector::TextSink* pSin
 
         tools::Long nBottom = rRect.Bottom();
 
-        const bool bIsShowChangesInMargin = pSh->GetViewOptions()->IsShowChangesInMargin();
+        // The marks drawn for any client take the same options whichever view is the current one.
+        const SwViewOption& rOptions = pSink && !pSink->isForView()
+                                           ? sw::vector::optionsForAnyView()
+                                           : *pSh->GetViewOptions();
+        const bool bIsShowChangesInMargin = rOptions.IsShowChangesInMargin();
         do
         {
             // A comment from SwTextFormatter::CalcRealHeight:
@@ -917,7 +921,8 @@ drawinglayer::primitive2d::TextPortionAlign alignOf(const SwTextFrame& rFrame)
 
 drawinglayer::primitive2d::Primitive2DContainer
 SwTextFrame::CreateTextPrimitives(
-    const Point& rOrigin, drawinglayer::primitive2d::Primitive2DContainer& rOverObjects) const
+    const Point& rOrigin, bool bForView,
+    drawinglayer::primitive2d::Primitive2DContainer& rOverObjects) const
 {
     drawinglayer::primitive2d::Primitive2DContainer aPrimitives;
     SwViewShell* pShell = getRootFrame()->GetCurrShell();
@@ -969,7 +974,7 @@ SwTextFrame::CreateTextPrimitives(
         SwRect aTextArea(getFramePrintArea());
         aTextArea.Pos(aTextArea.Pos() + getFrameArea().Pos());
 
-        sw::vector::TextSink aSink(rOrigin, aTextArea, alignOf(*this));
+        sw::vector::TextSink aSink(rOrigin, aTextArea, alignOf(*this), bForView);
         SwTextPaintInfo aInfo(pThis, aDrawArea, aSink);
         aInfo.GetTextFly().SetTopRule();
 

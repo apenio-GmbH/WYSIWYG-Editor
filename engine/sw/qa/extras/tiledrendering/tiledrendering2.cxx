@@ -39,6 +39,10 @@
 #include <unotools/datetime.hxx>
 #include <vcl/virdev.hxx>
 #include <unotxdoc.hxx>
+#include <vcl/BitmapReadAccess.hxx>
+#include <VectorCollector.hxx>
+#include <VectorPart.hxx>
+#include <itabenum.hxx>
 
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XEnumerationAccess.hpp>
@@ -55,6 +59,7 @@
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
+#include <com/sun/star/table/BorderLine2.hpp>
 #include <com/sun/star/text/XTextFramesSupplier.hpp>
 #include <com/sun/star/text/XTextGraphicObjectsSupplier.hpp>
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
@@ -70,6 +75,7 @@
 #include <ndtxt.hxx>
 #include <section.hxx>
 #include <txtfrm.hxx>
+#include <viscrs.hxx>
 #include <view.hxx>
 #include <IDocumentLayoutAccess.hxx>
 #include <IDocumentLinksAdministration.hxx>
@@ -2971,6 +2977,27 @@ CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yTextFrameSelection)
                          aView.m_aA11ySelection.get<std::string>("action", ""));
 }
 
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yTextFrameSelectionObjectNames)
+{
+    // Given a text frame holding a frame right after a word, and a comment right after the frame:
+    createDoc("a11y-frame-in-frame.fodt");
+    SwTestViewCallback aView;
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->GetSfxViewShell()->SetKitAccessibilityState(true);
+    Scheduler::ProcessEventsToIdle();
+
+    // When the outer frame is selected from the keyboard (Shift+F4):
+    dispatchCommand(mxComponent, u".uno:JumpToNextFrame"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+
+    // Then its text has the inner frame's title set off by spaces, and no comment anchor:
+    CPPUNIT_ASSERT(pWrtShell->IsFrameSelected());
+    CPPUNIT_ASSERT_EQUAL(std::string("Outer"), aView.m_aA11ySelection.get<std::string>("name", ""));
+    // Without the fix, the frame and the comment were U+FFFC:
+    CPPUNIT_ASSERT_EQUAL(std::string("Outer text Inner box with a remark here. \n"),
+                         aView.m_aA11ySelection.get<std::string>("text", ""));
+}
+
 CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yFloatingTableSelection)
 {
     // Given a floating table split over two pages, A1 on the first and A2 on the second, and the
@@ -3240,6 +3267,112 @@ CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yFocusedParagraphFormatsTracke
     CPPUNIT_ASSERT_EQUAL(5, rBold.get<int>("start"));
     CPPUNIT_ASSERT_EQUAL(9, rBold.get<int>("end"));
     CPPUNIT_ASSERT(!rBold.get_optional<std::string>("underline"));
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yFocusedParagraphChanges)
+{
+    // Given a paragraph after the first one with an insertion, a deletion and an attribute change:
+    createDoc("a11y-tracked-changes.fodt");
+    SwTestViewCallback aView;
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->GetSfxViewShell()->SetKitAccessibilityState(true);
+    Scheduler::ProcessEventsToIdle();
+
+    // When the caret moves into that paragraph:
+    pWrtShell->Down(/*bSelect=*/false);
+    Scheduler::ProcessEventsToIdle();
+
+    // Then each change is reported by its range and type, the deleted text in the content:
+    CPPUNIT_ASSERT_EQUAL(std::string("Keep fresh and lazy then warm end."),
+                         aView.m_aA11yFocusedParagraph.get<std::string>("content", ""));
+    // Without the fix, there was no "changes" node.
+    CPPUNIT_ASSERT(aView.m_aA11yFocusedParagraph.get_child_optional("changes"));
+    auto check
+        = [](const boost::property_tree::ptree& rChange, int nStart, int nEnd, const char* pType) {
+              CPPUNIT_ASSERT_EQUAL(nStart, rChange.get<int>("start"));
+              CPPUNIT_ASSERT_EQUAL(nEnd, rChange.get<int>("end"));
+              CPPUNIT_ASSERT_EQUAL(std::string(pType), rChange.get<std::string>("type"));
+          };
+    {
+        const boost::property_tree::ptree& rChanges
+            = aView.m_aA11yFocusedParagraph.get_child("changes");
+        CPPUNIT_ASSERT_EQUAL(size_t(3), rChanges.size());
+        auto it = rChanges.begin();
+        check((it++)->second, 5, 10, "insertion");
+        check((it++)->second, 15, 20, "deletion");
+        check(it->second, 25, 29, "attributes");
+    }
+
+    // And when the insertion is accepted, the text staying the same:
+    pWrtShell->Right(SwCursorSkipMode::Chars, /*bSelect=*/false, 6, /*bBasicCall=*/false);
+    dispatchCommand(mxComponent, u".uno:AcceptTrackedChange"_ustr, {});
+    Scheduler::ProcessEventsToIdle();
+
+    // Then the paragraph is reported again, without it:
+    {
+        const boost::property_tree::ptree& rChanges
+            = aView.m_aA11yFocusedParagraph.get_child("changes");
+        CPPUNIT_ASSERT_EQUAL(size_t(2), rChanges.size());
+        check(rChanges.begin()->second, 15, 20, "deletion");
+    }
+
+    // And when the caret moves back up, the changes are reported for the paragraph after it:
+    pWrtShell->Up(/*bSelect=*/false);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(
+        size_t(2), aView.m_aA11yFocusedParagraph.get_child("afterChanges").begin()->second.size());
+    CPPUNIT_ASSERT(!aView.m_aA11yFocusedParagraph.get_child_optional("changes"));
+
+    // And a paragraph inserted whole is reported as one insertion, from its start to its end:
+    pWrtShell->Down(/*bSelect=*/false, 2);
+    Scheduler::ProcessEventsToIdle();
+    {
+        const boost::property_tree::ptree& rChanges
+            = aView.m_aA11yFocusedParagraph.get_child("changes");
+        CPPUNIT_ASSERT_EQUAL(size_t(1), rChanges.size());
+        check(rChanges.begin()->second, 0, 13, "insertion");
+    }
+    pWrtShell->Up(/*bSelect=*/false, 2);
+
+    // And when the changes are hidden, none is reported, nor the deleted text:
+    dispatchCommand(mxComponent, u".uno:ShowTrackedChanges"_ustr, {});
+    pWrtShell->Down(/*bSelect=*/false);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(std::string("Keep fresh and then warm end."),
+                         aView.m_aA11yFocusedParagraph.get<std::string>("content", ""));
+    CPPUNIT_ASSERT(!aView.m_aA11yFocusedParagraph.get_child_optional("changes"));
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yFocusedParagraphStackedChanges)
+{
+    // Given the paragraph with changes, and changes recorded:
+    createDoc("a11y-tracked-changes.fodt");
+    SwTestViewCallback aView;
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->GetSfxViewShell()->SetKitAccessibilityState(true);
+    dispatchCommand(mxComponent, u".uno:TrackChanges"_ustr,
+                    { comphelper::makePropertyValue(u"TrackChanges"_ustr, true) });
+    pWrtShell->Down(/*bSelect=*/false);
+    Scheduler::ProcessEventsToIdle();
+
+    // When the inserted and the deleted text are made bold:
+    auto makeBold = [&](sal_uInt16 nStart, sal_uInt16 nLength) {
+        pWrtShell->SttPara(/*bSelect=*/false);
+        pWrtShell->Right(SwCursorSkipMode::Chars, /*bSelect=*/false, nStart, /*bBasicCall=*/false);
+        pWrtShell->Right(SwCursorSkipMode::Chars, /*bSelect=*/true, nLength,
+                         /*bBasicCall=*/false);
+        dispatchCommand(mxComponent, u".uno:Bold"_ustr, {});
+        Scheduler::ProcessEventsToIdle();
+    };
+    makeBold(5, 5);
+    makeBold(15, 5);
+
+    // Then they are still reported as inserted and deleted, not as attribute changes:
+    std::map<int, std::string> aTypes;
+    for (const auto& rChange : aView.m_aA11yFocusedParagraph.get_child("changes"))
+        aTypes[rChange.second.get<int>("start")] = rChange.second.get<std::string>("type");
+    CPPUNIT_ASSERT_EQUAL(std::string("insertion"), aTypes[5]);
+    CPPUNIT_ASSERT_EQUAL(std::string("deletion"), aTypes[15]);
 }
 
 CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testA11yContextWithoutElements)
@@ -5106,6 +5239,285 @@ CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testManageChangesListIgnoresOtherView
                                      rDialog.indexOf("writerchanges"));
     KitHelper::setView(nView1);
     pWrtShell1->GetView().GetViewFrame().SetChildWindow(FN_REDLINE_ACCEPT, false);
+}
+
+namespace
+{
+/// A tile of 512 pixels that shows nTileSize twips from (nTilePosX, nTilePosY), painted by the
+/// paint code of the frames or from the primitive decomposition of the pages.
+Bitmap paintOneTile(SwXTextDocument* pXTextDocument, bool bFromPrimitives, int nTilePosX,
+                    int nTilePosY, tools::Long nTileSize)
+{
+    const bool bWasFromPrimitives = sw::vector::tilesFromPrimitives();
+    sw::vector::setTilesFromPrimitives(bFromPrimitives);
+    comphelper::ScopeGuard aGuard(
+        [bWasFromPrimitives] { sw::vector::setTilesFromPrimitives(bWasFromPrimitives); });
+    const tools::Long nSize = 512;
+    ScopedVclPtrInstance<VirtualDevice> pDevice(DeviceFormat::WITHOUT_ALPHA);
+    std::vector<unsigned char> aPixmap(nSize * nSize * 4, 0);
+    pDevice->SetBackground(Wallpaper(COL_TRANSPARENT));
+    pDevice->SetOutputSizePixelScaleOffsetAndKitBuffer(Size(nSize, nSize), 1.0, Point(),
+                                                        aPixmap.data());
+    pXTextDocument->paintTile(*pDevice, nSize, nSize, nTilePosX, nTilePosY, nTileSize, nTileSize);
+    pDevice->EnableMapMode(false);
+    return pDevice->GetBitmap(Point(0, 0), Size(nSize, nSize));
+}
+
+/// Whether two colors are within three eighths of the range of each other in every color channel.
+bool closeColors(const Color& rOne, const Color& rOther)
+{
+    return std::abs(rOne.GetRed() - rOther.GetRed()) <= 96
+           && std::abs(rOne.GetGreen() - rOther.GetGreen()) <= 96
+           && std::abs(rOne.GetBlue() - rOther.GetBlue()) <= 96;
+}
+
+/// Whether a pixel of rOther within nReach pixels of (nCenterX, nCenterY) has a color close to
+/// rColor.
+bool hasCloseNeighbor(const BitmapScopedReadAccess& rOther, const Size& rSize,
+                      tools::Long nCenterX, tools::Long nCenterY, const Color& rColor,
+                      tools::Long nReach)
+{
+    for (tools::Long nY = std::max<tools::Long>(nCenterY - nReach, 0);
+         nY <= std::min<tools::Long>(nCenterY + nReach, rSize.Height() - 1); ++nY)
+    {
+        for (tools::Long nX = std::max<tools::Long>(nCenterX - nReach, 0);
+             nX <= std::min<tools::Long>(nCenterX + nReach, rSize.Width() - 1); ++nX)
+        {
+            if (closeColors(rColor, Color(rOther->GetPixel(nY, nX))))
+                return true;
+        }
+    }
+    return false;
+}
+
+/// The share of the pixels where the color of one tile has no close match within nReach pixels
+/// in the other tile. The paint code snaps lines and text to whole pixels of the screen at 100%,
+/// which are 15 twips, and the primitives keep their exact positions. So the same content can lie
+/// up to 15 twips apart, and the anti-aliased edge of a line has other levels of gray when the
+/// line lies at another fraction of a pixel. nReach is the number of pixels of the tile that
+/// cover 15 twips: one at 100%, two at 200%.
+double differingShare(const Bitmap& rOne, const Bitmap& rOther, tools::Long nReach = 1)
+{
+    const Size aSize = rOne.GetSizePixel();
+    BitmapScopedReadAccess pOne(rOne);
+    BitmapScopedReadAccess pOther(rOther);
+    tools::Long nDiffering = 0;
+    for (tools::Long nY = 0; nY < aSize.Height(); ++nY)
+    {
+        for (tools::Long nX = 0; nX < aSize.Width(); ++nX)
+        {
+            const Color aOne(pOne->GetPixel(nY, nX));
+            const Color aOther(pOther->GetPixel(nY, nX));
+            if (closeColors(aOne, aOther))
+                continue;
+            if (!hasCloseNeighbor(pOther, aSize, nX, nY, aOne, nReach)
+                || !hasCloseNeighbor(pOne, aSize, nX, nY, aOther, nReach))
+                ++nDiffering;
+        }
+    }
+    return double(nDiffering) / (aSize.Width() * aSize.Height());
+}
+
+/// The number of pixels that are dark, as text on white paper is.
+tools::Long countDarkPixels(const Bitmap& rBitmap)
+{
+    const Size aSize = rBitmap.GetSizePixel();
+    BitmapScopedReadAccess pAccess(rBitmap);
+    tools::Long nDark = 0;
+    for (tools::Long nY = 0; nY < aSize.Height(); ++nY)
+    {
+        for (tools::Long nX = 0; nX < aSize.Width(); ++nX)
+        {
+            if (Color(pAccess->GetPixel(nY, nX)).IsDark())
+                ++nDark;
+        }
+    }
+    return nDark;
+}
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testTileFromPrimitivesLooksLikeThePaintedTile)
+{
+    // Text, a paragraph border and a table are the parts the decomposition builds on its own.
+    SwXTextDocument* pXTextDocument = createDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->Insert(u"The decomposition draws this text like the paint code does."_ustr);
+    table::BorderLine2 aBorder;
+    aBorder.OuterLineWidth = 50;
+    aBorder.LineWidth = 50;
+    uno::Reference<beans::XPropertySet> xParagraph(getParagraph(1), uno::UNO_QUERY);
+    xParagraph->setPropertyValue(u"BottomBorder"_ustr, uno::Any(aBorder));
+    pWrtShell->SplitNode();
+    SwInsertTableOptions aTableOptions(SwInsertTableFlags::DefaultBorder, 0);
+    pWrtShell->InsertTable(aTableOptions, /*nRows=*/2, /*nCols=*/2);
+    Scheduler::ProcessEventsToIdle();
+
+    // The first two tiles show the top left of the first page at 100%.
+    const Bitmap aPainted = paintOneTile(pXTextDocument, /*bFromPrimitives=*/false, 0, 0, 7680);
+    const Bitmap aFromPrimitives
+        = paintOneTile(pXTextDocument, /*bFromPrimitives=*/true, 0, 0, 7680);
+
+    // The tile shows the text and the table lines, rather than paper alone.
+    CPPUNIT_ASSERT_GREATER(tools::Long(100), countDarkPixels(aFromPrimitives));
+    // The limit is 0.2% of the tile. One horizontal table line is about 0.33% of it, so a tile
+    // that lacks such a line is over the limit.
+    CPPUNIT_ASSERT_LESS(0.002, differingShare(aPainted, aFromPrimitives));
+
+    // The next tiles start inside the page at 200% and still show the start of the text and of
+    // the table. They check that the offset and the scale of the tile apply to the primitives.
+    const Bitmap aPaintedZoomed
+        = paintOneTile(pXTextDocument, /*bFromPrimitives=*/false, 960, 960, 3840);
+    const Bitmap aZoomedFromPrimitives
+        = paintOneTile(pXTextDocument, /*bFromPrimitives=*/true, 960, 960, 3840);
+    CPPUNIT_ASSERT_GREATER(tools::Long(100), countDarkPixels(aZoomedFromPrimitives));
+    // At 200% a pixel is 7.5 twips, so the same content lies up to two pixels apart.
+    CPPUNIT_ASSERT_LESS(0.002, differingShare(aPaintedZoomed, aZoomedFromPrimitives, /*nReach=*/2));
+}
+
+namespace
+{
+/// Asks for the primitives of the first page, as a client that draws the pages from them does.
+void requestFirstVectorPage(SwXTextDocument& rDocument, SwWrtShell& rShell)
+{
+    const SwPageFrame* pPage = rShell.GetLayout()->GetLower()->DynCastPageFrame();
+    CPPUNIT_ASSERT(pPage);
+    const OString aCommand = ".uno:VectorPrimitives?partid=" + sw::vector::partIdOf(*pPage);
+    tools::JsonWriter aWriter;
+    rDocument.getCommandValues(aWriter, aCommand);
+    aWriter.finishAndGetAsOString();
+}
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testCaretOfTiledDocumentHasRectangleOnly)
+{
+    // A document whose pages go out as tiles only sends the rectangle of the caret. A caret
+    // that moves over a zero-width character then sends the same message as before.
+    createDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->Insert(u"abc"_ustr);
+    Scheduler::ProcessEventsToIdle();
+
+    std::optional<OString> oPayload = pWrtShell->GetVisibleCursor()->getKitPayload(
+        COKitCallbackType::INVALIDATE_VISIBLE_CURSOR, /*nViewId=*/0);
+    CPPUNIT_ASSERT(oPayload);
+    std::stringstream aStream((std::string(*oPayload)));
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+
+    CPPUNIT_ASSERT(aTree.get_child_optional("rectangle"));
+    CPPUNIT_ASSERT(!aTree.get_child_optional("object"));
+    CPPUNIT_ASSERT(!aTree.get_child_optional("paragraph"));
+    CPPUNIT_ASSERT(!aTree.get_child_optional("index"));
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testCaretNamesItsTextFrameAndIndex)
+{
+    // The caret message says where the caret is in the text of the frame that holds it, the way
+    // the vector primitives of that frame index their text.
+    SwXTextDocument* pXTextDocument = createDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    requestFirstVectorPage(*pXTextDocument, *pWrtShell);
+    pWrtShell->Insert(u"first"_ustr);
+    pWrtShell->SplitNode();
+    pWrtShell->Insert(u"abc"_ustr);
+    pWrtShell->Left(SwCursorSkipMode::Chars, /*bSelect=*/false, 1, /*bBasicCall=*/false);
+    Scheduler::ProcessEventsToIdle();
+
+    const SwContentFrame* pFrame = pWrtShell->GetCurrFrame();
+    CPPUNIT_ASSERT(pFrame);
+    std::optional<OString> oPayload = pWrtShell->GetVisibleCursor()->getKitPayload(
+        COKitCallbackType::INVALIDATE_VISIBLE_CURSOR, /*nViewId=*/0);
+    CPPUNIT_ASSERT(oPayload);
+    std::stringstream aStream((std::string(*oPayload)));
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+
+    CPPUNIT_ASSERT_EQUAL(std::to_string(pFrame->GetFrameId()), aTree.get<std::string>("object"));
+    CPPUNIT_ASSERT_EQUAL(std::string("0"), aTree.get<std::string>("paragraph"));
+    CPPUNIT_ASSERT_EQUAL(std::string("2"), aTree.get<std::string>("index"));
+    // Nothing is selected, so there is no other end.
+    CPPUNIT_ASSERT(!aTree.get_child_optional("anchorIndex"));
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testCaretNamesTheOtherEndOfASelectionInItsFrame)
+{
+    SwXTextDocument* pXTextDocument = createDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    requestFirstVectorPage(*pXTextDocument, *pWrtShell);
+    pWrtShell->Insert(u"abcd"_ustr);
+    pWrtShell->Left(SwCursorSkipMode::Chars, /*bSelect=*/true, 3, /*bBasicCall=*/false);
+    Scheduler::ProcessEventsToIdle();
+
+    std::optional<OString> oPayload = pWrtShell->GetVisibleCursor()->getKitPayload(
+        COKitCallbackType::INVALIDATE_VISIBLE_CURSOR, /*nViewId=*/0);
+    CPPUNIT_ASSERT(oPayload);
+    std::stringstream aStream((std::string(*oPayload)));
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+
+    CPPUNIT_ASSERT_EQUAL(std::string("1"), aTree.get<std::string>("index"));
+    CPPUNIT_ASSERT_EQUAL(std::string("0"), aTree.get<std::string>("anchorParagraph"));
+    CPPUNIT_ASSERT_EQUAL(std::string("4"), aTree.get<std::string>("anchorIndex"));
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testTextCursorGoesToAnIndexOfATextFrame)
+{
+    // A client that moved the caret itself names the text frame and the offsets in its text.
+    SwXTextDocument* pXTextDocument = createDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->Insert(u"first"_ustr);
+    pWrtShell->SplitNode();
+    pWrtShell->Insert(u"abcd"_ustr);
+    const sal_uInt64 nSecond = pWrtShell->GetCurrFrame()->GetFrameId();
+    pWrtShell->SttEndDoc(/*bStt=*/true);
+    Scheduler::ProcessEventsToIdle();
+
+    CPPUNIT_ASSERT(pXTextDocument->setKitTextCursor(pWrtShell->GetView(), nSecond, 0, 1, 0, 3));
+
+    CPPUNIT_ASSERT_EQUAL(nSecond, sal_uInt64(pWrtShell->GetCurrFrame()->GetFrameId()));
+    CPPUNIT_ASSERT_EQUAL(u"bc"_ustr, pWrtShell->GetSelText());
+    // A frame that does not exist moves nothing.
+    CPPUNIT_ASSERT(
+        !pXTextDocument->setKitTextCursor(pWrtShell->GetView(), nSecond + 1000, 0, 0, 0, 0));
+    CPPUNIT_ASSERT_EQUAL(u"bc"_ustr, pWrtShell->GetSelText());
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testTextCursorBeforeTheTextStaysAtItsStart)
+{
+    // An offset before the start of the text frame puts the caret at the start of its text.
+    SwXTextDocument* pXTextDocument = createDoc();
+    SwWrtShell* pWrtShell = getSwDocShell()->GetWrtShell();
+    pWrtShell->Insert(u"abcd"_ustr);
+    const sal_uInt64 nFrame = pWrtShell->GetCurrFrame()->GetFrameId();
+    Scheduler::ProcessEventsToIdle();
+
+    CPPUNIT_ASSERT(pXTextDocument->setKitTextCursor(pWrtShell->GetView(), nFrame, 0, -5, 0, 2));
+
+    CPPUNIT_ASSERT_EQUAL(u"ab"_ustr, pWrtShell->GetSelText());
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), pWrtShell->GetCursor()->GetPoint()->GetContentIndex());
+}
+
+CPPUNIT_TEST_FIXTURE(SwTiledRenderingTest, testTextCursorMovesTheCaretOfTheViewThatSentIt)
+{
+    // The caret of the view named with the text frame moves, while the current view is another.
+    SwXTextDocument* pXTextDocument = createDoc();
+    SwTestViewCallback aView1;
+    int nView1 = KitHelper::getCurrentView();
+    SwWrtShell* pWrtShell1 = pXTextDocument->GetDocShell()->GetWrtShell();
+    pWrtShell1->Insert(u"abcd"_ustr);
+    const sal_uInt64 nFrame = pWrtShell1->GetCurrFrame()->GetFrameId();
+    KitHelper::createView();
+    SwTestViewCallback aView2;
+    SwWrtShell* pWrtShell2 = pXTextDocument->GetDocShell()->GetWrtShell();
+    pWrtShell2->SttEndDoc(/*bStt=*/true);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(nView1 != KitHelper::getCurrentView());
+
+    CPPUNIT_ASSERT(pXTextDocument->setKitTextCursor(pWrtShell1->GetView(), nFrame, 0, 1, 0, 3));
+
+    CPPUNIT_ASSERT_EQUAL(u"bc"_ustr, pWrtShell1->GetSelText());
+    CPPUNIT_ASSERT(!pWrtShell2->HasSelection());
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(0), pWrtShell2->GetCursor()->GetPoint()->GetContentIndex());
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

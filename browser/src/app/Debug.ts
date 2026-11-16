@@ -510,9 +510,25 @@ class DebugManager {
 				},
 			});
 
+		// switching it off and on again forgets the looks of shapes kept so far
+		if (vectorDocument)
+			this._addDebugTool({
+				name: 'Keep shape looks',
+				category: 'Display',
+				startsOn: true,
+				dependsOn: 'Vector',
+				keepOnClose: true,
+				onAdd: function () {
+					ClassicShapeCreateContext.keepTheLooks(true);
+				},
+				onRemove: function () {
+					ClassicShapeCreateContext.keepTheLooks(false);
+				},
+			});
+
 		// Predicted edits change the vector cache, so the caret that shows
 		// them is a Vector tool.
-		if (vectorDocument || vectorSpreadsheet)
+		if (vectorDocument || vectorText || vectorSpreadsheet)
 			this._addDebugTool({
 				name: 'Predicted caret',
 				category: 'Display',
@@ -925,8 +941,8 @@ class DebugManager {
 		});
 
 		// The view sends its changes to the engine a few at a time while it draws from the
-		// objects.
-		if (vectorDocument)
+		// objects, and its typed text while it draws the pages of a text document.
+		if (vectorDocument || vectorText)
 			this._addDebugTool({
 				name: 'Changes in flight',
 				category: 'Functionality',
@@ -950,7 +966,7 @@ class DebugManager {
 				},
 			});
 
-		if (vectorDocument)
+		if (vectorDocument || vectorText)
 			this._addDebugTool({
 				name: 'Combine typed text',
 				category: 'Functionality',

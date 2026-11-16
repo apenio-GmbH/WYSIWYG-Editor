@@ -161,7 +161,7 @@ JQUERY_MINIFIED_DIST_IMAGES = $(patsubst $(JQUERY_MINIFIED_IMAGE_PATH)/%.png,$(D
 
 COOL_IMAGES_SRC = $(shell find $(srcdir)/images \( -name '*.png' -o -name '*.svg' -o -name '*.gif' \))
 COOL_IMAGES_DST = $(patsubst $(srcdir)/%,$(DIST_FOLDER)/%,$(COOL_IMAGES_SRC))
-COOL_VIDEO_BACKGROUNDS_SRC = $(wildcard $(srcdir)/videobackgrounds/*.webm)
+COOL_VIDEO_BACKGROUNDS_SRC = $(wildcard $(srcdir)/videobackgrounds/*.mp4)
 COOL_VIDEO_BACKGROUNDS_DST = $(patsubst $(srcdir)/%,$(DIST_FOLDER)/%,$(COOL_VIDEO_BACKGROUNDS_SRC))
 COOL_IMAGES_CUSTOM_SRC = $(shell if test -n "$(CUSTOM_ICONS_DIRECTORY)"; then find $(CUSTOM_ICONS_DIRECTORY) -name '*.*'; fi)
 COOL_IMAGES_CUSTOM_DST = $(patsubst $(CUSTOM_ICONS_DIRECTORY)/%,$(DIST_FOLDER)/images/%,$(COOL_IMAGES_CUSTOM_SRC))
@@ -449,6 +449,7 @@ COOL_JS_LST =\
 	src/app/InteractionContext.ts \
 	src/app/ClassicInteraction.ts \
 	src/app/TableContext.ts \
+	src/app/CreateContext.ts \
 	src/app/HandleTravel.ts \
 	src/app/GraphicSelectionMiddleware.ts \
 	src/app/TextSelectionMiddleware.ts \
@@ -654,7 +655,9 @@ COOL_JS_LST =\
 	src/canvas/sections/CellRangeHandleSection.ts \
 	src/canvas/sections/OverviewPreviewsSection.ts \
 	src/canvas/sections/PreviewEditSection.ts \
+	src/canvas/sections/WholePageSection.ts \
 	src/canvas/sections/FreeformLineSection.ts \
+	src/canvas/sections/InteractionModeSection.ts \
 	src/canvas/sections/TableResizeMarkerSection.ts \
 	src/canvas/sections/TableSelectMarkerSection.ts \
 	src/canvas/sections/FocusCellSection.ts \
@@ -1029,11 +1032,13 @@ COOL_JS_LST =\
     src/slideshow/ShapeTransitionMask.ts \
     src/slideshow/SlideQuads.ts \
     src/slideshow/SlidePartsGl.ts \
+    src/slideshow/SlideMorph.ts \
     src/slideshow/VectorSlideLayers.ts \
     src/slideshow/Transition2d.ts \
     src/slideshow/Transition3d.ts \
     src/slideshow/transition/ClippingTransition.ts \
 	src/slideshow/transition/FadeTransition.ts \
+	src/slideshow/transition/MorphTransition.ts \
 	src/slideshow/transition/PlusTransition.ts \
 	src/slideshow/transition/CircleTransition.ts \
 	src/slideshow/transition/VenetianTransition.ts \

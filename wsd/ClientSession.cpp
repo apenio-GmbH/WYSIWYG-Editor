@@ -1899,6 +1899,7 @@ bool ClientSession::_handleInput(const char *buffer, int length)
              tokens.equals(0, "cropobject") ||
              tokens.equals(0, "formcontrol") ||
              tokens.equals(0, "selectcells") ||
+             tokens.equals(0, "setconnectorend") ||
              tokens.equals(0, "downloadas") ||
              tokens.equals(0, "getchildid") ||
              tokens.equals(0, "gettextselection") ||
@@ -3333,17 +3334,14 @@ bool ClientSession::filterMessage(const std::string& message) const
     if (tokens.equals(0, "downloadas"))
     {
         std::string id;
-        if (tokens.size() >= 3)
-            getTokenString(tokens[2], "id", id);
-        allowed = filterDownloadAs(id);
+        allowed = tokens.size() >= 3 && getTokenString(tokens[2], "id", id) && filterDownloadAs(id);
 
         // Printing produces a PDF, so a print in any other format is an export.
         if (allowed && id == "print")
         {
             std::string format;
-            if (tokens.size() >= 4)
-                getTokenString(tokens[3], "format", format);
-            if (format != "pdf")
+            if (tokens.size() < 4 || !getTokenString(tokens[3], "format", format) ||
+                format != "pdf")
             {
                 allowed = false;
                 LOG_WRN("Refusing a print to format [" << format << ']');
@@ -3815,9 +3813,7 @@ bool ClientSession::handleKitToClientMessage(const std::shared_ptr<Message>& pay
     if (tokens.equals(0, "downloadas:"))
     {
         std::string id;
-        if (tokens.size() >= 4)
-            getTokenString(tokens[3], "id", id);
-        if (!filterDownloadAs(id))
+        if (tokens.size() < 4 || !getTokenString(tokens[3], "id", id) || !filterDownloadAs(id))
         {
             LOG_WRN("Ignoring kit to client message of: " << firstLine);
             return false;

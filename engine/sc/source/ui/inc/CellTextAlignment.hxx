@@ -41,6 +41,12 @@ SvxCellHorJustify getAlignmentFromContext(SvxCellHorJustify eInHorJust, bool bCe
 /// Whether the number format of the cell is a text format.
 bool isNumberFormatText(const ScDocument& rDocument, SCCOL nColumn, SCROW nRow, SCTAB nTab);
 
+/** Whether "wrap text automatically" breaks the text of a cell into lines. A number never wraps,
+    whatever its number format, as in Excel: one that does not fit shows "###" (#i111387#,
+    tdf#121040). The rule holds whether the text goes to the EditEngine or not.
+ */
+bool wrapsTextAutomatically(bool bLineBreak, bool bCellIsValue);
+
 /** Whether the text holds characters that only the EditEngine lays out: soft hyphen, zero width
     space, direction marks, no-break hyphen and word joiner. The no-break space counts only without
     a repeat character, because it is the thousands separator of some number formats.
@@ -58,6 +64,18 @@ void setVerticalTextAlignment(ScEditEngineDefaulter& rEngine, bool bTopToBottom,
 /// Asian vertical text breaks its columns this many pixels above the bottom of the cell, or the
 /// text would reach out of the cell. The value is a heuristic.
 constexpr tools::Long constAsianVerticalBottomGap = 5;
+
+/** Whether wrapped text is clearly too high for its cell: by more than 1 mm, over several lines,
+    with clip marks shown. The window then marks the cell as clipped, and starts normal text at the
+    top instead of the bottom, which looks better and lets the EditEngine skip the lines outside
+    the cell. The heights are in 1/100 mm, as the EditEngine measures them.
+ */
+template <typename T>
+bool editTextClearlyTooHigh(T nEngineHeight, T nCellHeight, bool bBreak, bool bMarkClipped,
+                            bool bSeveralLines)
+{
+    return nEngineHeight - nCellHeight > 100 && bBreak && bMarkClipped && bSeveralLines;
+}
 
 /** Where stacked text starts across its cell, in the units of the arguments. Stacked text that
     wraps starts at the left margin. Otherwise the text, nNeeded wide with both margins, moves by

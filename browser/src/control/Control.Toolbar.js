@@ -14,7 +14,7 @@
  * Collabora Online toolbar
  */
 
-/* global app $ _ _UNO JSDialog URLPopUpSection HyperlinkWizard cool Util */
+/* global app $ _ _UNO JSDialog URLPopUpSection HyperlinkWizard cool Util ClassicCreateContext ClassicShapeCreateContext */
 /*eslint indent: [error, "tab", { "outerIIFEBody": 0 }]*/
 
 (function(global) {
@@ -370,6 +370,21 @@ function insertTable(grid = document.getElementsByClassName('inserttable-grid')[
 	}
 }
 
+// the kinds of connectors, offered on their own and with the lines
+const connectorKinds = [
+	{img: 'connectors_connector', uno: 'Connector', text: _UNO('.uno:Connector', 'presentation')},
+	{img: 'connectors_connectorarrows', uno: 'ConnectorArrows', text: _UNO('.uno:ConnectorArrows', 'presentation')},
+	{img: 'connectors_connectorarrowend', uno: 'ConnectorArrowEnd', text: _UNO('.uno:ConnectorArrowEnd', 'presentation')},
+	{img: 'connectors_connectorlinearrowend', uno: 'ConnectorLineArrowEnd', text: _UNO('.uno:ConnectorLineArrowEnd', 'presentation')},
+	{img: 'connectors_connectorcurvearrowend', uno: 'ConnectorCurveArrowEnd', text: _UNO('.uno:ConnectorCurveArrowEnd', 'presentation')},
+	{img: 'connectors_connectorlinesarrowend', uno: 'ConnectorLinesArrowEnd', text: _UNO('.uno:ConnectorLinesArrowEnd', 'presentation')},
+	{img: 'connectors_connectorline', uno: 'ConnectorLine', text: _UNO('.uno:ConnectorLine', 'presentation')},
+	{img: 'connectors_connectorcurve', uno: 'ConnectorCurve', text: _UNO('.uno:ConnectorCurve', 'presentation')},
+	{img: 'connectors_connectorlines', uno: 'ConnectorLines', text: _UNO('.uno:ConnectorLines', 'presentation')},
+	{img: 'connectors_connectorlinearrows', uno: 'ConnectorLineArrows', text: _UNO('.uno:ConnectorLineArrows', 'presentation')},
+	{img: 'connectors_connectorcurvearrows', uno: 'ConnectorCurveArrows', text: _UNO('.uno:ConnectorCurveArrows', 'presentation')}
+];
+
 var shapes = {
 	'insertshapes': {
 		'Basic Shapes': [
@@ -518,19 +533,22 @@ var shapes = {
 		]
 	},
 	'insertconnectors': {
-		'Connectors': [
-			{img: 'connectors_connector', uno: 'Connector', text: _UNO('.uno:Connector', 'presentation')},
-			{img: 'connectors_connectorarrows', uno: 'ConnectorArrows', text: _UNO('.uno:ConnectorArrows', 'presentation')},
-			{img: 'connectors_connectorarrowend', uno: 'ConnectorArrowEnd', text: _UNO('.uno:ConnectorArrowEnd', 'presentation')},
-			{img: 'connectors_connectorlinearrowend', uno: 'ConnectorLineArrowEnd', text: _UNO('.uno:ConnectorLineArrowEnd', 'presentation')},
-			{img: 'connectors_connectorcurvearrowend', uno: 'ConnectorCurveArrowEnd', text: _UNO('.uno:ConnectorCurveArrowEnd', 'presentation')},
-			{img: 'connectors_connectorlinesarrowend', uno: 'ConnectorLinesArrowEnd', text: _UNO('.uno:ConnectorLinesArrowEnd', 'presentation')},
-			{img: 'connectors_connectorline', uno: 'ConnectorLine', text: _UNO('.uno:ConnectorLine', 'presentation')},
-			{img: 'connectors_connectorcurve', uno: 'ConnectorCurve', text: _UNO('.uno:ConnectorCurve', 'presentation')},
-			{img: 'connectors_connectorlines', uno: 'ConnectorLines', text: _UNO('.uno:ConnectorLines', 'presentation')},
-			{img: 'connectors_connectorlinearrows', uno: 'ConnectorLineArrows', text: _UNO('.uno:ConnectorLineArrows', 'presentation')},
-			{img: 'connectors_connectorcurvearrows', uno: 'ConnectorCurvearrows', text: _UNO('.uno:ConnectorCurveArrows', 'presentation')}
-		]
+		'Connectors': connectorKinds
+	},
+	'insertlines': {
+		'Lines and Arrows': [
+			{img: 'lines_linearrowend', uno: 'LineArrowEnd', text: _UNO('.uno:LineArrowEnd', 'presentation')},
+			{img: 'lines_linecirclearrow', uno: 'LineCircleArrow', text: _UNO('.uno:LineCircleArrow', 'presentation')},
+			{img: 'lines_linesquarearrow', uno: 'LineSquareArrow', text: _UNO('.uno:LineSquareArrow', 'presentation')},
+			{img: 'lines_linearrows', uno: 'LineArrows', text: _UNO('.uno:LineArrows', 'presentation')},
+			{img: 'lines_linearrowstart', uno: 'LineArrowStart', text: _UNO('.uno:LineArrowStart', 'presentation')},
+			{img: 'lines_linearrowcircle', uno: 'LineArrowCircle', text: _UNO('.uno:LineArrowCircle', 'presentation')},
+			{img: 'lines_linearrowsquare', uno: 'LineArrowSquare', text: _UNO('.uno:LineArrowSquare', 'presentation')},
+			{img: 'lines_line', uno: 'Line', text: _UNO('.uno:Line', 'presentation')},
+			{img: 'lines_measureline', uno: 'MeasureLine', text: _UNO('.uno:MeasureLine', 'presentation')},
+			{img: 'lines_line_diagonal', uno: 'Line_Diagonal', text: _UNO('.uno:Line_Diagonal', 'presentation')}
+		],
+		'Connectors': connectorKinds
 	}
 };
 
@@ -544,7 +562,8 @@ const shapeGroupTitles = {
 	'Stars and Banners': _UNO('.uno:StarShapes'),
 	'Callouts': _UNO('.uno:CalloutShapes'),
 	'Flowchart': _UNO('.uno:FlowChartShapes'),
-	'Connectors': _UNO('.uno:ConnectorToolbox')
+	'Connectors': _UNO('.uno:ConnectorToolbox'),
+	'Lines and Arrows': _UNO('.uno:ArrowsToolbox')
 };
 
 function createShapesPanel(shapeType) {
@@ -606,6 +625,9 @@ function sendShapeCommand(name) {
 			Width: { type: 'long', value: String(width) },
 			Height: { type: 'long', value: String(height) },
 		});
+	} else if (ClassicCreateContext.canCreate(name)) {
+		// in a view that draws from objects the shape is dragged out where it is to go
+		ClassicCreateContext.start(name);
 	} else {
 		app.map.sendUnoCommand('.uno:' + name);
 	}
@@ -705,6 +727,16 @@ function focusFirstShapeOnOpen(grid) {
 	});
 }
 
+// A shape the mouse rests on in the grid is looked at ahead, so dragging it out shows it at once.
+var lookAheadTimer = null;
+function lookAheadAtShape(e) {
+	var name = e.target && e.target.dataset ? e.target.dataset.uno : null;
+	clearTimeout(lookAheadTimer);
+	if (!name)
+		return;
+	lookAheadTimer = setTimeout(function() { ClassicShapeCreateContext.lookAhead(name); }, 150);
+}
+
 function getShapesPopupElements(closeCallback) {
 	lastClosePopupCallback = closeCallback;
 
@@ -712,6 +744,8 @@ function getShapesPopupElements(closeCallback) {
 	grid.className = 'insertshape-grid';
 	grid.onclick = onShapeClickFunction;
 	grid.onkeydown = onShapeKeyDownFunction;
+	grid.addEventListener('mouseover', lookAheadAtShape);
+	grid.addEventListener('focusin', lookAheadAtShape);
 
 	const container = document.createElement('div');
 	container.appendChild(grid);
@@ -738,7 +772,8 @@ function getShapesPopupElements(closeCallback) {
 	return wrapperContainer;
 }
 
-function getConnectorsPopupElements(closeCallback) {
+// the popup of a grid of that table of kinds, that many in a row
+function getGridPopupElements(shapeType, width, closeCallback) {
 	lastClosePopupCallback = closeCallback;
 
 	const gridContainer = document.createElement('div');
@@ -750,7 +785,7 @@ function getConnectorsPopupElements(closeCallback) {
 
 	gridContainer.appendChild(grid);
 
-	insertShapes('insertconnectors', gridContainer.children[0], 2);
+	insertShapes(shapeType, gridContainer.children[0], width);
 
 
 	const wrapperContainer = document.createElement('div');
@@ -769,6 +804,14 @@ function getConnectorsPopupElements(closeCallback) {
 	focusFirstShapeOnOpen(grid);
 
 	return wrapperContainer;
+}
+
+function getConnectorsPopupElements(closeCallback) {
+	return getGridPopupElements('insertconnectors', 2, closeCallback);
+}
+
+function getLinesPopupElements(closeCallback) {
+	return getGridPopupElements('insertlines', 5, closeCallback);
 }
 
 function getColorPickerData(type) {
@@ -1312,6 +1355,7 @@ global.setupToolbar = setupToolbar;
 global.getInsertTablePopupElements = getInsertTablePopupElements;
 global.getShapesPopupElements = getShapesPopupElements;
 global.getConnectorsPopupElements = getConnectorsPopupElements;
+global.getLinesPopupElements = getLinesPopupElements;
 global.createShapesPanel = createShapesPanel;
 global.getUNOCommand = getUNOCommand;
 global.unoCmdToToolbarId = unoCmdToToolbarId;

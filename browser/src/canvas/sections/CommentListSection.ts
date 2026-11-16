@@ -667,7 +667,9 @@ export class CommentSection extends CanvasSectionObject {
 	}
 
 	public keepsSelectedCommentBesideThePage(): boolean {
-		return app.map._docLayer._docType === 'text'
+		// A small screen shows a comment in the mobile wizard, not beside the page.
+		return !(<any>window).mode.isSmallScreenDevice()
+			&& app.map._docLayer._docType === 'text'
 			&& (!CommentSection.isMultiColumnLayout()
 				|| app.activeDocument.activeLayout.type === 'ViewLayoutMultiPage')
 			&& document.documentElement.dir !== 'rtl'
@@ -1717,7 +1719,9 @@ export class CommentSection extends CanvasSectionObject {
 	/// returns canvas top and bottom position in core pixels
 	public getScreenTopBottom(): Array<number> {
 		const screenTop = app.activeDocument.activeLayout.viewedRectangle.pY1;
-		const screenBottom = screenTop + this.cssToCorePixels($('#map').height());
+		const mapEl = Util.getElementOrWarn('map');
+		if (!mapEl) return [screenTop, screenTop];
+		const screenBottom = screenTop + this.cssToCorePixels(mapEl.clientHeight);
 
 		return [screenTop, screenBottom];
 	}

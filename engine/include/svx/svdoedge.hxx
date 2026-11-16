@@ -220,6 +220,11 @@ public:
     // * pObj=NULL: disconnect connector
     void SetEdgeTrackDirty() { m_bEdgeTrackDirty=true; }
     void ConnectToNode(bool bTail1, SdrObject* pObj) override;
+    /// Moves the start or the end to that point and ties it to that object, at the glue point
+    /// counted as the glue point properties of a connector count them: -1 for the best side, 0
+    /// to 3 for the middles of the sides, an own glue point by its id and 3. Without an object
+    /// the end is free there. The run is laid out anew, as after a drag of that end.
+    void MoveEndTo(bool bTail1, const Point& rPoint, SdrObject* pNode, sal_Int32 nGluePoint);
     SAL_DLLPRIVATE void DisconnectFromNode(bool bTail1) override;
     SdrObject* GetConnectedNode(bool bTail1) const override;
     const SdrObjConnection& GetConnection(bool bTail1) const { return *(bTail1 ? &m_aCon1 : &m_aCon2); }

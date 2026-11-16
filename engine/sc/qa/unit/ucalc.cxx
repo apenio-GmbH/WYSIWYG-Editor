@@ -21,6 +21,9 @@
 #endif
 
 #include <svl/asiancfg.hxx>
+#include <vcl/settings.hxx>
+#include <vcl/svapp.hxx>
+#include <vcl/virdev.hxx>
 
 #include <simpleformulacalc.hxx>
 #include <stringutil.hxx>
@@ -31,6 +34,7 @@
 #include <undoblk.hxx>
 #include <undotab.hxx>
 #include <attrib.hxx>
+#include <dpcontrol.hxx>
 #include <dbdata.hxx>
 #include <filterentries.hxx>
 #include <reftokenhelper.hxx>
@@ -74,6 +78,7 @@
 #include <svx/svdocirc.hxx>
 #include <svx/svdopath.hxx>
 #include <svx/svdocapt.hxx>
+#include <svl/intitem.hxx>
 #include <svl/numformat.hxx>
 #include <svl/srchitem.hxx>
 #include <svl/sharedstringpool.hxx>
@@ -8674,6 +8679,66 @@ CPPUNIT_TEST_FIXTURE(Test, testCopyTabRelativeTabRefs)
 
         xDocShell->DoClose();
     }
+}
+
+CPPUNIT_TEST_FIXTURE(Test, testZoomedFilterButtonIsHalfTheCell)
+{
+    // A drop-down button is at most half as wide as its cell at any zoom. Its largest size grows
+    // with the zoom, but the size of the cell is zoomed already: the half was zoomed a second
+    // time, so the button of a narrow cell grew as wide as the cell or wider.
+    ScopedVclPtrInstance<VirtualDevice> pDevice;
+    ScDPFieldButton aButton(pDevice.get(), Application::GetSettings().GetStyleSettings(), 2.0,
+                            *m_pDoc);
+    Point aPos;
+    Size aSize;
+
+    // A cell 24 pixels wide at 200% has a button 12 pixels wide at its right edge.
+    aButton.setBoundingBox(Point(0, 0), Size(24, 40), false);
+    aButton.getPopupBoundingBox(aPos, aSize);
+    CPPUNIT_ASSERT_EQUAL(tools::Long(12), aSize.Width());
+    CPPUNIT_ASSERT_EQUAL(tools::Long(12), aPos.X());
+
+    // A wide cell keeps the largest button, which grows with the zoom.
+    aButton.setBoundingBox(Point(0, 0), Size(200, 40), false);
+    aButton.getPopupBoundingBox(aPos, aSize);
+    CPPUNIT_ASSERT_EQUAL(tools::Long(2 * 17), aSize.Width());
+    CPPUNIT_ASSERT_EQUAL(tools::Long(2 * 17), aSize.Height());
+}
+
+CPPUNIT_TEST_FIXTURE(Test, testWrappedNumberRowHeight)
+{
+    // A number never wraps, whatever its number format, so a row of optimal height keeps the
+    // height of one line for a wrapped currency, percent or date that does not fit, as for a plain
+    // number. The row grew for lines that the cell never shows.
+    m_pDoc->InsertTab(0, u"Test"_ustr);
+    m_pDoc->SetColWidth(0, 0, 400);
+    SvNumberFormatter* pFormatter = m_pDoc->GetFormatTable();
+    const struct
+    {
+        SvNumFormatType meType;
+        double mfValue;
+    } aCells[] = { { SvNumFormatType::NUMBER, 123456789.0 },
+                   { SvNumFormatType::CURRENCY, 123456789.0 },
+                   { SvNumFormatType::PERCENT, 123456789.0 },
+                   { SvNumFormatType::DATE, 45000.0 } };
+    SCROW nRow = 0;
+    for (const auto& rCell : aCells)
+    {
+        m_pDoc->SetValue(ScAddress(0, nRow, 0), rCell.mfValue);
+        ScPatternAttr aPattern(m_pDoc->getCellAttributeHelper());
+        aPattern.ItemSetPut(ScLineBreakCell(true));
+        aPattern.ItemSetPut(
+            SfxUInt32Item(ATTR_VALUE_FORMAT, pFormatter->GetStandardFormat(rCell.meType)));
+        m_pDoc->ApplyPatternAreaTab(0, nRow, 0, nRow, 0, aPattern);
+        ++nRow;
+    }
+    m_xDocShell->AdjustRowHeight(0, nRow - 1, 0);
+
+    const sal_uInt16 nOneLine = m_pDoc->GetRowHeight(0, 0);
+    for (SCROW nCheckRow = 1; nCheckRow < nRow; ++nCheckRow)
+        CPPUNIT_ASSERT_EQUAL(nOneLine, m_pDoc->GetRowHeight(nCheckRow, 0));
+
+    m_pDoc->DeleteTab(0);
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

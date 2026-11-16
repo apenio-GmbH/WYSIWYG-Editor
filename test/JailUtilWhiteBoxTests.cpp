@@ -16,6 +16,13 @@
 
 #include <test/lokassert.hpp>
 
+#include <fstream>
+#include <sstream>
+#include <ctime>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <cppunit/TestAssert.h>
 #include <cppunit/extensions/HelperMacros.h>
 
@@ -34,6 +41,9 @@ class JailUtilWhiteBoxTests : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST(testNamespaceRefusalBlamesAppArmor);
     CPPUNIT_TEST(testNamespaceRefusalBlamesSeccomp);
     CPPUNIT_TEST(testNamespaceRefusalSaysNothingWhenAllPermitted);
+    CPPUNIT_TEST(testCrashNoteReplacesALink);
+    CPPUNIT_TEST(testCrashNoteStaysInsideTheJail);
+    CPPUNIT_TEST(testCrashedJailKeptOnlyForAFreshNote);
 #endif // __linux__
     CPPUNIT_TEST_SUITE_END();
 
@@ -44,6 +54,9 @@ class JailUtilWhiteBoxTests : public CPPUNIT_NS::TestFixture
     void testNamespaceRefusalBlamesAppArmor();
     void testNamespaceRefusalBlamesSeccomp();
     void testNamespaceRefusalSaysNothingWhenAllPermitted();
+    void testCrashNoteReplacesALink();
+    void testCrashNoteStaysInsideTheJail();
+    void testCrashedJailKeptOnlyForAFreshNote();
 #endif // __linux__
 };
 
@@ -61,6 +74,20 @@ std::string statusWithSeccompMode(const std::string& mode)
            "voluntary_ctxt_switches:\t1\n"
            "Seccomp:\t" +
            mode + "\nSeccomp_filters:\t1\nSpeculation_Store_Bypass:\tthread vulnerable\n";
+}
+
+std::string readFile(const std::string& path)
+{
+    std::ifstream file(path);
+    std::ostringstream text;
+    text << file.rdbuf();
+    return text.str();
+}
+
+void writeFile(const std::string& path, const std::string& text)
+{
+    std::ofstream file(path);
+    file << text;
 }
 
 } // namespace
@@ -143,6 +170,80 @@ void JailUtilWhiteBoxTests::testNamespaceRefusalSaysNothingWhenAllPermitted()
 
     // The largest value the file can hold still means namespaces are permitted.
     LOK_ASSERT_EQUAL(std::string(), JailUtil::explainNamespaceRefusal("2147483647\n", "0\n", 0));
+}
+
+/// The crash note is a new regular file in the jail's tmp, even where a link of that name was,
+/// and the file the link named keeps its contents.
+void JailUtilWhiteBoxTests::testCrashNoteReplacesALink()
+{
+    constexpr std::string_view testname = __func__;
+
+    const std::string root = FileUtil::createRandomTmpDir();
+    const std::string jail = root + "/jail";
+    const std::string other = root + "/other";
+    LOK_ASSERT_EQUAL(0, ::mkdir(jail.c_str(), S_IRWXU));
+    LOK_ASSERT_EQUAL(0, ::mkdir((jail + "/tmp").c_str(), S_IRWXU));
+    writeFile(other, "contents");
+    LOK_ASSERT_EQUAL(0, ::symlink(other.c_str(), (jail + "/tmp/kit-crashed").c_str()));
+
+    JailUtil::noteCrashedJail(jail);
+
+    const FileUtil::Stat note(jail + "/tmp/kit-crashed", /*link=*/true);
+    LOK_ASSERT(note.good());
+    LOK_ASSERT(note.isFile());
+    LOK_ASSERT_EQUAL(std::string("contents"), readFile(other));
+
+    FileUtil::removeFile(root, /*recursive=*/true);
+}
+
+/// When the jail's tmp is a link to a directory elsewhere, no crash note is written there.
+void JailUtilWhiteBoxTests::testCrashNoteStaysInsideTheJail()
+{
+    constexpr std::string_view testname = __func__;
+
+    const std::string root = FileUtil::createRandomTmpDir();
+    const std::string jail = root + "/jail";
+    const std::string other = root + "/other";
+    LOK_ASSERT_EQUAL(0, ::mkdir(jail.c_str(), S_IRWXU));
+    LOK_ASSERT_EQUAL(0, ::mkdir(other.c_str(), S_IRWXU));
+    LOK_ASSERT_EQUAL(0, ::symlink(other.c_str(), (jail + "/tmp").c_str()));
+
+    JailUtil::noteCrashedJail(jail);
+
+    LOK_ASSERT(!FileUtil::Stat(other + "/kit-crashed", /*link=*/true).exists());
+
+    FileUtil::removeFile(root, /*recursive=*/true);
+}
+
+/// A jail is kept for a crash note written just now, but not for one dated in the future, nor
+/// for a note that is not a regular file.
+void JailUtilWhiteBoxTests::testCrashedJailKeptOnlyForAFreshNote()
+{
+    constexpr std::string_view testname = __func__;
+
+    const std::string root = FileUtil::createRandomTmpDir();
+    const std::string jail = root + "/jail";
+    const std::string note = jail + "/tmp/kit-crashed";
+    LOK_ASSERT_EQUAL(0, ::mkdir(jail.c_str(), S_IRWXU));
+    LOK_ASSERT_EQUAL(0, ::mkdir((jail + "/tmp").c_str(), S_IRWXU));
+
+    LOK_ASSERT(!JailUtil::isCrashedJailKept(jail));
+
+    JailUtil::noteCrashedJail(jail);
+    LOK_ASSERT(JailUtil::isCrashedJailKept(jail));
+
+    const struct timespec tomorrow = { std::time(nullptr) + 24 * 60 * 60, 0 };
+    const struct timespec times[2] = { tomorrow, tomorrow };
+    LOK_ASSERT_EQUAL(0, ::utimensat(AT_FDCWD, note.c_str(), times, 0));
+    LOK_ASSERT(!JailUtil::isCrashedJailKept(jail));
+
+    const std::string other = root + "/other";
+    writeFile(other, "contents");
+    LOK_ASSERT_EQUAL(0, ::unlink(note.c_str()));
+    LOK_ASSERT_EQUAL(0, ::symlink(other.c_str(), note.c_str()));
+    LOK_ASSERT(!JailUtil::isCrashedJailKept(jail));
+
+    FileUtil::removeFile(root, /*recursive=*/true);
 }
 
 #endif // __linux__

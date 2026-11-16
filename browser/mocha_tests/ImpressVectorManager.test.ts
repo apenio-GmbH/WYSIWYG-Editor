@@ -1619,16 +1619,18 @@ describe('ImpressVectorManager', function () {
 	it('asks again for a missing part once the page list is replaced', function () {
 		const recorder = new SocketRecorder();
 
+		// How many times the part was asked for.
+		const asked = (): number =>
+			recorder.sent.filter(
+				(message) => message.indexOf('.uno:VectorPrimitives?partid=M4') >= 0,
+			).length;
+
 		const manager = new ImpressVectorManager();
 		nodeassert.strictEqual(
 			manager.requestPartById('M4', cool.VectorMode.MasterPages),
 			undefined,
 		);
-		nodeassert.strictEqual(
-			recorder.sent.length,
-			1,
-			'the part is asked for once',
-		);
+		nodeassert.strictEqual(asked(), 1, 'the part is asked for once');
 
 		// The engine answers that it holds no such page.
 		manager.handleVectorPrimitivesResponse({
@@ -1643,20 +1645,20 @@ describe('ImpressVectorManager', function () {
 			undefined,
 		);
 		nodeassert.strictEqual(
-			recorder.sent.length,
+			asked(),
 			1,
 			'a page the document lacks was asked again',
 		);
+		// The server is told to forget the part it was asked for.
+		nodeassert.deepStrictEqual(recorder.sent.slice(1), [
+			'commandvalues command=.uno:VectorForgetPart?partid=M4',
+		]);
 		manager.partListChanged();
 		nodeassert.strictEqual(
 			manager.requestPartById('M4', cool.VectorMode.MasterPages),
 			undefined,
 		);
-		nodeassert.strictEqual(
-			recorder.sent.length,
-			2,
-			'the part is asked for again',
-		);
+		nodeassert.strictEqual(asked(), 2, 'the part is asked for again');
 
 		recorder.restore();
 	});
@@ -2202,16 +2204,22 @@ describe('ImpressVectorManager', function () {
 		});
 	});
 
-	// The manager measures text with a stub, so widths do not depend on a
-	// canvas. The document state is set up as during a text edit.
-	describe('predicted text edits', function () {
-		const measure: cool.TextRunMeasure = (_run, text) => text.length * 100;
-		class TestManager extends ImpressVectorManager {
-			protected _textMeasure(): cool.TextRunMeasure {
-				return measure;
-			}
+	// A manager that measures text with the stub of the prediction tests.
+	class TestManager extends ImpressVectorManager {
+		protected _textMeasure(): cool.TextRunMeasure {
+			return predictionTest.measure;
 		}
+	}
 
+	// The same for the pages of a text document.
+	class WriterTestManager extends WriterVectorManager {
+		protected _textMeasure(): cool.TextRunMeasure {
+			return predictionTest.measure;
+		}
+	}
+
+	// The document state is set up as during a text edit.
+	describe('predicted text edits', function () {
 		// One text box with id 5 at (1000, 2000) holding one run of text.
 		function textBox(text: string): any {
 			return {
@@ -3693,6 +3701,562 @@ describe('ImpressVectorManager', function () {
 				recorder.callsOf('fillText').map((call) => call.args[0]),
 				['Two'],
 			);
+		});
+	});
+
+	describe('predicted text edits on a text document page', function () {
+		// The page '7' lies at (284, 284) in the document. Its text frame 96 lies at
+		// (1000, 2000) on the page, and the frame's one line has its baseline 300 below the
+		// frame's top left, which the primitives of the frame are relative to.
+		const page = {
+			id: 0,
+			kind: 'page',
+			width: 12240,
+			height: 15840,
+			primitives: [],
+		};
+		function frame(text: string): any {
+			return {
+				id: 96,
+				kind: 'textframe',
+				x: 1000,
+				y: 2000,
+				width: 5000,
+				height: 400,
+				primitives: [
+					{
+						type: 'textSimplePortion',
+						text,
+						textPosition: 0,
+						textLength: text.length,
+						matrix: [1, 0, 0, 1, 0, 300],
+						fontSize: 360,
+						familyname: 'Arial',
+						paragraph: 0,
+						lineAscent: 288,
+						lineHeight: 400,
+						textAreaWidth: 5000,
+						align: 'left',
+					},
+				],
+			};
+		}
+
+		function textOf(manager: WriterVectorManager): string {
+			const data: any = manager.requestTextPage('7');
+			return data.objects.get(96).primitives[0].text;
+		}
+
+		let savedMap: any;
+		let savedSelections: any;
+		let savedCursor: any;
+		let savedSequence: number;
+		let savedWriter: any;
+		let savedHitContext: any;
+		beforeEach(function () {
+			const anyApp = app as any;
+			// A click finds the text frame under it by the extent of its text.
+			savedHitContext = (cool.VectorHitTest as any)._context;
+			(cool.VectorHitTest as any)._context = new HitTestContext();
+			savedMap = anyApp.map;
+			savedSelections = (window as any).TextSelections;
+			savedCursor = app.file.textCursor;
+			savedSequence = app.file.inputSequence;
+			savedWriter = app.file.writer;
+			anyApp.map = { _docLayer: { _onUpdateCursor: function () {} } };
+			(window as any).TextSelections = { isActive: () => false };
+			app.file.writer = {
+				pageRectangleList: [[284, 284, 12240, 15840]],
+				pageIds: ['7'],
+			};
+			// The caret is at the end of "Hello" in frame 96.
+			app.file.textCursor = {
+				visible: true,
+				rectangle: new cool.SimpleRectangle(1784, 2296, 0, 400),
+				logical: { paragraph: 0, index: 5 },
+				object: 96,
+			};
+			app.file.inputSequence = 10;
+			LocalCaret.forget();
+		});
+		afterEach(function () {
+			(app as any).map = savedMap;
+			(window as any).TextSelections = savedSelections;
+			app.file.textCursor = savedCursor;
+			app.file.inputSequence = savedSequence;
+			app.file.writer = savedWriter;
+			(cool.VectorHitTest as any)._context = savedHitContext;
+			LocalCaret.forget();
+			cool.InputSequence.forget();
+		});
+
+		function managerWith(text: string): WriterVectorManager {
+			const manager = new WriterTestManager();
+			manager.handleVectorPrimitivesResponse({
+				partId: '7',
+				version: 1,
+				objects: [page, frame(text)],
+			});
+			return manager;
+		}
+
+		// Sends the edit predicted last, numbered as the next input.
+		function sendTheEdit(): void {
+			cool.InputSequence.stamp('textinput');
+		}
+
+		it('types into the text frame the caret names and puts the caret in document twips', function () {
+			const manager = managerWith('Hello');
+
+			nodeassert.strictEqual(manager.predictTextInsert('!'), true);
+
+			nodeassert.strictEqual(textOf(manager), 'Hello!');
+			// The caret is at the page offset plus the frame offset plus six characters of 100 twips.
+			nodeassert.strictEqual(
+				app.file.textCursor.rectangle?.x1,
+				284 + 1000 + 600,
+			);
+			nodeassert.strictEqual(
+				app.file.textCursor.rectangle?.y1,
+				284 + 2000 + 300 - 288,
+			);
+		});
+
+		it('deletes the character before the caret in the text frame', function () {
+			const manager = managerWith('Hello');
+
+			nodeassert.strictEqual(manager.predictTextDelete(1, 0), true);
+
+			nodeassert.strictEqual(textOf(manager), 'Hell');
+			nodeassert.strictEqual(
+				app.file.textCursor.rectangle?.x1,
+				284 + 1000 + 400,
+			);
+		});
+
+		it('leaves the text alone when no cached page holds the frame of the caret', function () {
+			const manager = managerWith('Hello');
+			app.file.textCursor.object = 97;
+
+			nodeassert.strictEqual(manager.predictTextInsert('!'), false);
+
+			nodeassert.strictEqual(textOf(manager), 'Hello');
+		});
+
+		it('leaves typing that wraps the paragraph to another line to the server', function () {
+			const manager = new WriterTestManager();
+			const narrow = frame('Hello world');
+			// The line holds eleven characters of 100 twips, so the frames below it stay where
+			// they are only while the paragraph keeps its one line.
+			narrow.primitives[0].textAreaWidth = 1100;
+			manager.handleVectorPrimitivesResponse({
+				partId: '7',
+				version: 1,
+				objects: [page, narrow],
+			});
+
+			nodeassert.strictEqual(manager.predictTextInsert('!'), false);
+
+			nodeassert.strictEqual(textOf(manager), 'Hello world');
+		});
+
+		it('leaves the text of a drawing object to the server', function () {
+			const manager = new WriterTestManager();
+			// A drawing object's entry id lies above the frame ids.
+			const shapeId = 4294967296 + 96;
+			manager.handleVectorPrimitivesResponse({
+				partId: '7',
+				version: 1,
+				objects: [
+					page,
+					frame('Hello'),
+					{ ...frame('Hello'), id: shapeId, kind: 'shape' },
+				],
+			});
+			app.file.textCursor.object = shapeId;
+
+			nodeassert.strictEqual(manager.predictTextInsert('!'), false);
+
+			nodeassert.strictEqual(textOf(manager), 'Hello');
+		});
+
+		it('keeps a typed character over a delta from before it, once', function () {
+			const manager = managerWith('Hello');
+			manager.predictTextInsert('!');
+			sendTheEdit();
+
+			// The delta answers input 10, so the character typed as input 11 is drawn again.
+			manager.handleVectorPrimitivesDelta({
+				partId: '7',
+				version: 2,
+				inputSequence: 10,
+				objects: [frame('Hello')],
+			});
+			nodeassert.strictEqual(textOf(manager), 'Hello!');
+
+			// This delta holds it, and it is not drawn twice.
+			manager.handleVectorPrimitivesDelta({
+				partId: '7',
+				version: 3,
+				inputSequence: 11,
+				objects: [frame('Hello!')],
+			});
+			nodeassert.strictEqual(textOf(manager), 'Hello!');
+		});
+
+		it('takes typed text out once the delta that answers it leaves its text frame unchanged', function () {
+			const manager = managerWith('Hello');
+			manager.predictTextInsert('!');
+			sendTheEdit();
+
+			// The delta answers input 11 and only moves the frame, as the engine did not take
+			// the text, so the page is asked for whole.
+			const sent = SocketRecorder.during(() => {
+				manager.handleVectorPrimitivesDelta({
+					partId: '7',
+					version: 2,
+					inputSequence: 11,
+					objects: [{ ...frame('Hello'), y: 2400, primitives: undefined }],
+				});
+			});
+			nodeassert.deepStrictEqual(
+				sent.map((message) => message.split('&')[0]),
+				['commandvalues command=.uno:VectorPrimitives?partid=7'],
+			);
+
+			// The whole page shows the text as the engine has it.
+			manager.handleVectorPrimitivesResponse({
+				partId: '7',
+				version: 3,
+				objects: [page, frame('Hello')],
+			});
+			nodeassert.strictEqual(textOf(manager), 'Hello');
+		});
+
+		// A manager that asked the server for the page '7' and holds the answer.
+		function managerThatAsked(text: string): WriterVectorManager {
+			const manager = new WriterTestManager();
+			manager.requestTextPage('7');
+			manager.handleVectorPrimitivesResponse({
+				partId: '7',
+				version: 1,
+				objects: [page, frame(text)],
+			});
+			return manager;
+		}
+
+		const forgetPage7 = 'commandvalues command=.uno:VectorForgetPart?partid=7';
+
+		// The ids of the pages that the messages ask for, in the order they were sent.
+		function pagesAskedFor(sent: string[]): (string | undefined)[] {
+			return sent
+				.filter((message) => message.indexOf('.uno:VectorPrimitives?') >= 0)
+				.map((message) => message.match(/partid=(\d+)/)?.[1]);
+		}
+
+		it('forgets a cached page that left the page list and types nothing on it', function () {
+			const manager = managerThatAsked('Hello');
+			app.file.writer = {
+				pageRectangleList: [[284, 284, 12240, 15840]],
+				pageIds: ['8'],
+			};
+
+			const sent = SocketRecorder.during(() => manager.partListChanged());
+
+			nodeassert.deepStrictEqual(sent, [forgetPage7]);
+			nodeassert.strictEqual(manager.predictTextInsert('!'), false);
+		});
+
+		it('tells the server nothing about a dropped page it was never asked for', function () {
+			const manager = managerWith('Hello');
+			app.file.writer = {
+				pageRectangleList: [[284, 284, 12240, 15840]],
+				pageIds: ['8'],
+			};
+
+			const sent = SocketRecorder.during(() => manager.partListChanged());
+
+			nodeassert.deepStrictEqual(sent, []);
+		});
+
+		it('tells the server once to forget each page when every page is dropped', function () {
+			const drops: ((manager: WriterVectorManager) => void)[] = [
+				(manager) => manager.clearAllParts(),
+				(manager) => manager.reclaimGraphicsMemory(),
+				(manager) => manager.discardAllCache(),
+			];
+			for (const drop of drops) {
+				const manager = managerThatAsked('Hello');
+
+				const sent = SocketRecorder.during(() => {
+					drop(manager);
+					drop(manager);
+				});
+
+				nodeassert.deepStrictEqual(sent, [forgetPage7]);
+			}
+		});
+
+		it('tells the server to forget a page that a delta dropped before it asks for the page again', function () {
+			const manager = managerThatAsked('Hello');
+
+			// The delta starts above the version held, so the page is dropped.
+			const sent = SocketRecorder.during(() => {
+				manager.handleVectorPrimitivesDelta({
+					partId: '7',
+					from: 5,
+					version: 6,
+					objects: [],
+				});
+				manager.requestTextPage('7');
+			});
+
+			nodeassert.deepStrictEqual(
+				sent.map((message) => message.split('&')[0]),
+				[forgetPage7, 'commandvalues command=.uno:VectorPrimitives?partid=7'],
+			);
+		});
+
+		it('leaves out the answer to a request that was out when its page was dropped', function () {
+			const manager = managerThatAsked('Hello');
+			(app as any).map.fire = function () {};
+			// The page asks what changed, and leaves the page list before the answer comes.
+			manager.revalidateCachedParts();
+			manager.requestTextPage('7');
+			app.file.writer = {
+				pageRectangleList: [[284, 284, 12240, 15840]],
+				pageIds: ['8'],
+			};
+			const sent = SocketRecorder.during(() => manager.partListChanged());
+			nodeassert.deepStrictEqual(sent, [forgetPage7]);
+
+			manager.handleVectorPrimitivesResponse({
+				partId: '7',
+				version: 2,
+				objects: [page, frame('Hello')],
+			});
+
+			// The server pushes no changes of the page, so the page is asked for again once
+			// it is back in the page list.
+			app.file.writer = {
+				pageRectangleList: [[284, 284, 12240, 15840]],
+				pageIds: ['7'],
+			};
+			const askedAgain = SocketRecorder.during(() => {
+				nodeassert.strictEqual(manager.requestTextPage('7'), undefined);
+			});
+			nodeassert.deepStrictEqual(pagesAskedFor(askedAgain), ['7']);
+		});
+
+		it('asks for the pages around the view a few at a time', function () {
+			const manager = new WriterTestManager();
+			const around = ['11', '12', '13'];
+			manager.keepTextPages(new Set(around));
+
+			const first = SocketRecorder.during(() => {
+				for (const pageId of around) manager.requestTextPageAhead(pageId);
+				// A page that waits for an earlier request to be answered is not asked for twice.
+				for (const pageId of around) manager.requestTextPageAhead(pageId);
+			});
+			nodeassert.deepStrictEqual(pagesAskedFor(first), ['11', '12']);
+
+			// An answer lets the next page ask.
+			const next = SocketRecorder.during(() =>
+				manager.handleVectorPrimitivesResponse({
+					partId: '11',
+					version: 1,
+					objects: [page, frame('Hello')],
+				}),
+			);
+			nodeassert.deepStrictEqual(pagesAskedFor(next), ['13']);
+		});
+
+		it('asks at once for a page that comes into view while it waits its turn', function () {
+			const manager = new WriterTestManager();
+			const around = ['11', '12', '13'];
+			manager.keepTextPages(new Set(around));
+
+			const sent = SocketRecorder.during(() => {
+				for (const pageId of around) manager.requestTextPageAhead(pageId);
+				manager.requestTextPage('13');
+			});
+
+			nodeassert.deepStrictEqual(pagesAskedFor(sent), ['11', '12', '13']);
+		});
+
+		it('asks nothing for a waiting page that is wanted no more when its turn comes', function () {
+			const manager = new WriterTestManager();
+			const around = ['11', '12', '13'];
+			manager.keepTextPages(new Set(around));
+			SocketRecorder.during(() => {
+				for (const pageId of around) manager.requestTextPageAhead(pageId);
+			});
+
+			// The view moved, and the page '13' is not among the wanted pages now.
+			manager.keepTextPages(new Set(['11', '12']));
+			const next = SocketRecorder.during(() =>
+				manager.handleVectorPrimitivesResponse({
+					partId: '11',
+					version: 1,
+					objects: [page, frame('Hello')],
+				}),
+			);
+
+			nodeassert.deepStrictEqual(pagesAskedFor(next), []);
+		});
+
+		describe('caret moved here', function () {
+			let recorder: SocketRecorder;
+			let sent: string[];
+			let savedTimerRegistry: any;
+			// The selection rectangles drawn here, as [x, y, width, height], one entry
+			// per draw.
+			let drawn: number[][][];
+			let savedSetStartRectangle: any;
+			let savedSetEndRectangle: any;
+			beforeEach(function () {
+				recorder = new SocketRecorder();
+				sent = recorder.sent;
+				savedTimerRegistry = (app as any).timerRegistry;
+				(app as any).timerRegistry = new TimerRegistry();
+				drawn = [];
+				(TextSelections as any).active = false;
+				(app as any).map._docLayer.showTextSelection = (
+					rectangles: number[][],
+				) => drawn.push(rectangles);
+				savedSetStartRectangle = TextSelections.setStartRectangle;
+				savedSetEndRectangle = TextSelections.setEndRectangle;
+				TextSelections.setStartRectangle = () => {};
+				TextSelections.setEndRectangle = () => {};
+			});
+			afterEach(function () {
+				LocalCaret.forget();
+				recorder.restore();
+				(app as any).timerRegistry = savedTimerRegistry;
+				(TextSelections as any).active = false;
+				TextSelections.setStartRectangle = savedSetStartRectangle;
+				TextSelections.setEndRectangle = savedSetEndRectangle;
+			});
+
+			it('moves the caret a character left in the text frame and draws it on the page', function () {
+				const manager = managerWith('Hello');
+
+				nodeassert.ok(manager.moveCaretByCharacter(-1));
+
+				nodeassert.deepStrictEqual(app.file.textCursor.logical, {
+					paragraph: 0,
+					index: 4,
+				});
+				nodeassert.strictEqual(
+					app.file.textCursor.rectangle?.x1,
+					284 + 1000 + 400,
+				);
+				nodeassert.deepStrictEqual(sent, []);
+			});
+
+			it('selects with Shift and draws the selection on the page', function () {
+				const manager = managerWith('Hello');
+
+				manager.moveCaretByCharacter(-1, true);
+				manager.moveCaretByCharacter(-1, true);
+
+				const last = drawn[drawn.length - 1];
+				nodeassert.strictEqual(last.length, 1);
+				nodeassert.strictEqual(last[0][0], 284 + 1000 + 300);
+				nodeassert.strictEqual(last[0][2], 200);
+				nodeassert.deepStrictEqual(app.file.textCursor.anchor, {
+					paragraph: 0,
+					index: 5,
+				});
+			});
+
+			it('tells the server the text frame and the index of the caret', function () {
+				const manager = managerWith('Hello');
+				manager.moveCaretByCharacter(-1);
+
+				LocalCaret.tell();
+
+				nodeassert.deepStrictEqual(sent, [
+					'textcursor object=96 paragraph=0 index=4 sequence=11',
+				]);
+			});
+
+			it('puts the caret in the text frame under a click', function () {
+				const manager = managerWith('Hello');
+				const x = 284 + 1000 + 280;
+				const y = 284 + 2000 + 200;
+
+				nodeassert.strictEqual(manager.textFrameAt(x, y), 96);
+				nodeassert.ok(manager.placeCaretAt(x, y, manager.textFrameAt(x, y)));
+
+				nodeassert.deepStrictEqual(app.file.textCursor.logical, {
+					paragraph: 0,
+					index: 3,
+				});
+				nodeassert.strictEqual(app.file.textCursor.object, 96);
+			});
+
+			it('finds no text frame off the frames of a page', function () {
+				const manager = managerWith('Hello');
+
+				nodeassert.strictEqual(
+					manager.textFrameAt(284 + 100, 284 + 100),
+					undefined,
+				);
+			});
+
+			it('finds no text frame where a picture lies over the text', function () {
+				const manager = new WriterTestManager();
+				const picture = {
+					id: 98,
+					kind: 'notextframe',
+					parent: 96,
+					x: 1200,
+					y: 2000,
+					width: 400,
+					height: 400,
+					primitives: [],
+				};
+				manager.handleVectorPrimitivesResponse({
+					partId: '7',
+					version: 1,
+					objects: [page, frame('Hello'), picture],
+				});
+
+				nodeassert.strictEqual(
+					manager.textFrameAt(284 + 1300, 284 + 2200),
+					undefined,
+				);
+				nodeassert.strictEqual(manager.textFrameAt(284 + 1050, 284 + 2200), 96);
+			});
+
+			it('lets a drag go to the server once it leaves the text frame it started in', function () {
+				const manager = managerWith('Hello');
+				const x = 284 + 1000 + 280;
+				const y = 284 + 2000 + 200;
+
+				nodeassert.ok(manager.startTextDrag(x, y, manager.textFrameAt(x, y)));
+
+				nodeassert.strictEqual(
+					manager.textDragLeavesItsText(x + 100, y),
+					false,
+				);
+				nodeassert.strictEqual(
+					manager.textDragLeavesItsText(284 + 100, 284 + 100),
+					true,
+				);
+			});
+
+			it('leaves a triple click to the server, which selects a sentence', function () {
+				const manager = managerWith('Hello');
+				const x = 284 + 1000 + 280;
+				const y = 284 + 2000 + 200;
+
+				nodeassert.strictEqual(
+					manager.selectParagraphAt(x, y, manager.textFrameAt(x, y)),
+					false,
+				);
+			});
 		});
 	});
 });

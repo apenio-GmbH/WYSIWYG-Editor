@@ -73,6 +73,7 @@ namespace com::sun::star::i18n { class XForbiddenCharacters; }
 namespace avmedia { struct MediaTempFile; }
 
 class SdrGrafObj;
+class SfxStyleSheet;
 class SdrObject;
 class SdrPage;
 class SdDrawDocument;
@@ -295,6 +296,21 @@ private:
     /// pull leaves the mark alone unless nothing has served the part yet.
     void writeVectorPrimitives(tools::JsonWriter& rJsonWriter, const OString& rPartId,
                                sal_Int32 nMode, sal_Int64 nSinceVersion, bool bPush);
+
+    /// Answers .uno:ReserveObjectIds: reserves that many object ids for the current view.
+    void writeReservedObjectIds(tools::JsonWriter& rJsonWriter, sal_Int32 nCount);
+
+    /// Answers .uno:ShapeGhost: makes the default object of the named shape, and writes its size
+    /// and how it is drawn.
+    void writeShapeGhost(tools::JsonWriter& rJsonWriter, std::u16string_view aShape);
+
+    /// The style new shapes take, listened to once a client asked for the looks of shapes;
+    /// nullptr before that and after the style went.
+    SfxStyleSheet* mpShapeStyle = nullptr;
+    /// Starts listening to the style new shapes take, where it does not yet.
+    void listenToTheShapeStyle();
+    /// Tells every view of the document the key of the attributes its new shapes take.
+    void notifyShapeStyleKey();
 
     cpo::uno::Reference<cpo::uno::XInterface> create(
         OUString const & aServiceSpecifier, OUString const & referer);

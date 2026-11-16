@@ -106,7 +106,10 @@
 #include <sfx2/kit/helper.hxx>
 #include <sfx2/dispatch.hxx>
 #include <sfx2/viewfrm.hxx>
+#include <sfx2/msg.hxx>
+#include <sfx2/msgpool.hxx>
 #include <sfx2/viewsh.hxx>
+#include <svl/style.hxx>
 #include <svl/cryptosign.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/unohelp.hxx>
@@ -294,6 +297,7 @@
 #include <controller/SlsPageSelector.hxx>
 
 #include <app.hrc>
+#include <svx/svxids.hrc>
 #include <slideshow.hxx>
 
 using namespace ::cppu;
@@ -2993,6 +2997,15 @@ bool SdXImpressDocument::isVectorMasterChangedSince(const SdrPage& rPage, sal_uI
 
 void SdXImpressDocument::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
+    if (mpShapeStyle && &rBC == mpShapeStyle)
+    {
+        if (rHint.GetId() == SfxHintId::Dying)
+            mpShapeStyle = nullptr;
+        else if (rHint.GetId() == SfxHintId::DataChanged)
+            notifyShapeStyleKey();
+        return;
+    }
+
     if( mpDoc )
     {
         if (rHint.GetId() == SfxHintId::ThisIsAnSdrHint)
@@ -3240,6 +3253,14 @@ public:
         // The text of a running edit is the last entry, so it draws over the object it runs on.
         // It changes with every keystroke, so a delta always carries it while an edit runs.
         writeTextEditEntry(rWriter, pPage);
+    }
+
+    /// Writes the entry of an object that is on no page yet, as drawn on that page, into the
+    /// open array, as an object of the page would be written once inserted.
+    void writeObjectOnNoPage(tools::JsonWriter& rWriter, SdPage* pPage, SdrObject& rObject)
+    {
+        setupProcessor(rWriter, pPage);
+        writeObjectEntry(rWriter, rObject, 0, contentOf(rObject));
     }
 
 private:
@@ -3990,6 +4011,13 @@ private:
         // A placeholder that holds no content of its own yet.
         if (rContent.mbEmptyPlaceholder)
             rWriter.put("emptyPlaceholder", true);
+        // An object of the page's layout, which deleting does not simply take away: it empties
+        // it, or switches it off on the master.
+        if (const SdPage* pLayoutPage
+            = dynamic_cast<const SdPage*>(rObject.getSdrPageFromSdrObject());
+            pLayoutPage
+            && pLayoutPage->GetPresObjKind(const_cast<SdrObject*>(&rObject)) != PresObjKind::NONE)
+            rWriter.put("placeholder", true);
         // A text edit is running on the object, so it is showing none of its own text and the
         // entry for the edit carries what has been typed.
         if (rContent.mbTextEdit)
@@ -4066,7 +4094,8 @@ bool SdXImpressDocument::supportsCommand(std::u16string_view rCommand)
 {
     if (svx::vector::isPartCommand(rCommand) || rCommand == u"ExtractDocumentStructure"
         || rCommand == u"GetDesignTemplates" || rCommand == u"GetDesignTemplateDesigns"
-        || rCommand == u"SecurityLabel")
+        || rCommand == u"SecurityLabel" || rCommand == u"ShapeGhost"
+        || rCommand == u"ReserveObjectIds" || rCommand == u"ShapeStyleKey")
         return true;
     return false;
 }
@@ -4124,6 +4153,132 @@ OUString lcl_ReadTemplateThumbnailDataUrl(const OUString& rUrl)
 }
 }
 
+/*
+    The answer to .uno:ReserveObjectIds?Count=50: that many object ids reserved for the current
+    view, between one and 1000, as the first and the count; the rest follow the first. No other
+    object takes them, so the client gives the objects it creates one each, and they keep it. The
+    ids travel in 32 bits, so none are reserved where they would not fit.
+*/
+void SdXImpressDocument::writeReservedObjectIds(::tools::JsonWriter& rJsonWriter, sal_Int32 nCount)
+{
+    rJsonWriter.put("commandName", ".uno:ReserveObjectIds");
+    auto aValues = rJsonWriter.startNode("commandValues");
+    sd::DrawViewShell* pShell
+        = mpDocShell ? dynamic_cast<sd::DrawViewShell*>(mpDocShell->GetViewShell()) : nullptr;
+    const sal_uInt32 nWanted(std::clamp<sal_Int32>(nCount, 1, 1000));
+    sal_uInt64 nFirst(0);
+    if (pShell)
+        nFirst = pShell->ReserveObjectIds(nWanted);
+    const bool bFits(pShell && nFirst + nWanted <= SAL_MAX_UINT32);
+    rJsonWriter.put("first", bFits ? nFirst : sal_uInt64(0));
+    rJsonWriter.put("count", bFits ? nWanted : sal_uInt32(0));
+}
+
+/*
+    The answer to .uno:ShapeGhost?Shape=BasicShapes.rectangle and the like: the view makes the
+    default object of that shape, which is inserted nowhere, and the answer carries its size and
+    how it is drawn, for the client to show it while the shape is dragged out. The key of the
+    attributes the shape took goes along, which tells whether a kept look still holds. A shape of
+    no known group gets an answer without an object.
+*/
+void SdXImpressDocument::writeShapeGhost(::tools::JsonWriter& rJsonWriter,
+                                         std::u16string_view aShape)
+{
+    static constexpr std::pair<std::u16string_view, sal_uInt16> aGroups[] = {
+        { u"BasicShapes", SID_DRAWTBX_CS_BASIC },
+        { u"SymbolShapes", SID_DRAWTBX_CS_SYMBOL },
+        { u"ArrowShapes", SID_DRAWTBX_CS_ARROW },
+        { u"StarShapes", SID_DRAWTBX_CS_STAR },
+        { u"CalloutShapes", SID_DRAWTBX_CS_CALLOUT },
+        { u"FlowChartShapes", SID_DRAWTBX_CS_FLOWCHART },
+    };
+
+    listenToTheShapeStyle();
+    rJsonWriter.put("commandName", ".uno:ShapeGhost");
+    auto aValues = rJsonWriter.startNode("commandValues");
+    rJsonWriter.put("shape", OUString(aShape));
+
+    const size_t nDot = aShape.find(u'.');
+    sd::DrawViewShell* pShell
+        = mpDocShell ? dynamic_cast<sd::DrawViewShell*>(mpDocShell->GetViewShell()) : nullptr;
+    if (!pShell)
+        return;
+
+    const auto pGroup
+        = nDot == std::u16string_view::npos
+              ? std::end(aGroups)
+              : std::find_if(std::begin(aGroups), std::end(aGroups),
+                             [aGroup = aShape.substr(0, nDot)](const auto& rGroup)
+                             { return rGroup.first == aGroup; });
+
+    // a dimension line or a connector is no custom shape; its look carries the measurement it
+    // lays out, or the numbers its run is worked out from, and its command names its slot
+    const bool bShape(pGroup != std::end(aGroups));
+    const SfxSlot* pSlot
+        = bShape ? nullptr
+                 : SfxSlotPool::GetSlotPool(pShell->GetViewFrame()).GetUnoSlot(OUString(aShape));
+
+    const OUString aType(bShape ? aShape.substr(nDot + 1) : std::u16string_view());
+    const rtl::Reference<SdrObject> xDescribed(
+        bShape ? pShell->MakeDefaultShape(pGroup->second, aType)
+               : pSlot ? pShell->MakeDefaultLineObject(pSlot->GetSlotId())
+                       : rtl::Reference<SdrObject>());
+    SdrObject* pObject = xDescribed.get();
+    SdPage* pPage = pShell->GetActualPage();
+    if (!pObject || !pPage)
+        return;
+
+    // the look holds as long as the attributes of new shapes stay as they are
+    rJsonWriter.put("styleKey", pShell->GetShapeStyleKey());
+
+    // some shapes are always as wide as high, as the custom shape tool makes them
+    rJsonWriter.put("asWideAsHigh", SdrObjCustomShape::doConstructOrthogonal(aType));
+
+    // the client maps it from its own box onto the dragged one, so the box goes along in twips;
+    // a shape made as wide as high does not start at the corner of the page
+    const ::tools::Rectangle aRectangle(pObject->GetLogicRect());
+    rJsonWriter.put("x", o3tl::convert(aRectangle.Left(), o3tl::Length::mm100, o3tl::Length::twip));
+    rJsonWriter.put("y", o3tl::convert(aRectangle.Top(), o3tl::Length::mm100, o3tl::Length::twip));
+    rJsonWriter.put("width", o3tl::convert(aRectangle.GetWidth(), o3tl::Length::mm100,
+                                           o3tl::Length::twip));
+    rJsonWriter.put("height", o3tl::convert(aRectangle.GetHeight(), o3tl::Length::mm100,
+                                            o3tl::Length::twip));
+    // the entry the object will have once inserted, which the client can take as created
+    auto aObjects = rJsonWriter.startArray("objects");
+    VectorContentWriter aWriter(mpDoc, this, OString());
+    aWriter.writeObjectOnNoPage(rJsonWriter, pPage, *pObject);
+}
+
+void SdXImpressDocument::listenToTheShapeStyle()
+{
+    if (mpShapeStyle || !mpDoc)
+        return;
+    mpShapeStyle = mpDoc->GetDefaultStyleSheet();
+    if (mpShapeStyle)
+        StartListening(*mpShapeStyle);
+}
+
+/*
+    A changed style makes the looks a client keeps of shapes wrong, so each view gets the new key
+    at once, as the state of .uno:ShapeStyleKey; the key is that of the view, as the page it shows
+    decides which style its new shapes take.
+*/
+void SdXImpressDocument::notifyShapeStyleKey()
+{
+    for (SfxViewShell* pViewShell = SfxViewShell::GetFirst(); pViewShell;
+         pViewShell = SfxViewShell::GetNext(*pViewShell))
+    {
+        if (pViewShell->GetObjectShell() != mpDocShell)
+            continue;
+        auto* pBase = dynamic_cast<sd::ViewShellBase*>(pViewShell);
+        auto* pShell = pBase ? dynamic_cast<sd::DrawViewShell*>(pBase->GetMainViewShell().get())
+                             : nullptr;
+        if (pShell)
+            pViewShell->viewCallback(COKitCallbackType::STATE_CHANGED,
+                                     ".uno:ShapeStyleKey=" + pShell->GetShapeStyleKey());
+    }
+}
+
 void SdXImpressDocument::getCommandValues(::tools::JsonWriter& rJsonWriter,
                                           std::string_view rCommand)
 {
@@ -4156,6 +4311,30 @@ void SdXImpressDocument::getCommandValues(::tools::JsonWriter& rJsonWriter,
     }
     std::map<OUString, OUString> aMap
         = KitHelper::parseCommandParameters(OUString::fromUtf8(rCommand));
+
+    if (o3tl::starts_with(rCommand, ".uno:ReserveObjectIds"))
+    {
+        writeReservedObjectIds(rJsonWriter, aMap[u"Count"_ustr].toInt32());
+        return;
+    }
+
+    if (o3tl::starts_with(rCommand, ".uno:ShapeStyleKey"))
+    {
+        listenToTheShapeStyle();
+        // the key of the attributes new shapes of the current view take, empty without a view
+        rJsonWriter.put("commandName", ".uno:ShapeStyleKey");
+        auto aValues = rJsonWriter.startNode("commandValues");
+        sd::DrawViewShell* pShell
+            = mpDocShell ? dynamic_cast<sd::DrawViewShell*>(mpDocShell->GetViewShell()) : nullptr;
+        rJsonWriter.put("styleKey", pShell ? pShell->GetShapeStyleKey() : OString());
+        return;
+    }
+
+    if (o3tl::starts_with(rCommand, ".uno:ShapeGhost"))
+    {
+        writeShapeGhost(rJsonWriter, aMap[u"Shape"_ustr]);
+        return;
+    }
 
     if (o3tl::starts_with(rCommand, ".uno:SecurityLabel"))
     {
@@ -6757,6 +6936,8 @@ void SdXImpressDocument::dumpState(rtl::OStringBuffer& rState)
     rState.append(" objects in ");
     rState.append(sal_Int32(maVectorParts.size()));
     rState.append(" parts");
+    rState.append("\nSdXImpressDocument shape style listened to:\t");
+    rState.append(mpShapeStyle ? "yes" : "no");
 }
 
 OUString SdXImpressDocument::getCacheName() const { return u"SdXImpressDocument"_ustr; }
@@ -8324,6 +8505,12 @@ void SdXImpressDocument::dispose()
         return;
 
     ::SolarMutexGuard aGuard;
+
+    if (mpShapeStyle)
+    {
+        EndListening(*mpShapeStyle);
+        mpShapeStyle = nullptr;
+    }
 
     if( mpDoc )
     {

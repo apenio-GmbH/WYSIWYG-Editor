@@ -1411,7 +1411,12 @@ void SdrObjEditView::ImpSetKitTextObjectId(OutlinerView& rView) const
 {
     rtl::Reference<SdrTextObj> pEdited = mxWeakTextEditObj.get();
     if (pEdited.is())
-        rView.GetEditView().SetKitTextObjectId(svx::vector::idOf(*pEdited));
+        rView.GetEditView().SetKitTextObjectId(GetKitTextObjectId(*pEdited));
+}
+
+sal_uInt64 SdrObjEditView::GetKitTextObjectId(const SdrTextObj& rObject) const
+{
+    return svx::vector::idOf(rObject);
 }
 
 bool SdrObjEditView::SetKitTextCursor(sal_uInt64 nObjectId, sal_Int32 nParagraph, sal_Int32 nIndex,
@@ -1423,7 +1428,7 @@ bool SdrObjEditView::SetKitTextCursor(sal_uInt64 nObjectId, sal_Int32 nParagraph
 
     const EditEngine& rEditEngine = mpTextEditOutlinerView->GetOutliner().GetEditEngine();
     const sal_Int32 nParagraphCount = rEditEngine.GetParagraphCount();
-    if (svx::vector::idOf(*pEdited) != nObjectId || nParagraph < 0 || nParagraph >= nParagraphCount
+    if (GetKitTextObjectId(*pEdited) != nObjectId || nParagraph < 0 || nParagraph >= nParagraphCount
         || nIndex < 0 || nAnchorParagraph < 0 || nAnchorParagraph >= nParagraphCount
         || nAnchorIndex < 0)
     {

@@ -87,7 +87,12 @@ bool tryRemoveJail(const std::string& root);
 /// collected.
 constexpr int CrashedJailKeepSeconds = 180;
 
-/// True while the jail holds a crash note that is younger than CrashedJailKeepSeconds.
+/// Writes a crash note into the tmp directory of the jail at root. The note is a new, empty
+/// regular file that replaces whatever had its name.
+void noteCrashedJail(const std::string& root);
+
+/// True while the jail holds a crash note, a regular file, that was written within the last
+/// CrashedJailKeepSeconds.
 bool isCrashedJailKept(const std::string& root);
 
 /// Remove all jails.

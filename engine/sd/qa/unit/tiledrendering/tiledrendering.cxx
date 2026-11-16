@@ -16,6 +16,9 @@
 #include <tools/json_writer.hxx>
 #include <test/JsonTestTools.hxx>
 #include <boost/property_tree/json_parser.hpp>
+#include <comphelper/dispatchcommand.hxx>
+#include <com/sun/star/frame/DispatchResultState.hpp>
+#include <com/sun/star/frame/XDispatchResultListener.hpp>
 #include <svx/svdlayer.hxx>
 #include <cmath>
 #include <functional>
@@ -57,6 +60,8 @@
 #include <svx/svdhdl.hxx>
 #include <svx/svdograf.hxx>
 #include <svx/svdopage.hxx>
+#include <svx/svdoedge.hxx>
+#include <svx/svdopath.hxx>
 #include <svx/svdorect.hxx>
 #include <svx/svdotable.hxx>
 #include <svx/svdoutl.hxx>
@@ -65,6 +70,8 @@
 #include <svx/xfillit0.hxx>
 #include <svx/xflclit.hxx>
 #include <svx/xfltrit.hxx>
+#include <svx/xlnedit.hxx>
+#include <svx/xlnstit.hxx>
 #include <com/sun/star/awt/XLayoutConstrains.hpp>
 #include <com/sun/star/table/XCellRange.hpp>
 #include <com/sun/star/text/XText.hpp>
@@ -1487,6 +1494,38 @@ CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testResizeAfterReadOnlyView)
     KitHelper::setViewReadOnly(nView, false);
     CPPUNIT_ASSERT(pView->IsResizeAllowed());
     CPPUNIT_ASSERT(pView->IsMoveAllowed());
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testTypeAfterReadOnlyView)
+{
+    // A text edit started in viewing mode accepts typing only once the view can edit.
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    int nView = KitHelper::getCurrentView();
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdrObject* pObject = pViewShell->GetActualPage()->GetObj(0);
+    SdrView* pView = pViewShell->GetView();
+
+    KitHelper::setViewReadOnly(nView, true);
+    const ::tools::Rectangle aRect = pObject->GetCurrentBoundRect();
+    const auto nX = o3tl::toTwips(aRect.Center().X(), o3tl::Length::mm100);
+    const auto nY = o3tl::toTwips(aRect.Center().Y(), o3tl::Length::mm100);
+    pXImpressDocument->postMouseEvent(COKitMouseEventType::BUTTONDOWN, nX, nY, 1, MOUSE_LEFT, 0);
+    pXImpressDocument->postMouseEvent(COKitMouseEventType::BUTTONUP, nX, nY, 1, MOUSE_LEFT, 0);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(pView->IsTextEdit());
+    EditEngine& rEditEngine = pView->GetTextEditOutlinerView()->GetEditView().getEditEngine();
+
+    pXImpressDocument->postKeyEvent(COKitKeyEventType::DOWN, 'y', 0);
+    pXImpressDocument->postKeyEvent(COKitKeyEventType::UP, 'y', 0);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(OUString(), rEditEngine.GetText());
+
+    KitHelper::setViewReadOnly(nView, false);
+    CPPUNIT_ASSERT(pView->IsTextEdit());
+    pXImpressDocument->postKeyEvent(COKitKeyEventType::DOWN, 'x', 0);
+    pXImpressDocument->postKeyEvent(COKitKeyEventType::UP, 'x', 0);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(u"x"_ustr, rEditEngine.GetText());
 }
 
 CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testUndoLimiting)
@@ -8664,6 +8703,360 @@ CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testInsertShapeIntoSlide)
     // Undo removes it again.
     dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
     CPPUNIT_ASSERT_EQUAL(nObjectCount, pSlide->GetObjCount());
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testCreateConnectorBetweenPoints)
+{
+    // a connector dragged out in the client from one shape to another is tied as the client says
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdPage* pSlide = pXImpressDocument->GetDoc()->GetSdPage(0, PageKind::Standard);
+
+    // a box as X, Y, Width and Height, or two points as StartX, StartY, EndX and EndY, in twips
+    const auto inTwips = [](sal_Int32 nX, sal_Int32 nY, sal_Int32 nX2, sal_Int32 nY2,
+                            bool bPoints) {
+        return comphelper::InitPropertySequence({
+            { bPoints ? u"StartX"_ustr : u"X"_ustr, cpo::uno::Any(nX) },
+            { bPoints ? u"StartY"_ustr : u"Y"_ustr, cpo::uno::Any(nY) },
+            { bPoints ? u"EndX"_ustr : u"Width"_ustr, cpo::uno::Any(nX2) },
+            { bPoints ? u"EndY"_ustr : u"Height"_ustr, cpo::uno::Any(nY2) },
+        });
+    };
+    dispatchCommand(mxComponent, u".uno:BasicShapes.rectangle"_ustr,
+                    inTwips(1000, 1000, 2000, 1000, false));
+    SdrObject* pFirst = pSlide->GetObj(pSlide->GetObjCount() - 1);
+    dispatchCommand(mxComponent, u".uno:BasicShapes.rectangle"_ustr,
+                    inTwips(5000, 3000, 2000, 1000, false));
+    SdrObject* pSecond = pSlide->GetObj(pSlide->GetObjCount() - 1);
+
+    // from the middle of the right side of the first to the middle of the left side of the second,
+    // tied to those two of the four sides
+    cpo::uno::Sequence<css::beans::PropertyValue> aArgs(inTwips(3000, 1500, 5000, 3500, true));
+    const OUString aTies(OUString::number(pFirst->GetUniqueID()) + " 1 "
+                         + OUString::number(pSecond->GetUniqueID()) + " 3");
+    aArgs.realloc(aArgs.getLength() + 1);
+    aArgs.getArray()[aArgs.getLength() - 1] = comphelper::makePropertyValue(u"Ties"_ustr, aTies);
+    SfxUndoManager* pUndoManager = pXImpressDocument->GetDoc()->GetUndoManager();
+    const size_t nUndoCount = pUndoManager->GetUndoActionCount();
+    dispatchCommand(mxComponent, u".uno:Connector"_ustr, aArgs);
+    // made and tied as one step
+    CPPUNIT_ASSERT_EQUAL(nUndoCount + 1, pUndoManager->GetUndoActionCount());
+
+    auto pConnector = dynamic_cast<SdrEdgeObj*>(pSlide->GetObj(pSlide->GetObjCount() - 1));
+    CPPUNIT_ASSERT(pConnector);
+    CPPUNIT_ASSERT_EQUAL(pFirst, pConnector->GetConnectedNode(true));
+    CPPUNIT_ASSERT_EQUAL(pSecond, pConnector->GetConnectedNode(false));
+    // a middle of a side is one of the four every object has, counted from 0
+    CPPUNIT_ASSERT(pConnector->GetConnection(true).IsAutoVertex());
+    CPPUNIT_ASSERT_EQUAL(sal_uInt16(1), pConnector->GetConnection(true).GetConnectorId());
+    CPPUNIT_ASSERT(pConnector->GetConnection(false).IsAutoVertex());
+    CPPUNIT_ASSERT_EQUAL(sal_uInt16(3), pConnector->GetConnection(false).GetConnectorId());
+
+    // the run leaves each shape the way its side faces: from the right side of the first to
+    // the right, into the left side of the second from the left
+    const basegfx::B2DPolygon aRun(pConnector->GetEdgeTrackPath().getB2DPolygon(0));
+    CPPUNIT_ASSERT(aRun.count() >= 2);
+    CPPUNIT_ASSERT_EQUAL(aRun.getB2DPoint(0).getY(), aRun.getB2DPoint(1).getY());
+    CPPUNIT_ASSERT(aRun.getB2DPoint(1).getX() > aRun.getB2DPoint(0).getX());
+    const sal_uInt32 nLast(aRun.count() - 1);
+    CPPUNIT_ASSERT_EQUAL(aRun.getB2DPoint(nLast).getY(), aRun.getB2DPoint(nLast - 1).getY());
+    CPPUNIT_ASSERT(aRun.getB2DPoint(nLast - 1).getX() < aRun.getB2DPoint(nLast).getX());
+
+    // an end moved to a point with no object to tie to hangs free there
+    const Point aFree(10000, 10000);
+    pConnector->MoveEndTo(false, aFree, nullptr, -1);
+    CPPUNIT_ASSERT(!pConnector->GetConnectedNode(false));
+    CPPUNIT_ASSERT_EQUAL(pFirst, pConnector->GetConnectedNode(true));
+    CPPUNIT_ASSERT_EQUAL(aFree, pConnector->GetPoint(1));
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testCreateLineBetweenPoints)
+{
+    // a line dragged out in the client goes from where the drag began to where it ended
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdDrawDocument* pDocument = pXImpressDocument->GetDoc();
+    SdPage* pSlide = pDocument->GetSdPage(0, PageKind::Standard);
+    const size_t nObjectCount = pSlide->GetObjCount();
+
+    // towards the upper left, so a line laid from the corners of its rectangle would be turned
+    cpo::uno::Sequence<css::beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
+        { u"StartX"_ustr, cpo::uno::Any(sal_Int32(5000)) },
+        { u"StartY"_ustr, cpo::uno::Any(sal_Int32(4000)) },
+        { u"EndX"_ustr, cpo::uno::Any(sal_Int32(1000)) },
+        { u"EndY"_ustr, cpo::uno::Any(sal_Int32(1500)) },
+    }));
+    dispatchCommand(mxComponent, u".uno:LineArrowEnd"_ustr, aArgs);
+
+    CPPUNIT_ASSERT_EQUAL(nObjectCount + 1, pSlide->GetObjCount());
+    auto pLine = dynamic_cast<SdrPathObj*>(pSlide->GetObj(pSlide->GetObjCount() - 1));
+    CPPUNIT_ASSERT(pLine);
+    const basegfx::B2DPolygon aLine(pLine->GetPathPoly().getB2DPolygon(0));
+    CPPUNIT_ASSERT_EQUAL(sal_uInt32(2), aLine.count());
+    const auto mm100 = [](sal_Int32 nTwips) {
+        return double(o3tl::convert(nTwips, o3tl::Length::twip, o3tl::Length::mm100));
+    };
+    CPPUNIT_ASSERT_EQUAL(mm100(5000), aLine.getB2DPoint(0).getX());
+    CPPUNIT_ASSERT_EQUAL(mm100(4000), aLine.getB2DPoint(0).getY());
+    CPPUNIT_ASSERT_EQUAL(mm100(1000), aLine.getB2DPoint(1).getX());
+    CPPUNIT_ASSERT_EQUAL(mm100(1500), aLine.getB2DPoint(1).getY());
+    // the arrow stays at the end the drag ended at
+    CPPUNIT_ASSERT(pLine->GetMergedItem(XATTR_LINEEND).GetLineEndValue().count() > 0);
+    CPPUNIT_ASSERT_EQUAL(sal_uInt32(0),
+                         pLine->GetMergedItem(XATTR_LINESTART).GetLineStartValue().count());
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testCreateShapeInRectangle)
+{
+    // a shape dragged out in the client is made in its rectangle, also partly beside the slide
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdDrawDocument* pDocument = pXImpressDocument->GetDoc();
+    SdPage* pSlide = pDocument->GetSdPage(0, PageKind::Standard);
+    const size_t nObjectCount = pSlide->GetObjCount();
+
+    cpo::uno::Sequence<css::beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
+        { u"X"_ustr, cpo::uno::Any(sal_Int32(-500)) },
+        { u"Y"_ustr, cpo::uno::Any(sal_Int32(1500)) },
+        { u"Width"_ustr, cpo::uno::Any(sal_Int32(4000)) },
+        { u"Height"_ustr, cpo::uno::Any(sal_Int32(3000)) },
+    }));
+    dispatchCommand(mxComponent, u".uno:BasicShapes.rectangle"_ustr, aArgs);
+
+    CPPUNIT_ASSERT_EQUAL(nObjectCount + 1, pSlide->GetObjCount());
+    SdrObject* pShape = pSlide->GetObj(pSlide->GetObjCount() - 1);
+    CPPUNIT_ASSERT_EQUAL(SdrObjKind::CustomShape, pShape->GetObjIdentifier());
+    const ::tools::Rectangle aRectangle = pShape->GetLogicRect();
+    CPPUNIT_ASSERT_EQUAL(o3tl::convert(-500, o3tl::Length::twip, o3tl::Length::mm100),
+                         static_cast<sal_Int64>(aRectangle.Left()));
+    CPPUNIT_ASSERT_EQUAL(o3tl::convert(1500, o3tl::Length::twip, o3tl::Length::mm100),
+                         static_cast<sal_Int64>(aRectangle.Top()));
+    CPPUNIT_ASSERT_EQUAL(o3tl::convert(4000, o3tl::Length::twip, o3tl::Length::mm100),
+                         static_cast<sal_Int64>(aRectangle.GetWidth()));
+    CPPUNIT_ASSERT_EQUAL(o3tl::convert(3000, o3tl::Length::twip, o3tl::Length::mm100),
+                         static_cast<sal_Int64>(aRectangle.GetHeight()));
+
+    // the new shape is the selection
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    const SdrMarkList& rMarkList = pViewShell->GetView()->GetMarkedObjectList();
+    CPPUNIT_ASSERT_EQUAL(size_t(1), rMarkList.GetMarkCount());
+    CPPUNIT_ASSERT_EQUAL(pShape, rMarkList.GetMark(0)->GetMarkedSdrObj());
+
+    // one undo step takes it away
+    dispatchCommand(mxComponent, u".uno:Undo"_ustr, {});
+    CPPUNIT_ASSERT_EQUAL(nObjectCount, pSlide->GetObjCount());
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testShapeGhost)
+{
+    // the shape shown while it is dragged out is described by the engine, and the document stays
+    // as it was
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdDrawDocument* pDocument = pXImpressDocument->GetDoc();
+    SdPage* pSlide = pDocument->GetSdPage(0, PageKind::Standard);
+    const size_t nObjectCount = pSlide->GetObjCount();
+    const size_t nUndoCount = pDocument->GetUndoManager()->GetUndoActionCount();
+
+    tools::JsonWriter aWriter;
+    pXImpressDocument->getCommandValues(aWriter, ".uno:ShapeGhost?Shape=BasicShapes.rectangle");
+    std::stringstream aStream((std::string(aWriter.finishAndGetAsOString())));
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+    const boost::property_tree::ptree& rValues = aTree.get_child("commandValues");
+    CPPUNIT_ASSERT_EQUAL(std::string("BasicShapes.rectangle"), rValues.get<std::string>("shape"));
+    CPPUNIT_ASSERT(rValues.get<sal_Int64>("width") > 0);
+    CPPUNIT_ASSERT(rValues.get<sal_Int64>("height") > 0);
+    CPPUNIT_ASSERT(!rValues.get<std::string>("styleKey").empty());
+    const boost::property_tree::ptree& rEntry = rValues.get_child("objects").front().second;
+    CPPUNIT_ASSERT(!rEntry.get_child("primitives").empty());
+    // the client gives a created shape its own id, so the look promises none
+    CPPUNIT_ASSERT(!rValues.get_child_optional("id"));
+
+    // a dimension line is described too, with the measurement its look is laid out from
+    tools::JsonWriter aMeasureWriter;
+    pXImpressDocument->getCommandValues(aMeasureWriter, ".uno:ShapeGhost?Shape=MeasureLine");
+    std::stringstream aMeasureStream((std::string(aMeasureWriter.finishAndGetAsOString())));
+    boost::property_tree::ptree aMeasureTree;
+    boost::property_tree::read_json(aMeasureStream, aMeasureTree);
+    const boost::property_tree::ptree& rMeasure
+        = aMeasureTree.get_child("commandValues.objects").front().second;
+    CPPUNIT_ASSERT(rMeasure.get_child_optional("measurement"));
+    CPPUNIT_ASSERT(!rMeasure.get_child("transform").empty());
+
+    // a connector too, with the numbers its run is worked out from
+    tools::JsonWriter aConnectorWriter;
+    pXImpressDocument->getCommandValues(aConnectorWriter,
+                                        ".uno:ShapeGhost?Shape=ConnectorLinesArrowEnd");
+    std::stringstream aConnectorStream((std::string(aConnectorWriter.finishAndGetAsOString())));
+    boost::property_tree::ptree aConnectorTree;
+    boost::property_tree::read_json(aConnectorStream, aConnectorTree);
+    const boost::property_tree::ptree& rConnector
+        = aConnectorTree.get_child("commandValues.objects").front().second;
+    CPPUNIT_ASSERT_EQUAL(std::string("three"), rConnector.get<std::string>("routing.kind"));
+
+    // the document does not know of it
+    CPPUNIT_ASSERT_EQUAL(nObjectCount, pSlide->GetObjCount());
+    CPPUNIT_ASSERT_EQUAL(nUndoCount, pDocument->GetUndoManager()->GetUndoActionCount());
+}
+
+namespace
+{
+/// Keeps the state a dispatched command finished with.
+class DispatchResultCatcher : public cppu::WeakImplHelper<css::frame::XDispatchResultListener>
+{
+public:
+    sal_Int16 mnState = -1;
+
+    virtual void dispatchFinished(const css::frame::DispatchResultEvent& rEvent) override
+    {
+        mnState = rEvent.State;
+    }
+
+    virtual void disposing(const css::lang::EventObject&) override {}
+};
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testDeleteReportsWhetherItDeleted)
+{
+    // a client that takes deleted objects away at once is told whether the engine deleted them
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdPage* pSlide = pXImpressDocument->GetDoc()->GetSdPage(0, PageKind::Standard);
+    const size_t nObjectCount = pSlide->GetObjCount();
+
+    cpo::uno::Sequence<css::beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
+        { u"X"_ustr, cpo::uno::Any(sal_Int32(1000)) },
+        { u"Y"_ustr, cpo::uno::Any(sal_Int32(1500)) },
+        { u"Width"_ustr, cpo::uno::Any(sal_Int32(4000)) },
+        { u"Height"_ustr, cpo::uno::Any(sal_Int32(3000)) },
+    }));
+    dispatchCommand(mxComponent, u".uno:BasicShapes.rectangle"_ustr, aArgs);
+    CPPUNIT_ASSERT_EQUAL(nObjectCount + 1, pSlide->GetObjCount());
+
+    // the new shape is selected, and goes
+    rtl::Reference<DispatchResultCatcher> xDeleted(new DispatchResultCatcher);
+    comphelper::dispatchCommand(u".uno:Delete"_ustr, {}, xDeleted);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT_EQUAL(nObjectCount, pSlide->GetObjCount());
+    CPPUNIT_ASSERT_EQUAL(sal_Int16(css::frame::DispatchResultState::SUCCESS), xDeleted->mnState);
+
+    // with nothing selected nothing goes, which is no success
+    rtl::Reference<DispatchResultCatcher> xNothing(new DispatchResultCatcher);
+    comphelper::dispatchCommand(u".uno:Delete"_ustr, {}, xNothing);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(sal_Int16(css::frame::DispatchResultState::SUCCESS) != xNothing->mnState);
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testCreateTextInRectangle)
+{
+    // a text dragged out is made in its rectangle with a fixed width, a text clicked grows in
+    // width too, and either is edited at once, as with the office's text tool
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdPage* pSlide = pXImpressDocument->GetDoc()->GetSdPage(0, PageKind::Standard);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+
+    const size_t nObjectCount = pSlide->GetObjCount();
+    // an empty text goes again when the next one is made, so each is told by where it stands
+    // a click gives the text a small room at the point it starts from
+    const auto textAt = [&](sal_Int32 nX, bool bGrow) {
+        cpo::uno::Sequence<css::beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
+            { u"X"_ustr, cpo::uno::Any(nX) },
+            { u"Y"_ustr, cpo::uno::Any(sal_Int32(1500)) },
+            { u"Width"_ustr, cpo::uno::Any(sal_Int32(bGrow ? 90 : 4000)) },
+            { u"Height"_ustr, cpo::uno::Any(sal_Int32(600)) },
+            { u"Grow"_ustr, cpo::uno::Any(bGrow) },
+        }));
+        dispatchCommand(mxComponent, u".uno:Text"_ustr, aArgs);
+        CPPUNIT_ASSERT(pViewShell->GetView()->IsTextEdit());
+        SdrObject* pText = pSlide->GetObj(pSlide->GetObjCount() - 1);
+        CPPUNIT_ASSERT_EQUAL(o3tl::convert(nX, o3tl::Length::twip, o3tl::Length::mm100),
+                             static_cast<sal_Int64>(pText->GetLogicRect().Left()));
+        CPPUNIT_ASSERT_EQUAL(o3tl::convert(1500, o3tl::Length::twip, o3tl::Length::mm100),
+                             static_cast<sal_Int64>(pText->GetLogicRect().Top()));
+        return pText->GetMergedItem(SDRATTR_TEXT_AUTOGROWWIDTH).GetValue();
+    };
+
+    // dragged: the width stays as dragged
+    CPPUNIT_ASSERT(!textAt(1000, false));
+    // clicked: it grows with the text; the text tool did not stay on for it, so this is a new
+    // text, and the first, left empty, went again
+    CPPUNIT_ASSERT(textAt(3000, true));
+    CPPUNIT_ASSERT_EQUAL(nObjectCount + 1, pSlide->GetObjCount());
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testReservedObjectIds)
+{
+    // a client creates shapes under ids reserved for its view, which no other object takes
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdPage* pSlide = pXImpressDocument->GetDoc()->GetSdPage(0, PageKind::Standard);
+
+    tools::JsonWriter aWriter;
+    pXImpressDocument->getCommandValues(aWriter, ".uno:ReserveObjectIds?Count=16");
+    std::stringstream aStream((std::string(aWriter.finishAndGetAsOString())));
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+    const sal_uInt64 nFirst = aTree.get<sal_uInt64>("commandValues.first");
+    CPPUNIT_ASSERT_EQUAL(16, aTree.get<int>("commandValues.count"));
+
+    const auto shapeWithId = [&](sal_uInt32 nId) {
+        cpo::uno::Sequence<css::beans::PropertyValue> aArgs(comphelper::InitPropertySequence({
+            { u"X"_ustr, cpo::uno::Any(sal_Int32(1000)) },
+            { u"Y"_ustr, cpo::uno::Any(sal_Int32(1500)) },
+            { u"Width"_ustr, cpo::uno::Any(sal_Int32(4000)) },
+            { u"Height"_ustr, cpo::uno::Any(sal_Int32(3000)) },
+            { u"Id"_ustr, cpo::uno::Any(nId) },
+        }));
+        dispatchCommand(mxComponent, u".uno:BasicShapes.rectangle"_ustr, aArgs);
+        return pSlide->GetObj(pSlide->GetObjCount() - 1)->GetUniqueID();
+    };
+    const auto reserved = [&](sal_uInt64 nId) { return nId >= nFirst && nId < nFirst + 16; };
+
+    // a reserved id given is the id the shape gets
+    CPPUNIT_ASSERT_EQUAL(nFirst + 3, shapeWithId(nFirst + 3));
+    // an id is given once; given again, the shape takes an id of its own, outside the reserve
+    CPPUNIT_ASSERT(!reserved(shapeWithId(nFirst + 3)));
+    // an id never reserved is not taken either
+    CPPUNIT_ASSERT(shapeWithId(1) != 1);
+    CPPUNIT_ASSERT(!reserved(pSlide->GetObj(pSlide->GetObjCount() - 1)->GetUniqueID()));
+
+    // a client may hold a second, larger set as its reserve, which lies after the first
+    tools::JsonWriter aSecondWriter;
+    pXImpressDocument->getCommandValues(aSecondWriter, ".uno:ReserveObjectIds?Count=500");
+    std::stringstream aSecondStream((std::string(aSecondWriter.finishAndGetAsOString())));
+    boost::property_tree::ptree aSecondTree;
+    boost::property_tree::read_json(aSecondStream, aSecondTree);
+    CPPUNIT_ASSERT_EQUAL(500, aSecondTree.get<int>("commandValues.count"));
+    const sal_uInt64 nSecondFirst = aSecondTree.get<sal_uInt64>("commandValues.first");
+    CPPUNIT_ASSERT(nSecondFirst >= nFirst + 16);
+    CPPUNIT_ASSERT_EQUAL(nSecondFirst + 499, shapeWithId(nSecondFirst + 499));
+}
+
+CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testShapeStyleKey)
+{
+    // a client keeps the looks of shapes as long as the key of the attributes stays the same
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    SdTestViewCallback aView;
+    const auto styleKey = [&]() {
+        tools::JsonWriter aWriter;
+        pXImpressDocument->getCommandValues(aWriter, ".uno:ShapeStyleKey");
+        std::stringstream aStream((std::string(aWriter.finishAndGetAsOString())));
+        boost::property_tree::ptree aTree;
+        boost::property_tree::read_json(aStream, aTree);
+        return aTree.get<std::string>("commandValues.styleKey");
+    };
+
+    const std::string aKey = styleKey();
+    CPPUNIT_ASSERT(!aKey.empty());
+    // asked again with nothing changed, it is the same, though every new shape is another object
+    CPPUNIT_ASSERT_EQUAL(aKey, styleKey());
+
+    // new shapes take the fill colour of the default style, so the key changes with it
+    SfxStyleSheet* pStyle = pXImpressDocument->GetDoc()->GetDefaultStyleSheet();
+    CPPUNIT_ASSERT(pStyle);
+    pStyle->GetItemSet().Put(XFillColorItem(OUString(), COL_LIGHTMAGENTA));
+    pStyle->Broadcast(SfxHint(SfxHintId::DataChanged));
+    const std::string aChangedKey = styleKey();
+    CPPUNIT_ASSERT(aKey != aChangedKey);
+    // the view is told the new key at once, without asking
+    CPPUNIT_ASSERT(std::find(aView.m_aStateChanged.begin(), aView.m_aStateChanged.end(),
+                             ".uno:ShapeStyleKey=" + aChangedKey)
+                   != aView.m_aStateChanged.end());
 }
 
 CPPUNIT_TEST_FIXTURE(SdTiledRenderingTest, testMovePreviewShape)

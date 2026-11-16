@@ -28,6 +28,7 @@
 #include <cpo/uno/Any.hxx>
 
 #include <COKit/COKit.hxx>
+#include <comphelper/hash.hxx>
 #include <comphelper/kit.hxx>
 #include <comphelper/propertyvalue.hxx>
 #include <comphelper/scopeguard.hxx>
@@ -39,8 +40,16 @@
 #include <svx/clipfmtitem.hxx>
 #include <svx/svdpagv.hxx>
 #include <svx/svdopath.hxx>
+#include <svx/svdomeas.hxx>
+#include <svx/svdoedge.hxx>
+#include <basegfx/polygon/b2dpolypolygon.hxx>
 #include <svx/svdundo.hxx>
 #include <svx/svdorect.hxx>
+#include <svx/svdotext.hxx>
+#include <svx/sdtagitm.hxx>
+#include <svx/sdtaitm.hxx>
+#include <svl/itemset.hxx>
+#include <svx/svdoashp.hxx>
 #include <svl/eitem.hxx>
 #include <svl/intitem.hxx>
 #include <svl/poolitem.hxx>
@@ -61,8 +70,15 @@
 #include <svl/urihelper.hxx>
 #include <sfx2/docfile.hxx>
 #include <osl/diagnose.h>
+#include <osl/file.hxx>
+#include <osl/module.hxx>
 #include <svl/cryptosign.hxx>
 #include <tools/debug.hxx>
+#include <tools/UniqueID.hxx>
+#include <drawinglayer/processor2d/Primitive2dJsonProcessor.hxx>
+#include <svx/svdoashp.hxx>
+#include <o3tl/string_view.hxx>
+#include <o3tl/unit_conversion.hxx>
 
 #include <DrawViewShell.hxx>
 #include <slideshow.hxx>
@@ -108,7 +124,12 @@
 #include <svl/srchitem.hxx>
 #include <svx/srchdlg.hxx>
 
+#include <algorithm>
+#include <array>
 #include <functional>
+#include <libxml/xmlwriter.h>
+#include <rtl/strbuf.hxx>
+#include <optional>
 
 using namespace ::com::sun::star;
 using namespace ::cpo;
@@ -119,6 +140,95 @@ using namespace ::com::sun::star::beans;
 namespace sd {
 
 // Permanent Functions
+
+// the rectangle a shape is to be created in, given with the request in twips on the slide; the
+// slide's own area does not limit it, a shape may lie beside the slide
+static std::optional<::tools::Rectangle> lcl_getRequestedRectangle(SfxRequest const& rReq)
+{
+    const SfxItemSet* pArgs = rReq.GetArgs();
+    if (!pArgs)
+        return std::nullopt;
+
+    const SfxInt32Item* pXItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_2, false);
+    const SfxInt32Item* pYItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_3, false);
+    const SfxInt32Item* pWidthItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_4, false);
+    const SfxInt32Item* pHeightItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_5, false);
+    if (!pXItem || !pYItem || !pWidthItem || !pHeightItem)
+        return std::nullopt;
+
+    constexpr sal_Int32 nMostTwips = 10000000;
+    const sal_Int32 nX(pXItem->GetValue());
+    const sal_Int32 nY(pYItem->GetValue());
+    const sal_Int32 nWidth(pWidthItem->GetValue());
+    const sal_Int32 nHeight(pHeightItem->GetValue());
+    if (nWidth <= 0 || nHeight <= 0 || std::abs(nX) > nMostTwips || std::abs(nY) > nMostTwips
+        || nWidth > nMostTwips || nHeight > nMostTwips)
+        return std::nullopt;
+
+    auto toMm100 = [](sal_Int32 nTwips) {
+        return static_cast<::tools::Long>(
+            o3tl::convert(nTwips, o3tl::Length::twip, o3tl::Length::mm100));
+    };
+    return ::tools::Rectangle(Point(toMm100(nX), toMm100(nY)),
+                              Size(toMm100(nWidth), toMm100(nHeight)));
+}
+
+// the two points a line or a connector is to be created between, given with the request in twips
+// on the slide; FN_PARAM_4 is left out, as the rectangle function reads it as IsSticky for every
+// slot
+static std::optional<std::pair<Point, Point>> lcl_getRequestedLine(SfxRequest const& rReq)
+{
+    const SfxItemSet* pArgs = rReq.GetArgs();
+    if (!pArgs)
+        return std::nullopt;
+
+    const SfxInt32Item* pStartXItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_2, false);
+    const SfxInt32Item* pStartYItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_3, false);
+    const SfxInt32Item* pEndXItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_5, false);
+    const SfxInt32Item* pEndYItem = pArgs->GetItem<SfxInt32Item>(FN_PARAM_6, false);
+    if (!pStartXItem || !pStartYItem || !pEndXItem || !pEndYItem)
+        return std::nullopt;
+
+    constexpr sal_Int32 nMostTwips = 10000000;
+    const sal_Int32 aCoordinates[] = { pStartXItem->GetValue(), pStartYItem->GetValue(),
+                                       pEndXItem->GetValue(), pEndYItem->GetValue() };
+    for (sal_Int32 nCoordinate : aCoordinates)
+        if (std::abs(nCoordinate) > nMostTwips)
+            return std::nullopt;
+
+    auto toMm100 = [](sal_Int32 nTwips) {
+        return static_cast<::tools::Long>(
+            o3tl::convert(nTwips, o3tl::Length::twip, o3tl::Length::mm100));
+    };
+    const Point aStart(toMm100(aCoordinates[0]), toMm100(aCoordinates[1]));
+    const Point aEnd(toMm100(aCoordinates[2]), toMm100(aCoordinates[3]));
+    if (aStart == aEnd)
+        return std::nullopt;
+    return std::make_pair(aStart, aEnd);
+}
+
+// what the ends of a connector are to be tied to, given with the request as four numbers: the id of
+// the object at the start and the index of its glue point, then the same for the end; an object id
+// of 0 leaves that end free, and the index counts as the glue point properties of a connector do
+static std::optional<std::array<sal_Int64, 4>> lcl_getRequestedTies(SfxRequest const& rReq)
+{
+    const SfxItemSet* pArgs = rReq.GetArgs();
+    const auto* pTies
+        = pArgs ? dynamic_cast<const SfxStringItem*>(pArgs->GetItem(FN_PARAM_1, false)) : nullptr;
+    if (!pTies)
+        return std::nullopt;
+
+    std::array<sal_Int64, 4> aTies;
+    sal_Int32 nAt = 0;
+    for (sal_Int64& rTie : aTies)
+    {
+        const std::u16string_view aNumber(o3tl::getToken(pTies->GetValue(), 0, ' ', nAt));
+        if (aNumber.empty())
+            return std::nullopt;
+        rTie = o3tl::toInt64(aNumber);
+    }
+    return aTies;
+}
 
 static void ImpAddPrintableCharactersToTextEdit(SfxRequest const & rReq, ::sd::View* pView)
 {
@@ -155,8 +265,11 @@ static void ImpAddPrintableCharactersToTextEdit(SfxRequest const & rReq, ::sd::V
 void DrawViewShell::FuPermanent(SfxRequest& rReq)
 {
     sal_uInt16 nSId = rReq.GetSlot();
+    // a text the client dragged out or clicked is a new one, never one for the text tool on
+    const bool bTextInRectangle = (nSId == SID_ATTR_CHAR || nSId == SID_ATTR_CHAR_VERTICAL)
+                                  && lcl_getRequestedRectangle(rReq).has_value();
 
-    if( HasCurrentFunction() &&
+    if( HasCurrentFunction() && !bTextInRectangle &&
         ( nSId == SID_TEXTEDIT || nSId == SID_ATTR_CHAR || nSId == SID_TEXT_FITTOSIZE ||
           nSId == SID_ATTR_CHAR_VERTICAL || nSId == SID_TEXT_FITTOSIZE_VERTICAL ) )
     {
@@ -202,9 +315,10 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
             }
         }
 
-        if ( nSId != SID_TEXTEDIT && nSId != SID_ATTR_CHAR && nSId != SID_TEXT_FITTOSIZE &&
-             nSId != SID_ATTR_CHAR_VERTICAL && nSId != SID_TEXT_FITTOSIZE_VERTICAL &&
-             nSId != SID_FORMATPAINTBRUSH &&
+        if ( (bTextInRectangle ||
+              (nSId != SID_TEXTEDIT && nSId != SID_ATTR_CHAR && nSId != SID_TEXT_FITTOSIZE &&
+               nSId != SID_ATTR_CHAR_VERTICAL && nSId != SID_TEXT_FITTOSIZE_VERTICAL &&
+               nSId != SID_FORMATPAINTBRUSH)) &&
              mpDrawView->IsTextEdit() )
         {
             mpDrawView->SdrEndTextEdit();
@@ -214,11 +328,11 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
         {
             nOldSId = GetCurrentFunction()->GetSlotID();
 
-            if (nOldSId == nSId ||
+            if (!bTextInRectangle && (nOldSId == nSId ||
                 ((nOldSId == SID_TEXTEDIT || nOldSId == SID_ATTR_CHAR || nOldSId == SID_TEXT_FITTOSIZE ||
                 nOldSId == SID_ATTR_CHAR_VERTICAL || nOldSId == SID_TEXT_FITTOSIZE_VERTICAL) &&
                 (nSId == SID_TEXTEDIT || nSId == SID_ATTR_CHAR || nSId == SID_TEXT_FITTOSIZE ||
-                nSId == SID_ATTR_CHAR_VERTICAL || nSId == SID_TEXT_FITTOSIZE_VERTICAL )))
+                nSId == SID_ATTR_CHAR_VERTICAL || nSId == SID_TEXT_FITTOSIZE_VERTICAL ))))
             {
                 bPermanent = true;
             }
@@ -236,6 +350,21 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
     // for COKit - choosing a shape should construct it directly
     bool bCreateDirectly = false;
     bool bRectangle = false;
+    // where the shape goes when the request says, instead of the middle of the slide
+    std::optional<::tools::Rectangle> oRequestedRectangle;
+    // where a line goes when the request says, from its start to its end
+    std::optional<std::pair<Point, Point>> oRequestedLine;
+    // the id the client gave the object it creates, one this view reserved for it; nought for
+    // none, where the object takes the next id as any other
+    sal_uInt64 nGivenId = 0;
+    // all slots come here, and some have another kind of item at FN_PARAM_7
+    if (const SfxItemSet* pIdArgs = rReq.GetArgs())
+        if (const auto* pId
+            = dynamic_cast<const SfxUInt32Item*>(pIdArgs->GetItem(FN_PARAM_7, false));
+            pId && TakeReservedObjectId(pId->GetValue()))
+            nGivenId = pId->GetValue();
+    // whether a text made at once grows in width too
+    bool bTextGrows = false;
 
     switch ( nSId )
     {
@@ -263,6 +392,16 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
             const SfxItemSet* pArgs = rReq.GetArgs();
             if (pArgs && pArgs->HasItem(FN_PARAM_1))
                 bCreateDirectly = static_cast<const SfxBoolItem&>(pArgs->Get(FN_PARAM_1)).GetValue();
+
+            // a text dragged out in the client comes with its rectangle and is made at once; a
+            // click gives a text that grows in width as well, as the office's text tool makes it
+            oRequestedRectangle = lcl_getRequestedRectangle(rReq);
+            if (oRequestedRectangle)
+            {
+                bCreateDirectly = true;
+                if (const SfxBoolItem* pGrow = pArgs->GetItem<SfxBoolItem>(FN_PARAM_6, false))
+                    bTextGrows = pGrow->GetValue();
+            }
         }
         break;
 
@@ -504,6 +643,58 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
 
             bCreateDirectly = comphelper::COKit::isActive();
             bRectangle = true;
+
+            // a line dragged out in the client comes with its two points and is made at once
+            switch (nSId)
+            {
+                case SID_DRAW_LINE:
+                case SID_DRAW_XLINE:
+                case SID_DRAW_MEASURELINE:
+                case SID_LINE_ARROW_START:
+                case SID_LINE_ARROW_END:
+                case SID_LINE_ARROWS:
+                case SID_LINE_ARROW_CIRCLE:
+                case SID_LINE_CIRCLE_ARROW:
+                case SID_LINE_ARROW_SQUARE:
+                case SID_LINE_SQUARE_ARROW:
+                case SID_TOOL_CONNECTOR:
+                case SID_CONNECTOR_ARROW_START:
+                case SID_CONNECTOR_ARROW_END:
+                case SID_CONNECTOR_ARROWS:
+                case SID_CONNECTOR_CIRCLE_START:
+                case SID_CONNECTOR_CIRCLE_END:
+                case SID_CONNECTOR_CIRCLES:
+                case SID_CONNECTOR_LINE:
+                case SID_CONNECTOR_LINE_ARROW_START:
+                case SID_CONNECTOR_LINE_ARROW_END:
+                case SID_CONNECTOR_LINE_ARROWS:
+                case SID_CONNECTOR_LINE_CIRCLE_START:
+                case SID_CONNECTOR_LINE_CIRCLE_END:
+                case SID_CONNECTOR_LINE_CIRCLES:
+                case SID_CONNECTOR_CURVE:
+                case SID_CONNECTOR_CURVE_ARROW_START:
+                case SID_CONNECTOR_CURVE_ARROW_END:
+                case SID_CONNECTOR_CURVE_ARROWS:
+                case SID_CONNECTOR_CURVE_CIRCLE_START:
+                case SID_CONNECTOR_CURVE_CIRCLE_END:
+                case SID_CONNECTOR_CURVE_CIRCLES:
+                case SID_CONNECTOR_LINES:
+                case SID_CONNECTOR_LINES_ARROW_START:
+                case SID_CONNECTOR_LINES_ARROW_END:
+                case SID_CONNECTOR_LINES_ARROWS:
+                case SID_CONNECTOR_LINES_CIRCLE_START:
+                case SID_CONNECTOR_LINES_CIRCLE_END:
+                case SID_CONNECTOR_LINES_CIRCLES:
+                    oRequestedLine = lcl_getRequestedLine(rReq);
+                    break;
+            }
+            if (oRequestedLine)
+            {
+                bCreateDirectly = true;
+                oRequestedRectangle
+                    = ::tools::Rectangle::Normalize(oRequestedLine->first, oRequestedLine->second);
+            }
+
             SetCurrentFunction( FuConstructRectangle::Create( *this, GetActiveWindow(), mpDrawView.get(), *GetDoc(), rReq, bPermanent ) );
             rReq.Done();
         }
@@ -589,6 +780,11 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
                 bCreateDirectly = static_cast<const SfxBoolItem&>(pArgs->Get(FN_PARAM_1)).GetValue();
             }
 
+            // a shape dragged out in the client comes with its rectangle and is made at once
+            oRequestedRectangle = lcl_getRequestedRectangle(rReq);
+            if (oRequestedRectangle)
+                bCreateDirectly = true;
+
             if ( nSId != SID_DRAW_CS_ID )
             {
                 SfxBindings& rBind = GetViewFrame()->GetBindings();
@@ -670,10 +866,9 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
     if(!(HasCurrentFunction() && ((rReq.GetModifier() & KEY_MOD1) || bCreateDirectly)))
         return;
 
-    // get SdOptions
-    SdOptions* pOptions = SdModule::get()->GetSdOptions(GetDoc()->GetDocumentType());
-    sal_uInt32 nDefaultObjectSizeWidth(pOptions->GetDefaultObjectSizeWidth());
-    sal_uInt32 nDefaultObjectSizeHeight(pOptions->GetDefaultObjectSizeHeight());
+    const Size aDefaultObjectSize(GetDefaultObjectSize());
+    sal_uInt32 nDefaultObjectSizeWidth(aDefaultObjectSize.Width());
+    sal_uInt32 nDefaultObjectSizeHeight(aDefaultObjectSize.Height());
     if (nSId == SID_INSERT_SIGNATURELINE)
     {
         // Half of the default to better match the space available for signatures in many real-world
@@ -694,20 +889,80 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
     aPagePos.AdjustX( -sal_Int32(nDefaultObjectSizeWidth / 2) );
     aPagePos.AdjustY( -sal_Int32(nDefaultObjectSizeHeight / 2) );
     ::tools::Rectangle aNewObjectRectangle(aPagePos, Size(nDefaultObjectSizeWidth, nDefaultObjectSizeHeight));
+    if (oRequestedRectangle)
+        aNewObjectRectangle = *oRequestedRectangle;
     SdrPageView* pPageView = mpDrawView->GetSdrPageView();
 
     if(!pPageView)
         return;
 
-    // create the default object
-    rtl::Reference<SdrObject> pObj = GetCurrentFunction()->CreateDefaultObject(nSId, aNewObjectRectangle);
+    // the object made first is the new one, so it takes the id the client gave it
+    UniqueID::giveNext(nGivenId);
+    rtl::Reference<SdrObject> pObj
+        = GetCurrentFunction()->CreateDefaultObject(nSId, aNewObjectRectangle);
+    UniqueID::giveNext(0);
 
     if(!pObj)
         return;
 
+    // the default line lies across the middle of its rectangle; a requested one goes from its
+    // start to its end, so the arrow of the start stays at the start
+    if (oRequestedLine)
+    {
+        const auto& [aStart, aEnd] = *oRequestedLine;
+        if (auto pPath = dynamic_cast<SdrPathObj*>(pObj.get()))
+        {
+            basegfx::B2DPolygon aLine;
+            aLine.append(basegfx::B2DPoint(aStart.X(), aStart.Y()));
+            aLine.append(basegfx::B2DPoint(aEnd.X(), aEnd.Y()));
+            pPath->SetPathPoly(basegfx::B2DPolyPolygon(aLine));
+        }
+        else if (auto pMeasure = dynamic_cast<SdrMeasureObj*>(pObj.get()))
+        {
+            pMeasure->SetPoint(aStart, 0);
+            pMeasure->SetPoint(aEnd, 1);
+        }
+        else if (auto pConnector = dynamic_cast<SdrEdgeObj*>(pObj.get()))
+        {
+            pConnector->SetTailPoint(true, aStart);
+            pConnector->SetTailPoint(false, aEnd);
+        }
+    }
+
+    if (bTextGrows)
+    {
+        // the text starts where it was clicked and grows to the right, as the office's text tool
+        // makes it
+        if (SdrTextObj* pText = DynCastSdrTextObj(pObj.get()))
+        {
+            pText->SetMergedItem(makeSdrTextAutoGrowWidthItem(true));
+            pText->SetMergedItem(SdrTextHorzAdjustItem(SDRTEXTHORZADJUST_LEFT));
+            pText->AdjustTextFrameWidthAndHeight();
+        }
+    }
+
     auto pObjTmp = pObj.get();
     // insert into page
     GetView()->InsertObjectAtView(pObj.get(), *pPageView);
+
+    // a connector's run is laid out between the objects it ties only while all are on one page,
+    // so its ends are tied as the client found them once it is in; the ties are part of the
+    // object, which the undo of the insertion takes out whole
+    if (auto pConnector = oRequestedLine ? dynamic_cast<SdrEdgeObj*>(pObjTmp) : nullptr)
+    {
+        const auto oTies = lcl_getRequestedTies(rReq);
+        for (const bool bStart : { true, false })
+        {
+            const sal_Int64 nObjectId(oTies ? (*oTies)[bStart ? 0 : 2] : 0);
+            SdrObject* pNode
+                = nObjectId > 0 ? pPageView->GetPage()->FindObjectByUniqueID(nObjectId) : nullptr;
+            pConnector->MoveEndTo(bStart, bStart ? oRequestedLine->first : oRequestedLine->second,
+                                  pNode,
+                                  oTies ? static_cast<sal_Int32>((*oTies)[bStart ? 1 : 3]) : -1);
+        }
+        pConnector->SetChanged();
+        pConnector->BroadcastObjectChange();
+    }
 
     // Now that pFuActual has done what it was created for we
     // can switch on the edit mode for callout objects.
@@ -720,6 +975,21 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
         case SID_TEXT_FITTOSIZE:
         case SID_TEXT_FITTOSIZE_VERTICAL:
         {
+            // a text the client dragged out or clicked is edited by the text function that made
+            // it, which goes back to the selection when the edit ends and removes a text left
+            // empty, as the office's text tool does
+            if (bTextInRectangle)
+            {
+                FuText* pFuText = dynamic_cast<FuText*>(GetCurrentFunction().get());
+                SdrTextObj* pText = DynCastSdrTextObj(pObjTmp);
+                if (pFuText && pText)
+                {
+                    mpDrawView->MarkObj(pText, pPageView);
+                    pFuText->EditCreatedText(*pText);
+                    return;
+                }
+            }
+
             // Make FuText the current function.
             SfxUInt16Item aItem (SID_TEXTEDIT, 1);
             GetViewFrame()->GetDispatcher()->
@@ -734,6 +1004,177 @@ void DrawViewShell::FuPermanent(SfxRequest& rReq)
     {
         GetViewFrame()->GetDispatcher()->Execute(SID_OBJECT_SELECT, SfxCallMode::ASYNCHRON);
     }
+}
+
+Size DrawViewShell::GetDefaultObjectSize() const
+{
+    SdOptions* pOptions = SdModule::get()->GetSdOptions(GetDoc()->GetDocumentType());
+    return Size(pOptions->GetDefaultObjectSizeWidth(), pOptions->GetDefaultObjectSizeHeight());
+}
+
+sal_uInt64 DrawViewShell::ReserveObjectIds(sal_uInt32 nCount)
+{
+    const sal_uInt64 nFirst(UniqueID::reserve(nCount));
+    for (sal_uInt32 nAt = 0; nAt < nCount; ++nAt)
+        maReservedObjectIds.insert(nFirst + nAt);
+    return nFirst;
+}
+
+bool DrawViewShell::TakeReservedObjectId(sal_uInt64 nId)
+{
+    return maReservedObjectIds.erase(nId) > 0;
+}
+
+rtl::Reference<SdrObject> DrawViewShell::MakeDefaultShape(sal_uInt16 nSlotId,
+                                                          const OUString& rShapeType)
+{
+    // the custom shape tool makes it as it makes a shape created directly, from the kind of
+    // object the view is set to create, which is put back after
+    const SdrObjKind eKind(mpDrawView->GetCurrentObjIdentifier());
+    const SdrInventor eInventor(mpDrawView->GetCurrentObjInventor());
+    mpDrawView->SetCurrentObj(SdrObjKind::CustomShape);
+
+    SfxAllItemSet aArguments(GetDoc()->GetPool());
+    aArguments.Put(SfxStringItem(nSlotId, rShapeType));
+    SfxRequest aRequest(nSlotId, SfxCallMode::SYNCHRON, aArguments);
+    rtl::Reference<FuPoor> xFunction = FuConstructCustomShape::Create(
+        *this, GetActiveWindow(), mpDrawView.get(), *GetDoc(), aRequest, false);
+    rtl::Reference<SdrObject> xShape = xFunction->CreateDefaultObject(
+        nSlotId, ::tools::Rectangle(Point(), GetDefaultObjectSize()));
+
+    mpDrawView->SetCurrentObj(eKind, eInventor);
+    return xShape;
+}
+
+// when the libraries that make a shape and write how it looks were built, as the times they were
+// last changed; a new build changes it, so looks kept from another build are not taken
+static const OString& lcl_getShapeBuild()
+{
+    static const OString aBuild = []() {
+        const oslGenericFunction aInLibraries[] = {
+            reinterpret_cast<oslGenericFunction>(&lcl_getRequestedRectangle),
+            reinterpret_cast<oslGenericFunction>(&SdrObjCustomShape::doConstructOrthogonal),
+            reinterpret_cast<oslGenericFunction>(
+                &drawinglayer::Primitive2dJsonProcessor::writeGraphicBase64),
+        };
+        std::set<OUString> aLibraries;
+        for (oslGenericFunction pFunction : aInLibraries)
+        {
+            OUString aUrl;
+            if (osl::Module::getUrlFromAddress(pFunction, aUrl))
+                aLibraries.insert(aUrl);
+        }
+        OStringBuffer aTimes;
+        for (const OUString& rUrl : aLibraries)
+        {
+            osl::DirectoryItem aItem;
+            osl::FileStatus aStatus(osl_FileStatus_Mask_ModifyTime);
+            if (osl::DirectoryItem::get(rUrl, aItem) != osl::FileBase::E_None
+                || aItem.getFileStatus(aStatus) != osl::FileBase::E_None)
+                continue;
+            const TimeValue aTime(aStatus.getModifyTime());
+            aTimes.append(OString::number(aTime.Seconds) + "." + OString::number(aTime.Nanosec)
+                          + " ");
+        }
+        return aTimes.makeStringAndClear();
+    }();
+    return aBuild;
+}
+
+OString DrawViewShell::GetShapeStyleKey()
+{
+    // every new shape takes the same attributes but its geometry, so we look at a rectangle
+    rtl::Reference<SdrObject> xShape(MakeDefaultShape(SID_DRAWTBX_CS_BASIC, u"rectangle"_ustr));
+    if (!xShape)
+        return OString();
+
+    xmlBufferPtr pBuffer = xmlBufferCreate();
+    xmlTextWriterPtr pWriter = xmlNewTextWriterMemory(pBuffer, 0);
+    (void)xmlTextWriterStartDocument(pWriter, nullptr, nullptr, nullptr);
+    // the attributes the shape inherits from its style count as well
+    for (const SfxItemSet* pSet = &xShape->GetMergedItemSet(); pSet; pSet = pSet->GetParent())
+        pSet->dumpAsXml(pWriter);
+    (void)xmlTextWriterEndDocument(pWriter);
+    xmlFreeTextWriter(pWriter);
+    OString aDump(reinterpret_cast<const char*>(xmlBufferContent(pBuffer)));
+    xmlBufferFree(pBuffer);
+
+    // the items name their place in memory, which differs from shape to shape
+    OStringBuffer aKeyed(aDump.getLength());
+    for (sal_Int32 nAt = 0; nAt < aDump.getLength();)
+    {
+        const sal_Int32 nPointer = aDump.indexOf(" ptr=\"", nAt);
+        const sal_Int32 nEnd = nPointer < 0 ? -1 : aDump.indexOf('"', nPointer + 6);
+        if (nEnd < 0)
+        {
+            aKeyed.append(aDump.subView(nAt));
+            break;
+        }
+        aKeyed.append(aDump.subView(nAt, nPointer - nAt));
+        nAt = nEnd + 1;
+    }
+
+    aKeyed.append(lcl_getShapeBuild());
+    const std::vector<unsigned char> aHash(comphelper::Hash::calculateHash(
+        aKeyed.getStr(), aKeyed.getLength(), comphelper::HashType::SHA1));
+    return OString(comphelper::hashToString(aHash));
+}
+
+rtl::Reference<SdrObject> DrawViewShell::MakeDefaultLineObject(sal_uInt16 nSlotId)
+{
+    SdrObjKind eMade;
+    switch (nSlotId)
+    {
+        case SID_DRAW_MEASURELINE:
+            eMade = SdrObjKind::Measure;
+            break;
+        case SID_TOOL_CONNECTOR:
+        case SID_CONNECTOR_ARROW_START:
+        case SID_CONNECTOR_ARROW_END:
+        case SID_CONNECTOR_ARROWS:
+        case SID_CONNECTOR_CIRCLE_START:
+        case SID_CONNECTOR_CIRCLE_END:
+        case SID_CONNECTOR_CIRCLES:
+        case SID_CONNECTOR_LINE:
+        case SID_CONNECTOR_LINE_ARROW_START:
+        case SID_CONNECTOR_LINE_ARROW_END:
+        case SID_CONNECTOR_LINE_ARROWS:
+        case SID_CONNECTOR_LINE_CIRCLE_START:
+        case SID_CONNECTOR_LINE_CIRCLE_END:
+        case SID_CONNECTOR_LINE_CIRCLES:
+        case SID_CONNECTOR_CURVE:
+        case SID_CONNECTOR_CURVE_ARROW_START:
+        case SID_CONNECTOR_CURVE_ARROW_END:
+        case SID_CONNECTOR_CURVE_ARROWS:
+        case SID_CONNECTOR_CURVE_CIRCLE_START:
+        case SID_CONNECTOR_CURVE_CIRCLE_END:
+        case SID_CONNECTOR_CURVE_CIRCLES:
+        case SID_CONNECTOR_LINES:
+        case SID_CONNECTOR_LINES_ARROW_START:
+        case SID_CONNECTOR_LINES_ARROW_END:
+        case SID_CONNECTOR_LINES_ARROWS:
+        case SID_CONNECTOR_LINES_CIRCLE_START:
+        case SID_CONNECTOR_LINES_CIRCLE_END:
+        case SID_CONNECTOR_LINES_CIRCLES:
+            eMade = SdrObjKind::Edge;
+            break;
+        default:
+            return nullptr;
+    }
+
+    // the view is set to create that kind of object while the tool makes it, and put back after
+    const SdrObjKind eKind(mpDrawView->GetCurrentObjIdentifier());
+    const SdrInventor eInventor(mpDrawView->GetCurrentObjInventor());
+    mpDrawView->SetCurrentObj(eMade);
+
+    SfxRequest aRequest(nSlotId, SfxCallMode::SYNCHRON, GetDoc()->GetPool());
+    rtl::Reference<FuPoor> xFunction = FuConstructRectangle::Create(
+        *this, GetActiveWindow(), mpDrawView.get(), *GetDoc(), aRequest, false);
+    rtl::Reference<SdrObject> xLine = xFunction->CreateDefaultObject(
+        nSlotId, ::tools::Rectangle(Point(), GetDefaultObjectSize()));
+
+    mpDrawView->SetCurrentObj(eKind, eInventor);
+    return xLine;
 }
 
 void DrawViewShell::FuDeleteSelectedObjects()
@@ -1266,7 +1707,22 @@ void DrawViewShell::FuSupport(SfxRequest& rReq)
             else
             {
                 mpDrawView->EndTextEditAllViews();
+
+                // the request is done where every object that was selected is out of the
+                // document after it, which a client that takes them away at once relies on; a
+                // placeholder that is only emptied, or one that cannot go, leaves it undone
+                std::vector<rtl::Reference<SdrObject>> aSelected;
+                const SdrMarkList& rMarkList = mpDrawView->GetMarkedObjectList();
+                for (size_t nMark = 0; nMark < rMarkList.GetMarkCount(); ++nMark)
+                    aSelected.emplace_back(rMarkList.GetMark(nMark)->GetMarkedSdrObj());
+
                 FuDeleteSelectedObjects();
+
+                if (!aSelected.empty()
+                    && std::none_of(aSelected.begin(), aSelected.end(),
+                                    [](const rtl::Reference<SdrObject>& rObject)
+                                    { return rObject->IsInserted(); }))
+                    rReq.Done();
             }
         }
         break;

@@ -7,7 +7,7 @@
  * at TextInput.
  */
 
-/* global app UNOKey RenderManager GraphicSelection JSDialog URLPopUpSection */
+/* global app UNOKey RenderManager GraphicSelection JSDialog URLPopUpSection Interaction */
 
 window.L.Map.mergeOptions({
 	keyboard: true,
@@ -317,6 +317,9 @@ window.L.Map.Keyboard = window.L.Handler.extend({
 		if (container.tabIndex === -1) {
 			container.tabIndex = '0';
 		}
+
+		// the context one stands in has every key first, before anything else uses it up
+		Interaction.followTheKeys();
 
 		this._keyEventContainer = document.getElementById('document-container');
 		window.L.DomEvent.on(this._keyEventContainer, 'keydown keyup keypress', this._onKeyDown, this);
@@ -1029,9 +1032,9 @@ window.L.Map.Keyboard = window.L.Handler.extend({
 		return true;
 	},
 
-	// Moves the caret here for an arrow key, in a document drawn from objects. Left and Right
-	// with the word modifier move one word, and with Shift the keys select text to the caret.
-	// True when the caret moved.
+	// Moves the caret here for an arrow key, in a document drawn from vector primitives. Left
+	// and Right with the word modifier move one word, and with Shift the keys select text to
+	// the caret. True when the caret moved.
 	_moveCaretHere: function (ev, keyCode) {
 		if (ev.type !== 'keydown' || ev.isComposing)
 			return false;
@@ -1042,7 +1045,7 @@ window.L.Map.Keyboard = window.L.Handler.extend({
 		const others = this.modifier & ~shift;
 		if (others && others !== wordModifier)
 			return false;
-		if (!RenderManager.isVectorRendering() || this._map.getWinId() !== 0)
+		if (!RenderManager.drawsFromPrimitives() || this._map.getWinId() !== 0)
 			return false;
 		// With accessibility support the browser moves the caret of the text area on these
 		// keys.

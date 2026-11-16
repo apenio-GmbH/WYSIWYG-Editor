@@ -22,6 +22,8 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
+#include <rtl/ref.hxx>
 #include "ViewShell.hxx"
 #include "tools/AsynchronousCall.hxx"
 #include "TabControl.hxx"
@@ -210,6 +212,21 @@ public:
     void            FuTransformDocumentStructure(SfxRequest& rReq);
     void            FuTemporary(SfxRequest& rReq);
     void            FuPermanent(SfxRequest& rReq);
+
+    /// Makes the default object of a custom shape, of that group's slot and that type, in the
+    /// default size, as the custom shape tool makes it. It is not inserted anywhere.
+    rtl::Reference<SdrObject> MakeDefaultShape(sal_uInt16 nSlotId, const OUString& rShapeType);
+    /// Makes the default dimension line or connector of that slot in the default size, as the
+    /// tool for it makes it; nothing for another slot. It is not inserted anywhere.
+    rtl::Reference<SdrObject> MakeDefaultLineObject(sal_uInt16 nSlotId);
+    /// A key of the attributes a new shape of this view takes, its own and those of its style, and
+    /// of the build that makes it: a hash in hexadecimal, the same as long as they are the same.
+    OString GetShapeStyleKey();
+    /// Reserves that many object ids for this view, which no other object takes, and answers the
+    /// first; the rest follow it. A client gives the objects it creates one of them each.
+    sal_uInt64 ReserveObjectIds(sal_uInt32 nCount);
+    /// Takes that id out of the ids this view reserved, answering whether it was one of them.
+    bool TakeReservedObjectId(sal_uInt64 nId);
     void            FuSupport(SfxRequest& rReq);
     void            FuDeleteSelectedObjects();
     void            FuSupportRotate(SfxRequest const & rReq);
@@ -472,7 +489,12 @@ private:
     bool ShouldDisableEditHyperlink() const;
 
 private:
+    /// The office's default size of a new object, in 1/100 mm.
+    Size GetDefaultObjectSize() const;
+
     std::unique_ptr<DrawView> mpDrawView;
+    /// The object ids reserved for this view and not taken yet.
+    std::set<sal_uInt64> maReservedObjectIds;
     SdPage*             mpActualPage;
     ::tools::Rectangle           maMarkRect;
     Point               maMousePos;

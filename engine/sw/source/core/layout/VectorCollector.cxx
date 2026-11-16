@@ -10,6 +10,7 @@
  */
 
 #include <VectorCollector.hxx>
+#include <VectorText.hxx>
 
 #include <IDocumentDrawModelAccess.hxx>
 #include <anchoredobject.hxx>
@@ -28,15 +29,21 @@
 
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
+#include <basegfx/polygon/b2dpolypolygon.hxx>
+#include <drawinglayer/primitive2d/PolyPolygonColorPrimitive2D.hxx>
+#include <rootfrm.hxx>
+#include <tools/color.hxx>
 #include <drawinglayer/geometry/viewinformation2d.hxx>
-#include <drawinglayer/primitive2d/maskprimitive2d.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
+#include <drawinglayer/primitive2d/unifiedtransparenceprimitive2d.hxx>
 #include <svx/sdr/contact/viewcontact.hxx>
 #include <svx/svdobj.hxx>
 #include <svx/VectorObjectContent.hxx>
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
+#include <string_view>
 
 namespace sw::vector
 {
@@ -228,6 +235,29 @@ void Collector::closeBorderLayer()
     maBorderLayers.pop_back();
 }
 
+basegfx::B2DRange rangeRelativeTo(const SwRect& rArea, const Point& rOrigin)
+{
+    return basegfx::B2DRange(rArea.Left() - rOrigin.X(), rArea.Top() - rOrigin.Y(),
+                             rArea.Left() + rArea.Width() - rOrigin.X(),
+                             rArea.Top() + rArea.Height() - rOrigin.Y());
+}
+
+void addColorFill(drawinglayer::primitive2d::Primitive2DContainer& rTarget,
+                  basegfx::B2DPolyPolygon&& rArea, const Color& rColor)
+{
+    if (!rArea.count() || rColor.IsFullyTransparent())
+        return;
+
+    drawinglayer::primitive2d::Primitive2DReference xFill(
+        new drawinglayer::primitive2d::PolyPolygonColorPrimitive2D(std::move(rArea),
+                                                                   rColor.getBColor()));
+    if (rColor.IsTransparent())
+        xFill = new drawinglayer::primitive2d::UnifiedTransparencePrimitive2D(
+            drawinglayer::primitive2d::Primitive2DContainer{ xFill },
+            1.0 - rColor.GetAlpha() / 255.0);
+    rTarget.push_back(xFill);
+}
+
 std::optional<sal_uInt64> anchorOf(const SwAnchoredObject& rObject)
 {
     const SwFrame* pAnchor = rObject.GetAnchorFrame();
@@ -250,7 +280,7 @@ void addShape(Collector& rCollector, const SwAnchoredObject& rObject)
     const std::optional<SwRect> oClip = getHorizontalRuleClip(pObject);
     if (oClip)
         aBox.Intersection(*oClip);
-    if (!aBox.HasArea())
+    if (!aBox.HasArea() || !rCollector.wants(aBox))
         return;
 
     drawinglayer::primitive2d::Primitive2DContainer aPrimitives;
@@ -261,19 +291,19 @@ void addShape(Collector& rCollector, const SwAnchoredObject& rObject)
     // A rule is cropped rather than shrunk, so a rule made of a picture keeps its scale.
     if (oClip)
     {
-        const basegfx::B2DRange aClip(oClip->Left(), oClip->Top(), oClip->Right(),
-                                      oClip->Bottom());
+        // The primitives of the object are in document twips, so the mask has no origin to move
+        // by.
         drawinglayer::primitive2d::Primitive2DReference xMask(
-            new drawinglayer::primitive2d::MaskPrimitive2D(
-                basegfx::B2DPolyPolygon(basegfx::utils::createPolygonFromRect(aClip)),
-                std::move(aPrimitives)));
+            createMask(*oClip, Point(), std::move(aPrimitives)));
         aPrimitives = drawinglayer::primitive2d::Primitive2DContainer{ xMask };
     }
 
     rCollector.open(entryIdOf(*pObject), EntryKind::Shape, aBox);
     rCollector.current().moAnchor = anchorOf(rObject);
-    svx::vector::decomposeForComparison(aPrimitives, rCollector.current().maDrawn,
-                                        drawinglayer::geometry::ViewInformation2D());
+    // A view draws the entries right away and compares nothing, so it needs no decomposition.
+    if (!rCollector.isForView())
+        svx::vector::decomposeForComparison(aPrimitives, rCollector.current().maDrawn,
+                                            drawinglayer::geometry::ViewInformation2D());
     rCollector.add(new drawinglayer::primitive2d::TransformPrimitive2D(
         basegfx::utils::createTranslateB2DHomMatrix(-aBox.Left(), -aBox.Top()),
         std::move(aPrimitives)));
@@ -328,7 +358,7 @@ void addObjects(Collector& rCollector, const SwSortedObjs& rObjects,
     std::vector<const SwAnchoredObject*> aObjects;
     for (const SwAnchoredObject* pObject : rObjects)
     {
-        if (!isDrawn(*pObject, rAccess, /*bForView=*/false))
+        if (!isDrawn(*pObject, rAccess, rCollector.isForView()))
             continue;
         if (bAsCharacter
             && pObject->GetFrameFormat()->GetAnchor().GetAnchorId() != RndStdIds::FLY_AS_CHAR)
@@ -384,11 +414,116 @@ void addCharacterObjects(Collector& rCollector, const SwTextFrame& rFrame)
         addObjects(rCollector, *pObjects, rAccess, ePlace, /*bAsCharacter=*/true);
 }
 
+namespace
+{
+const SwFrame* frameIn(const SwFrame& rFrame, sal_uInt64 nId)
+{
+    if (rFrame.GetFrameId() == nId)
+        return &rFrame;
+    // Every fly is among the objects of the frame it is anchored at.
+    if (const SwSortedObjs* pObjects = rFrame.GetDrawObjs())
+    {
+        for (const SwAnchoredObject* pObject : *pObjects)
+        {
+            const SwFlyFrame* pFly = pObject->DynCastFlyFrame();
+            if (const SwFrame* pFound = pFly ? frameIn(*pFly, nId) : nullptr)
+                return pFound;
+        }
+    }
+    if (rFrame.IsLayoutFrame())
+    {
+        for (const SwFrame* pLower = static_cast<const SwLayoutFrame&>(rFrame).Lower(); pLower;
+             pLower = pLower->GetNext())
+        {
+            if (const SwFrame* pFound = frameIn(*pLower, nId))
+                return pFound;
+        }
+    }
+    return nullptr;
+}
+}
+
+const SwFrame* frameOf(const SwRootFrame& rLayout, sal_uInt64 nId, const SwPageFrame* pNear)
+{
+    if (!pNear || rLayout.GetFrameId() == nId)
+        return frameIn(rLayout, nId);
+
+    // The root frame holds the pages and nothing else, so the walk outward from pNear visits
+    // every frame the whole walk visits.
+    const SwFrame* pAfter = pNear;
+    const SwFrame* pBefore = pNear->GetPrev();
+    while (pAfter || pBefore)
+    {
+        if (pAfter)
+        {
+            if (const SwFrame* pFound = frameIn(*pAfter, nId))
+                return pFound;
+            pAfter = pAfter->GetNext();
+        }
+        if (pBefore)
+        {
+            if (const SwFrame* pFound = frameIn(*pBefore, nId))
+                return pFound;
+            pBefore = pBefore->GetPrev();
+        }
+    }
+    return nullptr;
+}
+
 std::vector<Entry> decomposePage(const SwPageFrame& rPage)
 {
     Collector aCollector;
     rPage.CreatePrimitives(aCollector);
     return aCollector.take();
+}
+
+namespace
+{
+bool& tilesFromPrimitivesFlag()
+{
+    // An empty value and "0" leave the switch off, as when the variable is not set.
+    static bool bFromPrimitives = [] {
+        const char* pValue = std::getenv("SW_TILES_FROM_PRIMITIVES");
+        return pValue && *pValue && std::string_view(pValue) != "0";
+    }();
+    return bFromPrimitives;
+}
+}
+
+bool tilesFromPrimitives() { return tilesFromPrimitivesFlag(); }
+
+void setTilesFromPrimitives(bool bFromPrimitives) { tilesFromPrimitivesFlag() = bFromPrimitives; }
+
+drawinglayer::primitive2d::Primitive2DContainer
+createAreaPrimitives(const SwRootFrame& rLayout, const SwRect& rArea, const Color& rPaper)
+{
+    drawinglayer::primitive2d::Primitive2DContainer aPrimitives;
+    for (const SwFrame* pFrame = rLayout.Lower(); pFrame; pFrame = pFrame->GetNext())
+    {
+        if (!pFrame->IsPageFrame() || !pFrame->getFrameArea().Overlaps(rArea))
+            continue;
+
+        // The paper is opaque, whatever transparency its color names.
+        addColorFill(aPrimitives,
+                     basegfx::B2DPolyPolygon(basegfx::utils::createPolygonFromRect(
+                         rangeRelativeTo(pFrame->getFrameArea(), Point()))),
+                     rPaper.GetRGBColor());
+        // Every tile builds what it shows anew, so it builds only the frames and the objects
+        // that reach into its area.
+        Collector aCollector(/*bForView=*/true);
+        aCollector.setArea(rArea);
+        pFrame->CreatePrimitives(aCollector);
+        for (Entry& rEntry : aCollector.take())
+        {
+            if (rEntry.maPrimitives.empty())
+                continue;
+            aPrimitives.push_back(new drawinglayer::primitive2d::TransformPrimitive2D(
+                basegfx::utils::createTranslateB2DHomMatrix(rEntry.maBox.Left(),
+                                                            rEntry.maBox.Top()),
+                std::move(rEntry.maPrimitives)));
+        }
+    }
+    return aPrimitives;
 }
 }
 
